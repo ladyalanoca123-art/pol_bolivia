@@ -23,7 +23,7 @@
                             Gestionar usuarios
                         </a>
 
-                        <a href="#" class="p-5 bg-blue-600 text-white rounded-lg">
+                        <a href="{{ route('admin.mascotas.index') }}" class="p-5 bg-blue-600 text-white rounded-lg">
                             Gestionar mascotas
                         </a>
 

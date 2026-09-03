@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\MascotaController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +32,9 @@ Route::middleware(['auth', 'role:administrador'])
 
         Route::patch('/usuarios/{user}/estado', [UserController::class, 'updateStatus'])
             ->name('usuarios.estado.update');
+
+        Route::get('/mascotas', [MascotaController::class, 'index'])
+            ->name('mascotas.index');
     });
 
 require __DIR__.'/auth.php';

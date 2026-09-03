@@ -24,6 +24,10 @@
                         <x-nav-link :href="route('admin.usuarios.index')" :active="request()->routeIs('admin.usuarios.*')">
                             Usuarios
                         </x-nav-link>
+
+                        <x-nav-link :href="route('admin.mascotas.index')" :active="request()->routeIs('admin.mascotas.*')">
+                            Mascotas
+                        </x-nav-link>
                     @endif
                 </div>
             </div>
@@ -88,6 +92,10 @@
 
                 <x-responsive-nav-link :href="route('admin.usuarios.index')" :active="request()->routeIs('admin.usuarios.*')">
                     Usuarios
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('admin.mascotas.index')" :active="request()->routeIs('admin.mascotas.*')">
+                    Mascotas
                 </x-responsive-nav-link>
             @endif
         </div>
