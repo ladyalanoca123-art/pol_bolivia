@@ -17,8 +17,12 @@
                     </x-nav-link>
 
                     @if (auth()->user()->hasRole('administrador'))
-                        <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.*')">
+                        <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
                             Panel de administración
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('admin.usuarios.index')" :active="request()->routeIs('admin.usuarios.*')">
+                            Usuarios
                         </x-nav-link>
                     @endif
                 </div>
@@ -78,8 +82,12 @@
             </x-responsive-nav-link>
 
             @if (auth()->user()->hasRole('administrador'))
-                <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.*')">
+                <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
                     Panel de administración
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('admin.usuarios.index')" :active="request()->routeIs('admin.usuarios.*')">
+                    Usuarios
                 </x-responsive-nav-link>
             @endif
         </div>

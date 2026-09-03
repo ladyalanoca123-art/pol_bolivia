@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -24,6 +25,12 @@ Route::middleware(['auth', 'role:administrador'])
     ->group(function () {
         Route::view('/panel', 'admin.dashboard')
             ->name('dashboard');
+
+        Route::get('/usuarios', [UserController::class, 'index'])
+            ->name('usuarios.index');
+
+        Route::patch('/usuarios/{user}/estado', [UserController::class, 'updateStatus'])
+            ->name('usuarios.estado.update');
     });
 
 require __DIR__.'/auth.php';

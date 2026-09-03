@@ -19,6 +19,10 @@
                     </p>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                        <a href="{{ route('admin.usuarios.index') }}" class="p-5 bg-indigo-600 text-white rounded-lg">
+                            Gestionar usuarios
+                        </a>
+
                         <a href="#" class="p-5 bg-blue-600 text-white rounded-lg">
                             Gestionar mascotas
                         </a>
