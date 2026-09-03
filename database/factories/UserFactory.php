@@ -27,7 +27,7 @@ class UserFactory extends Factory
         return [
             'nombres' => fake()->firstName(),
             'apellidos' => fake()->lastName(),
-            'correo' => fake()->unique()->safeEmail(),
+            'email' => fake()->unique()->safeEmail(),
             'telefono' => fake()->optional()->numerify('7#######'),
             'rol' => 'ciudadano',
             'estado' => true,

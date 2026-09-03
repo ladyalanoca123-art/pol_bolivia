@@ -15,7 +15,7 @@ class User extends Authenticatable
     protected $table = 'usuarios';
 
     protected $fillable = [
-        'nombres', 'apellidos', 'correo', 'telefono',
+        'nombres', 'apellidos', 'email', 'telefono',
         'password', 'rol', 'estado',
     ];
 
@@ -34,7 +34,7 @@ class User extends Authenticatable
 
     public function getEmailForPasswordReset(): string
     {
-        return $this->correo;
+        return $this->email;
     }
 
     public function mascotasRegistradas(): HasMany

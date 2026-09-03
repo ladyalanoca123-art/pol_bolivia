@@ -21,7 +21,7 @@ class RegistrationTest extends TestCase
         $response = $this->post('/register', [
             'nombres' => 'Usuario',
             'apellidos' => 'De Prueba',
-            'correo' => 'test@example.com',
+            'email' => 'test@example.com',
             'telefono' => '70000000',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -31,7 +31,7 @@ class RegistrationTest extends TestCase
         $this->assertDatabaseHas('usuarios', [
             'nombres' => 'Usuario',
             'apellidos' => 'De Prueba',
-            'correo' => 'test@example.com',
+            'email' => 'test@example.com',
             'rol' => 'ciudadano',
         ]);
         $response->assertRedirect(route('dashboard', absolute: false));

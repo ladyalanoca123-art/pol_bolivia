@@ -5,20 +5,20 @@
         @csrf
 
         <div>
-            <x-input-label for="correo" :value="__('Correo electrónico')" />
+            <x-input-label for="email" :value="__('Correo electrónico')" />
 
             <x-text-input
-                id="correo"
+                id="email"
                 class="block mt-1 w-full"
                 type="email"
-                name="correo"
-                :value="old('correo')"
+                name="email"
+                :value="old('email')"
                 required
                 autofocus
                 autocomplete="username"
             />
 
-            <x-input-error :messages="$errors->get('correo')" class="mt-2" />
+            <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
         <div class="mt-4">

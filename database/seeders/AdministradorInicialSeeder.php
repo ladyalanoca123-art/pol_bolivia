@@ -19,7 +19,7 @@ class AdministradorInicialSeeder extends Seeder
         }
 
         User::updateOrCreate(
-            ['correo' => 'ladyalanoca123@gmail.com'],
+            ['email' => 'ladyalanoca123@gmail.com'],
             [
                 'nombres' => 'Lady',
                 'apellidos' => 'Alanoca',
