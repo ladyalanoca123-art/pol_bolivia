@@ -16,7 +16,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'nombres', 'apellidos', 'email', 'telefono',
-        'password', 'rol', 'estado',
+        'password',
     ];
 
     protected $hidden = [
@@ -35,6 +35,11 @@ class User extends Authenticatable
     public function getEmailForPasswordReset(): string
     {
         return $this->email;
+    }
+
+    public function hasRole(string ...$roles): bool
+    {
+        return in_array($this->rol, $roles, true);
     }
 
     public function mascotasRegistradas(): HasMany

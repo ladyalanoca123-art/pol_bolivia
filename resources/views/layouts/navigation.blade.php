@@ -16,7 +16,7 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
 
-                    @if (auth()->user()->rol === 'administrador')
+                    @if (auth()->user()->hasRole('administrador'))
                         <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.*')">
                             Panel de administración
                         </x-nav-link>
@@ -77,7 +77,7 @@
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
 
-            @if (auth()->user()->rol === 'administrador')
+            @if (auth()->user()->hasRole('administrador'))
                 <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.*')">
                     Panel de administración
                 </x-responsive-nav-link>

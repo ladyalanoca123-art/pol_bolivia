@@ -18,17 +18,16 @@ class AdministradorInicialSeeder extends Seeder
             );
         }
 
-        User::updateOrCreate(
-            ['email' => 'ladyalanoca123@gmail.com'],
-            [
-                'nombres' => 'Lady',
-                'apellidos' => 'Alanoca',
-                'telefono' => null,
-                'password' => Hash::make($password),
-                'rol' => 'administrador',
-                'estado' => true,
-                'email_verified_at' => now(),
-            ]
-        );
+        $user = User::firstOrNew(['email' => 'ladyalanoca123@gmail.com']);
+
+        $user->forceFill([
+            'nombres' => 'Lady',
+            'apellidos' => 'Alanoca',
+            'telefono' => null,
+            'password' => Hash::make($password),
+            'rol' => 'administrador',
+            'estado' => true,
+            'email_verified_at' => now(),
+        ])->save();
     }
 }

@@ -15,7 +15,7 @@ class EnsureUserHasRole
     ): Response {
         $user = $request->user();
 
-        if (! $user || ! in_array($user->rol, $roles, true)) {
+        if (! $user || ! $user->estado || ! $user->hasRole(...$roles)) {
             abort(403, 'No tienes permiso para acceder a esta sección.');
         }
 

@@ -36,4 +36,22 @@ class RegistrationTest extends TestCase
         ]);
         $response->assertRedirect(route('dashboard', absolute: false));
     }
+
+    public function test_registration_cannot_assign_an_administrative_role(): void
+    {
+        $this->post('/register', [
+            'nombres' => 'Usuario',
+            'apellidos' => 'Ciudadano',
+            'email' => 'ciudadano@example.com',
+            'telefono' => '70000000',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'rol' => 'administrador',
+        ]);
+
+        $this->assertDatabaseHas('usuarios', [
+            'email' => 'ciudadano@example.com',
+            'rol' => 'ciudadano',
+        ]);
+    }
 }

@@ -17,7 +17,7 @@
                         Has iniciado sesión correctamente.
                     </p>
 
-                    @if (auth()->user()->rol === 'administrador')
+                    @if (auth()->user()->hasRole('administrador'))
                         <a
                             href="{{ route('admin.dashboard') }}"
                             class="inline-block mt-5 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
