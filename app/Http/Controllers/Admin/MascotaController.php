@@ -4,11 +4,18 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\FilterMascotasRequest;
+use App\Http\Requests\Admin\RegisterMascotaRequest;
 use App\Models\Mascota;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class MascotaController extends Controller
 {
+    public function create(): View
+    {
+        return view('admin.mascotas.create');
+    }
+
     public function index(FilterMascotasRequest $request): View
     {
         $filters = $request->validated();
@@ -32,5 +39,17 @@ class MascotaController extends Controller
             ->withQueryString();
 
         return view('admin.mascotas.index', compact('mascotas', 'filters'));
+    }
+
+    public function store(RegisterMascotaRequest $request): RedirectResponse
+    {
+        Mascota::create([
+            ...$request->validated(),
+            'estado' => 'borrador',
+            'registrado_por' => auth()->id(),
+        ]);
+
+        return to_route('admin.mascotas.index')
+            ->with('status', 'La mascota fue registrada como borrador.');
     }
 }

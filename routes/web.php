@@ -35,6 +35,12 @@ Route::middleware(['auth', 'role:administrador'])
 
         Route::get('/mascotas', [MascotaController::class, 'index'])
             ->name('mascotas.index');
+
+        Route::get('/mascotas/create', [MascotaController::class, 'create'])
+            ->name('mascotas.create');
+
+        Route::post('/mascotas', [MascotaController::class, 'store'])
+            ->name('mascotas.store');
     });
 
 require __DIR__.'/auth.php';

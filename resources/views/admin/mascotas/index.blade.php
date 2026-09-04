@@ -5,7 +5,15 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+            @if (session('status'))
+                <div class="rounded-md bg-green-50 p-4 text-sm text-green-700">{{ session('status') }}</div>
+            @endif
+
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <div class="mb-6 flex justify-end">
+                    <a href="{{ route('admin.mascotas.create') }}" class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Registrar mascota</a>
+                </div>
+
                 <form method="GET" action="{{ route('admin.mascotas.index') }}" class="grid grid-cols-1 gap-4 md:grid-cols-6">
                     <div class="md:col-span-2">
                         <x-input-label for="buscar" :value="__('Buscar')" />
