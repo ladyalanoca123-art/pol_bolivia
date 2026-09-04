@@ -41,6 +41,18 @@ Route::middleware(['auth', 'role:administrador'])
 
         Route::post('/mascotas', [MascotaController::class, 'store'])
             ->name('mascotas.store');
+
+        Route::get('/mascotas/{mascota}', [MascotaController::class, 'show'])
+            ->name('mascotas.show');
+
+        Route::post('/mascotas/{mascota}/fotos', [MascotaController::class, 'storePhoto'])
+            ->name('mascotas.fotos.store');
+
+        Route::patch('/mascotas/{mascota}/fotos/{foto}/principal', [MascotaController::class, 'setPrincipalPhoto'])
+            ->name('mascotas.fotos.principal');
+
+        Route::delete('/mascotas/{mascota}/fotos/{foto}', [MascotaController::class, 'destroyPhoto'])
+            ->name('mascotas.fotos.destroy');
     });
 
 require __DIR__.'/auth.php';

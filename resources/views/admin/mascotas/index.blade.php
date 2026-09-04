@@ -104,7 +104,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ucfirst($mascota->estado) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $mascota->created_at->format('d/m/Y H:i') }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                        <a href="#" class="text-indigo-600 hover:text-indigo-900" aria-disabled="true">Ver detalle</a>
+                                        <a href="{{ route('admin.mascotas.show', $mascota) }}" class="text-indigo-600 hover:text-indigo-900">Ver detalle</a>
                                     </td>
                                 </tr>
                             @empty
