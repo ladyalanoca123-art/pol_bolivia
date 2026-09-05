@@ -27,7 +27,7 @@
                             Gestionar mascotas
                         </a>
 
-                        <a href="#" class="p-5 bg-green-600 text-white rounded-lg">
+                        <a href="{{ route('admin.solicitudes-adopcion.index') }}" class="p-5 bg-green-600 text-white rounded-lg">
                             Solicitudes de adopción
                         </a>
 
