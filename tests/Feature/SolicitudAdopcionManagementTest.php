@@ -152,6 +152,154 @@ class SolicitudAdopcionManagementTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_administrator_can_accept_a_valid_request(): void
+    {
+        $administrator = User::factory()->create(['rol' => 'administrador']);
+        $solicitud = $this->createSolicitud(
+            User::factory()->create(['rol' => 'ciudadano']),
+            $this->createAvailableMascota(),
+        );
+
+        $this->actingAs($administrator)
+            ->patch(route('admin.solicitudes-adopcion.accept', $solicitud))
+            ->assertRedirect(route('admin.solicitudes-adopcion.show', $solicitud));
+
+        $this->assertDatabaseHas('solicitudes_adopcion', [
+            'id' => $solicitud->id,
+            'estado' => 'aceptada',
+        ]);
+    }
+
+    public function test_administrator_can_reject_a_valid_request(): void
+    {
+        $administrator = User::factory()->create(['rol' => 'administrador']);
+        $solicitud = $this->createSolicitud(
+            User::factory()->create(['rol' => 'ciudadano']),
+            $this->createAvailableMascota(),
+        );
+
+        $this->actingAs($administrator)
+            ->patch(route('admin.solicitudes-adopcion.reject', $solicitud))
+            ->assertRedirect(route('admin.solicitudes-adopcion.show', $solicitud));
+
+        $this->assertDatabaseHas('solicitudes_adopcion', [
+            'id' => $solicitud->id,
+            'estado' => 'rechazada',
+        ]);
+    }
+
+    public function test_citizen_and_volunteer_cannot_accept_or_reject_requests(): void
+    {
+        $solicitud = $this->createSolicitud(
+            User::factory()->create(['rol' => 'ciudadano']),
+            $this->createAvailableMascota(),
+        );
+
+        foreach (['ciudadano', 'voluntario'] as $rol) {
+            $actor = User::factory()->create(['rol' => $rol]);
+
+            $this->actingAs($actor)
+                ->patch(route('admin.solicitudes-adopcion.accept', $solicitud))
+                ->assertForbidden();
+
+            $this->actingAs($actor)
+                ->patch(route('admin.solicitudes-adopcion.reject', $solicitud))
+                ->assertForbidden();
+        }
+
+        $this->assertDatabaseHas('solicitudes_adopcion', ['id' => $solicitud->id, 'estado' => 'pendiente']);
+    }
+
+    public function test_a_final_request_cannot_be_processed_again(): void
+    {
+        $administrator = User::factory()->create(['rol' => 'administrador']);
+        $accepted = $this->createSolicitud(
+            User::factory()->create(['rol' => 'ciudadano']),
+            $this->createAvailableMascota(),
+        );
+
+        $this->actingAs($administrator)
+            ->patch(route('admin.solicitudes-adopcion.accept', $accepted))
+            ->assertRedirect();
+
+        $this->actingAs($administrator)
+            ->patch(route('admin.solicitudes-adopcion.accept', $accepted))
+            ->assertForbidden();
+
+        $rejected = $this->createSolicitud(
+            User::factory()->create(['rol' => 'ciudadano']),
+            $this->createAvailableMascota(),
+        );
+
+        $this->actingAs($administrator)
+            ->patch(route('admin.solicitudes-adopcion.reject', $rejected))
+            ->assertRedirect();
+
+        $this->actingAs($administrator)
+            ->patch(route('admin.solicitudes-adopcion.reject', $rejected))
+            ->assertForbidden();
+    }
+
+    public function test_state_from_the_client_is_ignored_by_explicit_administrative_actions(): void
+    {
+        $administrator = User::factory()->create(['rol' => 'administrador']);
+        $solicitud = $this->createSolicitud(
+            User::factory()->create(['rol' => 'ciudadano']),
+            $this->createAvailableMascota(),
+        );
+
+        $this->actingAs($administrator)
+            ->patch(route('admin.solicitudes-adopcion.accept', $solicitud), [
+                'estado' => 'rechazada',
+                'solicitante_id' => User::factory()->create(['rol' => 'ciudadano'])->id,
+                'mascota_id' => $this->createAvailableMascota()->id,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('solicitudes_adopcion', [
+            'id' => $solicitud->id,
+            'estado' => 'aceptada',
+        ]);
+    }
+
+    public function test_administrator_cannot_accept_a_request_when_its_pet_is_no_longer_available(): void
+    {
+        $administrator = User::factory()->create(['rol' => 'administrador']);
+        $mascota = $this->createAvailableMascota();
+        $solicitud = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano']), $mascota);
+        $mascota->update(['estado' => 'borrador']);
+
+        $this->actingAs($administrator)
+            ->patch(route('admin.solicitudes-adopcion.accept', $solicitud))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('solicitudes_adopcion', [
+            'id' => $solicitud->id,
+            'estado' => 'pendiente',
+        ]);
+    }
+
+    public function test_administrative_detail_only_shows_actions_for_a_request_that_can_be_processed(): void
+    {
+        $administrator = User::factory()->create(['rol' => 'administrador']);
+        $solicitud = $this->createSolicitud(
+            User::factory()->create(['rol' => 'ciudadano']),
+            $this->createAvailableMascota(),
+        );
+
+        $this->actingAs($administrator)
+            ->get(route('admin.solicitudes-adopcion.show', $solicitud))
+            ->assertSee('Aceptar')
+            ->assertSee('Rechazar');
+
+        $solicitud->update(['estado' => 'rechazada']);
+
+        $this->actingAs($administrator)
+            ->get(route('admin.solicitudes-adopcion.show', $solicitud))
+            ->assertDontSee('Aceptar')
+            ->assertDontSee('Rechazar');
+    }
+
     private function createSolicitud(User $citizen, Mascota $mascota): SolicitudAdopcion
     {
         return SolicitudAdopcion::create([

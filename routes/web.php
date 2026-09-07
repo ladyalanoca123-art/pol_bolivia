@@ -75,6 +75,12 @@ Route::middleware(['auth', 'role:administrador'])
 
         Route::get('/solicitudes-adopcion/{solicitud}', [AdminSolicitudAdopcionController::class, 'show'])
             ->name('solicitudes-adopcion.show');
+
+        Route::patch('/solicitudes-adopcion/{solicitud}/aceptar', [AdminSolicitudAdopcionController::class, 'accept'])
+            ->name('solicitudes-adopcion.accept');
+
+        Route::patch('/solicitudes-adopcion/{solicitud}/rechazar', [AdminSolicitudAdopcionController::class, 'reject'])
+            ->name('solicitudes-adopcion.reject');
     });
 
 require __DIR__.'/auth.php';

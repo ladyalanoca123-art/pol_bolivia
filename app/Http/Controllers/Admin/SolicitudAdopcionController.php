@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\FilterSolicitudesAdopcionRequest;
 use App\Models\SolicitudAdopcion;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 class SolicitudAdopcionController extends Controller
@@ -36,5 +38,25 @@ class SolicitudAdopcionController extends Controller
         $solicitud->load(['solicitante', 'mascota']);
 
         return view('admin.solicitudes-adopcion.show', compact('solicitud'));
+    }
+
+    public function accept(SolicitudAdopcion $solicitud): RedirectResponse
+    {
+        Gate::authorize('accept', $solicitud);
+
+        $solicitud->forceFill(['estado' => 'aceptada'])->save();
+
+        return to_route('admin.solicitudes-adopcion.show', $solicitud)
+            ->with('status', 'La solicitud de adopción fue aceptada.');
+    }
+
+    public function reject(SolicitudAdopcion $solicitud): RedirectResponse
+    {
+        Gate::authorize('reject', $solicitud);
+
+        $solicitud->forceFill(['estado' => 'rechazada'])->save();
+
+        return to_route('admin.solicitudes-adopcion.show', $solicitud)
+            ->with('status', 'La solicitud de adopción fue rechazada.');
     }
 }

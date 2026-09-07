@@ -15,6 +15,24 @@
             <div class="sm:col-span-2"><dt class="font-medium text-gray-500">Comentarios del ciudadano</dt><dd class="mt-1 whitespace-pre-line text-gray-900">{{ $solicitud->comentarios_solicitante ?? '—' }}</dd></div>
             @if ($solicitud->comentarios_admin)<div class="sm:col-span-2"><dt class="font-medium text-gray-500">Comentarios administrativos</dt><dd class="mt-1 whitespace-pre-line text-gray-900">{{ $solicitud->comentarios_admin }}</dd></div>@endif
         </dl>
-        <a href="{{ route('admin.solicitudes-adopcion.index') }}" class="mt-6 inline-block text-sm text-gray-600 hover:text-gray-900">Volver al listado</a>
+        <div class="mt-6 flex flex-wrap items-center gap-3">
+            @can('accept', $solicitud)
+                <form method="POST" action="{{ route('admin.solicitudes-adopcion.accept', $solicitud) }}">
+                    @csrf
+                    @method('PATCH')
+                    <button type="submit" onclick="return confirm('¿Confirmas que deseas aceptar esta solicitud?')" class="inline-flex items-center rounded-md bg-green-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-green-700">Aceptar</button>
+                </form>
+            @endcan
+
+            @can('reject', $solicitud)
+                <form method="POST" action="{{ route('admin.solicitudes-adopcion.reject', $solicitud) }}">
+                    @csrf
+                    @method('PATCH')
+                    <button type="submit" onclick="return confirm('¿Confirmas que deseas rechazar esta solicitud?')" class="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-red-700">Rechazar</button>
+                </form>
+            @endcan
+
+            <a href="{{ route('admin.solicitudes-adopcion.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Volver al listado</a>
+        </div>
     </div></div></div>
 </x-app-layout>
