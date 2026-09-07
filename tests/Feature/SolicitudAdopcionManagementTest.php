@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\FotoMascota;
 use App\Models\Mascota;
+use App\Models\SeguimientoAdopcion;
 use App\Models\SolicitudAdopcion;
 use App\Models\User;
 use Illuminate\Database\QueryException;
@@ -155,9 +156,10 @@ class SolicitudAdopcionManagementTest extends TestCase
     public function test_administrator_can_accept_a_valid_request(): void
     {
         $administrator = User::factory()->create(['rol' => 'administrador']);
+        $mascota = $this->createAvailableMascota();
         $solicitud = $this->createSolicitud(
             User::factory()->create(['rol' => 'ciudadano']),
-            $this->createAvailableMascota(),
+            $mascota,
         );
 
         $this->actingAs($administrator)
@@ -168,15 +170,55 @@ class SolicitudAdopcionManagementTest extends TestCase
             'id' => $solicitud->id,
             'estado' => 'aceptada',
         ]);
+        $this->assertDatabaseHas('mascotas', [
+            'id' => $mascota->id,
+            'estado' => 'adoptada',
+        ]);
+
+        $seguimiento = SeguimientoAdopcion::query()
+            ->where('solicitud_id', $solicitud->id)
+            ->sole();
+
+        $this->assertSame('sin_asignar', $seguimiento->estado);
+        $this->assertSame($solicitud->zona_aproximada, $seguimiento->zona_aproximada);
+        $this->assertSame($solicitud->horario_preferido, $seguimiento->horario_preferido);
+        $this->assertNull($seguimiento->voluntario_id);
+    }
+
+    public function test_accepting_a_request_closes_all_other_active_requests_for_the_same_pet(): void
+    {
+        $administrator = User::factory()->create(['rol' => 'administrador']);
+        $mascota = $this->createAvailableMascota();
+        $accepted = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano']), $mascota);
+        $pending = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano']), $mascota);
+        $waiting = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano']), $mascota);
+        $waiting->update(['estado' => 'en_espera']);
+
+        $this->actingAs($administrator)
+            ->patch(route('admin.solicitudes-adopcion.accept', $accepted))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('solicitudes_adopcion', ['id' => $accepted->id, 'estado' => 'aceptada']);
+        $this->assertDatabaseHas('solicitudes_adopcion', ['id' => $pending->id, 'estado' => 'cerrada']);
+        $this->assertDatabaseHas('solicitudes_adopcion', ['id' => $waiting->id, 'estado' => 'cerrada']);
+        $this->assertSame(1, SolicitudAdopcion::query()
+            ->where('mascota_id', $mascota->id)
+            ->where('estado', 'aceptada')
+            ->count());
+        $this->assertSame(1, SeguimientoAdopcion::query()
+            ->where('solicitud_id', $accepted->id)
+            ->count());
     }
 
     public function test_administrator_can_reject_a_valid_request(): void
     {
         $administrator = User::factory()->create(['rol' => 'administrador']);
+        $mascota = $this->createAvailableMascota();
         $solicitud = $this->createSolicitud(
             User::factory()->create(['rol' => 'ciudadano']),
-            $this->createAvailableMascota(),
+            $mascota,
         );
+        $otherSolicitud = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano']), $mascota);
 
         $this->actingAs($administrator)
             ->patch(route('admin.solicitudes-adopcion.reject', $solicitud))
@@ -186,6 +228,9 @@ class SolicitudAdopcionManagementTest extends TestCase
             'id' => $solicitud->id,
             'estado' => 'rechazada',
         ]);
+        $this->assertDatabaseHas('mascotas', ['id' => $mascota->id, 'estado' => 'disponible']);
+        $this->assertDatabaseHas('solicitudes_adopcion', ['id' => $otherSolicitud->id, 'estado' => 'pendiente']);
+        $this->assertDatabaseMissing('seguimientos_adopcion', ['solicitud_id' => $solicitud->id]);
     }
 
     public function test_citizen_and_volunteer_cannot_accept_or_reject_requests(): void
