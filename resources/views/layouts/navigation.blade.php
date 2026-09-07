@@ -35,9 +35,18 @@
                         <x-nav-link :href="route('admin.seguimientos.index')" :active="request()->routeIs('admin.seguimientos.*')">
                             Seguimientos
                         </x-nav-link>
+                        <x-nav-link :href="route('admin.postulaciones-voluntariado.index')" :active="request()->routeIs('admin.postulaciones-voluntariado.*')">
+                            Postulaciones
+                        </x-nav-link>
+                        <x-nav-link :href="route('admin.voluntarios.index')" :active="request()->routeIs('admin.voluntarios.*')">
+                            Voluntarios
+                        </x-nav-link>
                     @elseif (auth()->user()->hasRole('ciudadano'))
                         <x-nav-link :href="route('solicitudes-adopcion.index')" :active="request()->routeIs('solicitudes-adopcion.*')">
                             Mis solicitudes
+                        </x-nav-link>
+                        <x-nav-link :href="route('postulaciones-voluntariado.index')" :active="request()->routeIs('postulaciones-voluntariado.*')">
+                            Voluntariado
                         </x-nav-link>
                     @elseif (auth()->user()->hasRole('voluntario'))
                         <x-nav-link :href="route('seguimientos.index')" :active="request()->routeIs('seguimientos.*')">Mis seguimientos</x-nav-link>
@@ -114,10 +123,13 @@
                     Solicitudes
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.seguimientos.index')" :active="request()->routeIs('admin.seguimientos.*')">Seguimientos</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.postulaciones-voluntariado.index')" :active="request()->routeIs('admin.postulaciones-voluntariado.*')">Postulaciones</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.voluntarios.index')" :active="request()->routeIs('admin.voluntarios.*')">Voluntarios</x-responsive-nav-link>
             @elseif (auth()->user()->hasRole('ciudadano'))
                 <x-responsive-nav-link :href="route('solicitudes-adopcion.index')" :active="request()->routeIs('solicitudes-adopcion.*')">
                     Mis solicitudes
                 </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('postulaciones-voluntariado.index')" :active="request()->routeIs('postulaciones-voluntariado.*')">Voluntariado</x-responsive-nav-link>
             @elseif (auth()->user()->hasRole('voluntario'))
                 <x-responsive-nav-link :href="route('seguimientos.index')" :active="request()->routeIs('seguimientos.*')">Mis seguimientos</x-responsive-nav-link>
             @endif

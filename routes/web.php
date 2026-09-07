@@ -3,9 +3,12 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\MascotaController;
 use App\Http\Controllers\Admin\IncidenciaController;
+use App\Http\Controllers\Admin\PostulacionVoluntariadoController as AdminPostulacionVoluntariadoController;
 use App\Http\Controllers\Admin\SeguimientoAdopcionController as AdminSeguimientoAdopcionController;
 use App\Http\Controllers\Admin\SolicitudAdopcionController as AdminSolicitudAdopcionController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\VoluntarioController as AdminVoluntarioController;
+use App\Http\Controllers\PostulacionVoluntariadoController;
 use App\Http\Controllers\SolicitudAdopcionController;
 use App\Http\Controllers\SeguimientoAdopcionController;
 use Illuminate\Support\Facades\Route;
@@ -37,6 +40,11 @@ Route::middleware(['auth', 'role:ciudadano'])->group(function () {
 
     Route::get('/mis-solicitudes-adopcion/{solicitud}', [SolicitudAdopcionController::class, 'show'])
         ->name('solicitudes-adopcion.show');
+
+    Route::get('/postulaciones-voluntariado/create', [PostulacionVoluntariadoController::class, 'create'])->name('postulaciones-voluntariado.create');
+    Route::post('/postulaciones-voluntariado', [PostulacionVoluntariadoController::class, 'store'])->name('postulaciones-voluntariado.store');
+    Route::get('/mis-postulaciones-voluntariado', [PostulacionVoluntariadoController::class, 'index'])->name('postulaciones-voluntariado.index');
+    Route::get('/mis-postulaciones-voluntariado/{postulacion}', [PostulacionVoluntariadoController::class, 'show'])->name('postulaciones-voluntariado.show');
 });
 
 Route::middleware(['auth', 'role:voluntario'])->group(function () {
@@ -100,6 +108,15 @@ Route::middleware(['auth', 'role:administrador'])
         Route::patch('/seguimientos/{seguimiento}/cerrar', [AdminSeguimientoAdopcionController::class, 'close'])->name('seguimientos.close');
         Route::patch('/incidencias/{incidencia}/en-proceso', [IncidenciaController::class, 'progress'])->name('incidencias.progress');
         Route::patch('/seguimientos/{seguimiento}/incidencias/{incidencia}/atender', [SeguimientoAdopcionController::class, 'attendIncident'])->name('seguimientos.incidencias.attend');
+
+        Route::get('/postulaciones-voluntariado', [AdminPostulacionVoluntariadoController::class, 'index'])->name('postulaciones-voluntariado.index');
+        Route::get('/postulaciones-voluntariado/{postulacion}', [AdminPostulacionVoluntariadoController::class, 'show'])->name('postulaciones-voluntariado.show');
+        Route::patch('/postulaciones-voluntariado/{postulacion}/aprobar', [AdminPostulacionVoluntariadoController::class, 'approve'])->name('postulaciones-voluntariado.approve');
+        Route::patch('/postulaciones-voluntariado/{postulacion}/rechazar', [AdminPostulacionVoluntariadoController::class, 'reject'])->name('postulaciones-voluntariado.reject');
+
+        Route::get('/voluntarios', [AdminVoluntarioController::class, 'index'])->name('voluntarios.index');
+        Route::get('/voluntarios/{voluntario}', [AdminVoluntarioController::class, 'show'])->name('voluntarios.show');
+        Route::patch('/voluntarios/{voluntario}/desactivar', [AdminVoluntarioController::class, 'deactivate'])->name('voluntarios.deactivate');
     });
 
 require __DIR__.'/auth.php';
