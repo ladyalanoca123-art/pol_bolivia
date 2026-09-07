@@ -2,9 +2,12 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\MascotaController;
+use App\Http\Controllers\Admin\IncidenciaController;
+use App\Http\Controllers\Admin\SeguimientoAdopcionController as AdminSeguimientoAdopcionController;
 use App\Http\Controllers\Admin\SolicitudAdopcionController as AdminSolicitudAdopcionController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\SolicitudAdopcionController;
+use App\Http\Controllers\SeguimientoAdopcionController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -34,6 +37,15 @@ Route::middleware(['auth', 'role:ciudadano'])->group(function () {
 
     Route::get('/mis-solicitudes-adopcion/{solicitud}', [SolicitudAdopcionController::class, 'show'])
         ->name('solicitudes-adopcion.show');
+});
+
+Route::middleware(['auth', 'role:voluntario'])->group(function () {
+    Route::get('/seguimientos', [SeguimientoAdopcionController::class, 'index'])->name('seguimientos.index');
+    Route::get('/seguimientos/{seguimiento}', [SeguimientoAdopcionController::class, 'show'])->name('seguimientos.show');
+    Route::post('/seguimientos/{seguimiento}/visitas', [SeguimientoAdopcionController::class, 'storeVisit'])->name('seguimientos.visitas.store');
+    Route::patch('/seguimientos/{seguimiento}/visitas/{visita}/realizar', [SeguimientoAdopcionController::class, 'completeVisit'])->name('seguimientos.visitas.complete');
+    Route::post('/seguimientos/{seguimiento}/incidencias', [SeguimientoAdopcionController::class, 'storeIncident'])->name('seguimientos.incidencias.store');
+    Route::patch('/seguimientos/{seguimiento}/incidencias/{incidencia}/atender', [SeguimientoAdopcionController::class, 'attendIncident'])->name('seguimientos.incidencias.attend');
 });
 
 Route::middleware(['auth', 'role:administrador'])
@@ -81,6 +93,13 @@ Route::middleware(['auth', 'role:administrador'])
 
         Route::patch('/solicitudes-adopcion/{solicitud}/rechazar', [AdminSolicitudAdopcionController::class, 'reject'])
             ->name('solicitudes-adopcion.reject');
+
+        Route::get('/seguimientos', [AdminSeguimientoAdopcionController::class, 'index'])->name('seguimientos.index');
+        Route::get('/seguimientos/{seguimiento}', [AdminSeguimientoAdopcionController::class, 'show'])->name('seguimientos.show');
+        Route::patch('/seguimientos/{seguimiento}/asignar', [AdminSeguimientoAdopcionController::class, 'assign'])->name('seguimientos.assign');
+        Route::patch('/seguimientos/{seguimiento}/cerrar', [AdminSeguimientoAdopcionController::class, 'close'])->name('seguimientos.close');
+        Route::patch('/incidencias/{incidencia}/en-proceso', [IncidenciaController::class, 'progress'])->name('incidencias.progress');
+        Route::patch('/seguimientos/{seguimiento}/incidencias/{incidencia}/atender', [SeguimientoAdopcionController::class, 'attendIncident'])->name('seguimientos.incidencias.attend');
     });
 
 require __DIR__.'/auth.php';

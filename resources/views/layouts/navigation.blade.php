@@ -32,10 +32,15 @@
                         <x-nav-link :href="route('admin.solicitudes-adopcion.index')" :active="request()->routeIs('admin.solicitudes-adopcion.*')">
                             Solicitudes
                         </x-nav-link>
+                        <x-nav-link :href="route('admin.seguimientos.index')" :active="request()->routeIs('admin.seguimientos.*')">
+                            Seguimientos
+                        </x-nav-link>
                     @elseif (auth()->user()->hasRole('ciudadano'))
                         <x-nav-link :href="route('solicitudes-adopcion.index')" :active="request()->routeIs('solicitudes-adopcion.*')">
                             Mis solicitudes
                         </x-nav-link>
+                    @elseif (auth()->user()->hasRole('voluntario'))
+                        <x-nav-link :href="route('seguimientos.index')" :active="request()->routeIs('seguimientos.*')">Mis seguimientos</x-nav-link>
                     @endif
                 </div>
             </div>
@@ -108,10 +113,13 @@
                 <x-responsive-nav-link :href="route('admin.solicitudes-adopcion.index')" :active="request()->routeIs('admin.solicitudes-adopcion.*')">
                     Solicitudes
                 </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.seguimientos.index')" :active="request()->routeIs('admin.seguimientos.*')">Seguimientos</x-responsive-nav-link>
             @elseif (auth()->user()->hasRole('ciudadano'))
                 <x-responsive-nav-link :href="route('solicitudes-adopcion.index')" :active="request()->routeIs('solicitudes-adopcion.*')">
                     Mis solicitudes
                 </x-responsive-nav-link>
+            @elseif (auth()->user()->hasRole('voluntario'))
+                <x-responsive-nav-link :href="route('seguimientos.index')" :active="request()->routeIs('seguimientos.*')">Mis seguimientos</x-responsive-nav-link>
             @endif
         </div>
 
