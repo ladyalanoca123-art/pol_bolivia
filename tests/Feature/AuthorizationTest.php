@@ -14,9 +14,27 @@ class AuthorizationTest extends TestCase
     {
         $administrator = User::factory()->create(['rol' => 'administrador']);
 
-        $this->actingAs($administrator)
+        $response = $this->actingAs($administrator)
             ->get('/admin/panel')
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('Panel principal')
+            ->assertSee('Total de mascotas registradas')
+            ->assertSee('Solicitudes de adopción pendientes')
+            ->assertSee('Adopciones aprobadas')
+            ->assertSee('Usuarios registrados')
+            ->assertSee('Voluntarios activos')
+            ->assertSee('Postulaciones pendientes')
+            ->assertSee('Incidencias pendientes');
+
+        $this->assertSame([
+            'mascotas' => 0,
+            'solicitudesPendientes' => 0,
+            'adopcionesAprobadas' => 0,
+            'usuarios' => 1,
+            'voluntariosActivos' => 0,
+            'postulacionesPendientes' => 0,
+            'incidenciasPendientes' => 0,
+        ], $response->viewData('indicadores'));
     }
 
     public function test_citizen_cannot_access_the_administration_panel(): void
@@ -56,37 +74,34 @@ class AuthorizationTest extends TestCase
         $this->get('/admin/panel')->assertRedirect(route('login'));
     }
 
-    public function test_citizen_can_access_dashboard_and_profile_without_administration_link(): void
+    public function test_citizen_dashboard_redirects_to_profile(): void
     {
         $citizen = User::factory()->create(['rol' => 'ciudadano']);
 
         $this->actingAs($citizen)
             ->get('/dashboard')
-            ->assertOk()
-            ->assertDontSee('Panel de administración');
+            ->assertRedirect(route('profile.edit'));
 
         $this->actingAs($citizen)
             ->get('/profile')
             ->assertOk();
     }
 
-    public function test_administrator_sees_the_administration_link(): void
+    public function test_administrator_dashboard_redirects_to_main_panel(): void
     {
         $administrator = User::factory()->create(['rol' => 'administrador']);
 
         $this->actingAs($administrator)
             ->get('/dashboard')
-            ->assertOk()
-            ->assertSee('Panel de administración');
+            ->assertRedirect(route('admin.dashboard'));
     }
 
-    public function test_volunteer_does_not_see_the_administration_link(): void
+    public function test_volunteer_dashboard_redirects_to_profile(): void
     {
         $volunteer = User::factory()->create(['rol' => 'voluntario']);
 
         $this->actingAs($volunteer)
             ->get('/dashboard')
-            ->assertOk()
-            ->assertDontSee('Panel de administración');
+            ->assertRedirect(route('profile.edit'));
     }
 }

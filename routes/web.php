@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardRedirectController;
 use App\Http\Controllers\Admin\MascotaController;
 use App\Http\Controllers\Admin\IncidenciaController;
 use App\Http\Controllers\Admin\PostulacionVoluntariadoController as AdminPostulacionVoluntariadoController;
+use App\Http\Controllers\Admin\PanelPrincipalController;
 use App\Http\Controllers\Admin\ReporteController;
 use App\Http\Controllers\Admin\SeguimientoAdopcionController as AdminSeguimientoAdopcionController;
 use App\Http\Controllers\Admin\SolicitudAdopcionController as AdminSolicitudAdopcionController;
@@ -17,7 +19,7 @@ use Illuminate\Support\Facades\Route;
 Route::view('/', 'welcome')->name('home');
 
 Route::middleware('auth')->group(function () {
-    Route::view('/dashboard', 'dashboard')->name('dashboard');
+    Route::get('/dashboard', DashboardRedirectController::class)->name('dashboard');
 
     Route::get('/profile', [ProfileController::class, 'edit'])
         ->name('profile.edit');
@@ -61,7 +63,7 @@ Route::middleware(['auth', 'role:administrador'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-        Route::view('/panel', 'admin.dashboard')
+        Route::get('/panel', [PanelPrincipalController::class, 'index'])
             ->name('dashboard');
 
         Route::get('/usuarios', [UserController::class, 'index'])

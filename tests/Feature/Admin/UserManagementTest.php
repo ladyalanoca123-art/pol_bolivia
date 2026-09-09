@@ -214,8 +214,8 @@ class UserManagementTest extends TestCase
         $citizen = User::factory()->create(['rol' => 'ciudadano']);
         $volunteer = User::factory()->create(['rol' => 'voluntario']);
 
-        $this->actingAs($administrator)->get('/dashboard')->assertSee('Usuarios');
-        $this->actingAs($citizen)->get('/dashboard')->assertDontSee('Usuarios');
-        $this->actingAs($volunteer)->get('/dashboard')->assertDontSee('Usuarios');
+        $this->actingAs($administrator)->get('/admin/panel')->assertSee('Usuarios');
+        $this->actingAs($citizen)->get('/profile')->assertDontSee('Usuarios');
+        $this->actingAs($volunteer)->get('/profile')->assertDontSee('Usuarios');
     }
 }
