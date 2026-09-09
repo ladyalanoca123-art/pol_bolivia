@@ -72,6 +72,15 @@ Route::middleware(['auth', 'role:administrador'])
         Route::patch('/usuarios/{user}/estado', [UserController::class, 'updateStatus'])
             ->name('usuarios.estado.update');
 
+        Route::get('/usuarios/{user}', [UserController::class, 'show'])
+            ->name('usuarios.show');
+
+        Route::get('/usuarios/{user}/editar', [UserController::class, 'edit'])
+            ->name('usuarios.edit');
+
+        Route::patch('/usuarios/{user}', [UserController::class, 'update'])
+            ->name('usuarios.update');
+
         Route::get('/mascotas', [MascotaController::class, 'index'])
             ->name('mascotas.index');
 
