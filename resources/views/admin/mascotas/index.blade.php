@@ -11,7 +11,7 @@
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <div class="mb-6 flex justify-end">
-                    <a href="{{ route('admin.mascotas.create') }}" class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Registrar mascota</a>
+                    <a href="{{ route('admin.mascotas.create') }}" class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">+ Registrar mascota</a>
                 </div>
 
                 <form method="GET" action="{{ route('admin.mascotas.index') }}" class="grid grid-cols-1 gap-4 md:grid-cols-6">
@@ -54,14 +54,14 @@
                         <x-input-label for="estado" :value="__('Estado')" />
                         <select id="estado" name="estado" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                             <option value="">Todos</option>
-                            @foreach (['borrador', 'disponible', 'adoptada'] as $status)
+                            @foreach (['disponible', 'adoptada'] as $status)
                                 <option value="{{ $status }}" @selected(($filters['estado'] ?? '') === $status)>{{ ucfirst($status) }}</option>
                             @endforeach
                         </select>
                     </div>
 
                     <div class="md:col-span-6 flex items-center gap-3">
-                        <x-primary-button>Filtrar</x-primary-button>
+                        <x-primary-button>BUSCAR</x-primary-button>
                         <a href="{{ route('admin.mascotas.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Limpiar</a>
                     </div>
                 </form>

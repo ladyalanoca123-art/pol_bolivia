@@ -90,6 +90,12 @@ Route::middleware(['auth', 'role:administrador'])
         Route::post('/mascotas', [MascotaController::class, 'store'])
             ->name('mascotas.store');
 
+        Route::get('/mascotas/{mascota}/editar', [MascotaController::class, 'edit'])
+            ->name('mascotas.edit');
+
+        Route::patch('/mascotas/{mascota}', [MascotaController::class, 'update'])
+            ->name('mascotas.update');
+
         Route::get('/mascotas/{mascota}', [MascotaController::class, 'show'])
             ->name('mascotas.show');
 

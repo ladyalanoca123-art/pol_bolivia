@@ -10,6 +10,7 @@ use App\Models\SolicitudAdopcion;
 use App\Models\User;
 use App\Models\Voluntario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class VoluntariadoManagementTest extends TestCase
@@ -161,9 +162,11 @@ class VoluntariadoManagementTest extends TestCase
     {
         $administrator = User::factory()->create(['rol' => 'administrador']);
         $citizen = User::factory()->create(['rol' => 'ciudadano']);
-        $pet = Mascota::create(['nombre' => fake()->unique()->firstName(), 'especie' => 'perro', 'raza' => 'Mestiza', 'edad' => 2, 'sexo' => 'hembra', 'tamano' => 'mediano', 'estado' => 'borrador', 'registrado_por' => $administrator->id]);
-        FotoMascota::create(['mascota_id' => $pet->id, 'tipo' => 'foto', 'url' => 'mascotas/principal.jpg', 'es_principal' => true, 'orden' => 1]);
-        $pet->update(['estado' => 'disponible']);
+        $pet = DB::transaction(function () use ($administrator): Mascota {
+            $pet = Mascota::create(['nombre' => fake()->unique()->firstName(), 'especie' => 'perro', 'raza' => 'Mestiza', 'edad' => 2, 'sexo' => 'hembra', 'tamano' => 'mediano', 'estado' => 'disponible', 'registrado_por' => $administrator->id]);
+            FotoMascota::create(['mascota_id' => $pet->id, 'tipo' => 'foto', 'url' => 'mascotas/principal.jpg', 'es_principal' => true, 'orden' => 1]);
+            return $pet;
+        });
         $request = SolicitudAdopcion::create(['solicitante_id' => $citizen->id, 'mascota_id' => $pet->id, 'tiene_otras_mascotas' => false, 'viven_otras_personas' => true, 'tiene_espacio_adecuado' => true, 'zona_aproximada' => 'Centro', 'horario_preferido' => 'Tarde', 'declara_informacion_veraz' => true, 'estado' => 'pendiente']);
         $request->update(['estado' => 'aceptada']);
 

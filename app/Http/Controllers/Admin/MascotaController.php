@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\FilterMascotasRequest;
 use App\Http\Requests\Admin\RegisterMascotaRequest;
 use App\Http\Requests\Admin\StoreFotoMascotaRequest;
+use App\Http\Requests\Admin\UpdateMascotaRequest;
 use App\Models\FotoMascota;
 use App\Models\Mascota;
 use Illuminate\Http\RedirectResponse;
@@ -47,14 +48,38 @@ class MascotaController extends Controller
 
     public function store(RegisterMascotaRequest $request): RedirectResponse
     {
-        Mascota::create([
-            ...$request->validated(),
-            'estado' => 'borrador',
-            'registrado_por' => auth()->id(),
-        ]);
+        $data = $request->validated();
+        $photo = $data['foto_principal'];
+        unset($data['foto_principal']);
+        $path = null;
+
+        try {
+            DB::transaction(function () use ($data, $photo, &$path): void {
+                $mascota = Mascota::create([
+                    ...$data,
+                    'estado' => 'disponible',
+                    'registrado_por' => auth()->id(),
+                ]);
+
+                $path = $photo->store("mascotas/{$mascota->id}", 'public');
+
+                $mascota->fotos()->create([
+                    'tipo' => 'foto',
+                    'url' => $path,
+                    'es_principal' => true,
+                    'orden' => 1,
+                ]);
+            });
+        } catch (\Throwable $exception) {
+            if ($path !== null) {
+                Storage::disk('public')->delete($path);
+            }
+
+            throw $exception;
+        }
 
         return to_route('admin.mascotas.index')
-            ->with('status', 'La mascota fue registrada como borrador.');
+            ->with('status', 'La mascota fue registrada correctamente.');
     }
 
     public function show(Mascota $mascota): View
@@ -70,6 +95,19 @@ class MascotaController extends Controller
             'mascota' => $mascota,
             'fotoPrincipal' => $mascota->fotos->firstWhere('es_principal', true),
         ]);
+    }
+
+    public function edit(Mascota $mascota): View
+    {
+        return view('admin.mascotas.edit', compact('mascota'));
+    }
+
+    public function update(UpdateMascotaRequest $request, Mascota $mascota): RedirectResponse
+    {
+        $mascota->update($request->validated());
+
+        return to_route('admin.mascotas.show', $mascota)
+            ->with('status', 'La información de la mascota fue actualizada.');
     }
 
     public function storePhoto(StoreFotoMascotaRequest $request, Mascota $mascota): RedirectResponse

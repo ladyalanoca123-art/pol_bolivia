@@ -9,6 +9,7 @@ use App\Models\SolicitudAdopcion;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class SolicitudAdopcionManagementTest extends TestCase
@@ -69,14 +70,20 @@ class SolicitudAdopcionManagementTest extends TestCase
     public function test_citizen_cannot_request_a_pet_that_is_not_available(): void
     {
         $citizen = User::factory()->create(['rol' => 'ciudadano']);
-        $mascota = $this->createMascota(['estado' => 'borrador']);
+        $mascota = $this->createAvailableMascota();
+        $administrator = User::factory()->create(['rol' => 'administrador']);
+        $accepted = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano']), $mascota);
+        $this->actingAs($administrator)->patch(route('admin.solicitudes-adopcion.accept', $accepted));
 
         $this->actingAs($citizen)
-            ->from(route('solicitudes-adopcion.create', $this->createAvailableMascota()))
+            ->from(route('solicitudes-adopcion.create', $mascota))
             ->post(route('solicitudes-adopcion.store', $mascota), $this->requestData())
             ->assertSessionHasErrors('mascota');
 
-        $this->assertDatabaseMissing('solicitudes_adopcion', ['mascota_id' => $mascota->id]);
+        $this->assertDatabaseMissing('solicitudes_adopcion', [
+            'mascota_id' => $mascota->id,
+            'solicitante_id' => $citizen->id,
+        ]);
     }
 
     public function test_citizen_cannot_create_a_second_active_request_for_the_same_pet(): void
@@ -312,7 +319,8 @@ class SolicitudAdopcionManagementTest extends TestCase
         $administrator = User::factory()->create(['rol' => 'administrador']);
         $mascota = $this->createAvailableMascota();
         $solicitud = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano']), $mascota);
-        $mascota->update(['estado' => 'borrador']);
+        $accepted = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano']), $mascota);
+        $this->actingAs($administrator)->patch(route('admin.solicitudes-adopcion.accept', $accepted));
 
         $this->actingAs($administrator)
             ->patch(route('admin.solicitudes-adopcion.accept', $solicitud))
@@ -320,7 +328,7 @@ class SolicitudAdopcionManagementTest extends TestCase
 
         $this->assertDatabaseHas('solicitudes_adopcion', [
             'id' => $solicitud->id,
-            'estado' => 'pendiente',
+            'estado' => 'cerrada',
         ]);
     }
 
@@ -357,19 +365,17 @@ class SolicitudAdopcionManagementTest extends TestCase
 
     private function createAvailableMascota(array $attributes = []): Mascota
     {
-        $mascota = $this->createMascota($attributes);
-
-        FotoMascota::create([
-            'mascota_id' => $mascota->id,
-            'tipo' => 'foto',
-            'url' => "mascotas/{$mascota->id}/principal.jpg",
-            'es_principal' => true,
-            'orden' => 1,
-        ]);
-
-        $mascota->update(['estado' => 'disponible']);
-
-        return $mascota;
+        return DB::transaction(function () use ($attributes): Mascota {
+            $mascota = $this->createMascota($attributes);
+            FotoMascota::create([
+                'mascota_id' => $mascota->id,
+                'tipo' => 'foto',
+                'url' => "mascotas/{$mascota->id}/principal.jpg",
+                'es_principal' => true,
+                'orden' => 1,
+            ]);
+            return $mascota;
+        });
     }
 
     private function createMascota(array $attributes = []): Mascota
@@ -385,7 +391,7 @@ class SolicitudAdopcionManagementTest extends TestCase
             'color' => 'Canela',
             'tamano' => 'mediano',
             'descripcion' => 'Mascota de prueba',
-            'estado' => 'borrador',
+            'estado' => 'disponible',
             'registrado_por' => $administrator->id,
         ], $attributes));
     }

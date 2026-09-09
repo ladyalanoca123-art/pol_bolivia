@@ -79,7 +79,7 @@ CREATE TABLE mascotas (
     tamano VARCHAR(20) NOT NULL,                    -- FILTRO
     descripcion TEXT,
 
-    estado VARCHAR(20) NOT NULL DEFAULT 'borrador',
+    estado VARCHAR(20) NOT NULL DEFAULT 'disponible',
 
     -- RESTRICT conserva la trazabilidad de quién registró la mascota.
     registrado_por BIGINT NOT NULL
@@ -93,7 +93,7 @@ CREATE TABLE mascotas (
         CHECK (sexo IN ('macho', 'hembra')),
 
     CONSTRAINT mascotas_estado_valido
-        CHECK (estado IN ('borrador', 'disponible', 'adoptada')),
+        CHECK (estado IN ('disponible', 'adoptada')),
 
     CONSTRAINT mascotas_tamano_valido
         CHECK (tamano IN ('pequeno', 'mediano', 'grande')),
@@ -265,9 +265,10 @@ BEFORE INSERT OR UPDATE ON fotos_mascota
 FOR EACH ROW
 EXECUTE FUNCTION gestionar_foto_principal();
 
--- Una publicación disponible debe conservar, en todo momento, al menos
--- una foto y una foto principal, incluso después de editar o borrar archivos.
-CREATE OR REPLACE FUNCTION validar_multimedia_mascota_publicada()
+-- Toda mascota disponible debe conservar una foto y una foto principal.
+-- Los triggers se difieren al final de la transacción para permitir crear
+-- la mascota y su foto principal de forma atómica.
+CREATE OR REPLACE FUNCTION validar_multimedia_mascota_disponible()
 RETURNS TRIGGER AS $$
 DECLARE
     mascota_a_validar BIGINT;
@@ -275,7 +276,11 @@ DECLARE
     cantidad_fotos INTEGER;
     cantidad_principales INTEGER;
 BEGIN
-    mascota_a_validar := OLD.mascota_id;
+    IF TG_TABLE_NAME = 'mascotas' THEN
+        mascota_a_validar := NEW.id;
+    ELSE
+        mascota_a_validar := COALESCE(NEW.mascota_id, OLD.mascota_id);
+    END IF;
 
     SELECT estado INTO estado_mascota
     FROM mascotas
@@ -299,60 +304,26 @@ BEGIN
         END IF;
     END IF;
 
-    RETURN NULL;
+    RETURN COALESCE(NEW, OLD);
 END;
 $$ LANGUAGE plpgsql;
 
 CREATE CONSTRAINT TRIGGER trigger_validar_multimedia_publicada
-AFTER DELETE OR UPDATE ON fotos_mascota
+AFTER INSERT OR UPDATE OR DELETE ON fotos_mascota
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW
-EXECUTE FUNCTION validar_multimedia_mascota_publicada();
+EXECUTE FUNCTION validar_multimedia_mascota_disponible();
 
 
 -- ============================================
--- 5. Validar fotos antes de publicar mascota
+-- 5. Validar fotos de mascotas disponibles
 -- ============================================
 
-CREATE OR REPLACE FUNCTION validar_minimo_fotos()
-RETURNS TRIGGER AS $$
-DECLARE
-    cantidad_fotos INTEGER;
-    cantidad_principales INTEGER;
-BEGIN
-    IF NEW.estado = 'disponible' THEN
-        SELECT COUNT(*)
-        INTO cantidad_fotos
-        FROM fotos_mascota
-        WHERE mascota_id = NEW.id
-          AND tipo = 'foto';
-
-        SELECT COUNT(*)
-        INTO cantidad_principales
-        FROM fotos_mascota
-        WHERE mascota_id = NEW.id
-          AND tipo = 'foto'
-          AND es_principal = TRUE;
-
-        IF cantidad_fotos = 0 THEN
-            RAISE EXCEPTION
-                'La mascota necesita al menos una foto para poder publicarse';
-        END IF;
-
-        IF cantidad_principales = 0 THEN
-            RAISE EXCEPTION
-                'La mascota necesita una foto principal para poder publicarse';
-        END IF;
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_validar_minimo_fotos
-BEFORE INSERT OR UPDATE ON mascotas
+CREATE CONSTRAINT TRIGGER trigger_validar_minimo_fotos
+AFTER INSERT OR UPDATE ON mascotas
+DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW
-EXECUTE FUNCTION validar_minimo_fotos();
+EXECUTE FUNCTION validar_multimedia_mascota_disponible();
 
 
 -- ============================================

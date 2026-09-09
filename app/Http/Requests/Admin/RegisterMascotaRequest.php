@@ -23,6 +23,7 @@ class RegisterMascotaRequest extends FormRequest
             'color' => ['nullable', 'string', 'max:50'],
             'tamano' => ['required', Rule::in(['pequeno', 'mediano', 'grande'])],
             'descripcion' => ['nullable', 'string'],
+            'foto_principal' => ['required', 'image', 'max:5120'],
         ];
     }
 }

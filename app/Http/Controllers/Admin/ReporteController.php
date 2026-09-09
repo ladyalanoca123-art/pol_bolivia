@@ -18,7 +18,7 @@ class ReporteController extends Controller
     public function index(ReportPeriodRequest $request): View
     {
         $periodo = $request->validated();
-        $mascotasPorEstado = $this->countsByState(Mascota::query(), ['borrador', 'disponible', 'adoptada']);
+        $mascotasPorEstado = $this->countsByState(Mascota::query(), ['disponible', 'adoptada']);
         $mascotasPorEspecie = $this->countsByState(Mascota::query(), ['perro', 'gato'], 'especie');
         $solicitudesPorEstado = $this->countsByState(SolicitudAdopcion::query(), ['pendiente', 'en_espera', 'aceptada', 'rechazada', 'cancelada', 'cerrada']);
         $seguimientosPorEstado = $this->countsByState(SeguimientoAdopcion::query(), ['sin_asignar', 'activo', 'cerrado']);

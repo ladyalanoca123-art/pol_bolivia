@@ -10,6 +10,9 @@
             @endif
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                <div class="mb-6 flex justify-end">
+                    <a href="{{ route('admin.mascotas.edit', $mascota) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-900">Editar información</a>
+                </div>
                 <div class="flex flex-col gap-6 md:flex-row">
                     <div class="shrink-0">
                         @if ($fotoPrincipal)

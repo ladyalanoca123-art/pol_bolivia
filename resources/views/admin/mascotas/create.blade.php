@@ -6,7 +6,7 @@
     <div class="py-12">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <form method="POST" action="{{ route('admin.mascotas.store') }}" class="space-y-6">
+                <form method="POST" action="{{ route('admin.mascotas.store') }}" enctype="multipart/form-data" class="space-y-6">
                     @csrf
 
                     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -70,6 +70,13 @@
                         <x-input-label for="descripcion" :value="__('Descripción')" />
                         <textarea id="descripcion" name="descripcion" rows="4" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ old('descripcion') }}</textarea>
                         <x-input-error :messages="$errors->get('descripcion')" class="mt-2" />
+                    </div>
+
+                    <div>
+                        <x-input-label for="foto_principal" :value="__('Foto principal')" />
+                        <input id="foto_principal" name="foto_principal" type="file" accept="image/*" required class="mt-1 block w-full text-sm text-gray-700">
+                        <p class="mt-1 text-sm text-gray-500">Esta imagen se mostrará como foto principal de la mascota.</p>
+                        <x-input-error :messages="$errors->get('foto_principal')" class="mt-2" />
                     </div>
 
                     <div class="flex items-center gap-4">

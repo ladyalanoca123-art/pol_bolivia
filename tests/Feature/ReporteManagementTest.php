@@ -8,6 +8,7 @@ use App\Models\PostulacionVoluntariado;
 use App\Models\SolicitudAdopcion;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class ReporteManagementTest extends TestCase
@@ -30,8 +31,7 @@ class ReporteManagementTest extends TestCase
     public function test_report_displays_counts_from_existing_records(): void
     {
         $administrator = User::factory()->create(['rol' => 'administrador']);
-        $draft = $this->makePet($administrator, 'borrador');
-        $available = $this->makePet($administrator, 'disponible');
+        $available = $this->makePet($administrator);
         $accepted = $this->makeAcceptedRequest($administrator);
         $rejected = SolicitudAdopcion::create([...$this->requestData(), 'solicitante_id' => User::factory()->create()->id, 'mascota_id' => $available->id, 'estado' => 'pendiente']);
         $rejected->update(['estado' => 'rechazada']);
@@ -50,7 +50,7 @@ class ReporteManagementTest extends TestCase
             ->assertSee('Incidencias')
             ->assertSee('Reportes y estadísticas');
 
-        $this->assertDatabaseHas('mascotas', ['id' => $draft->id, 'estado' => 'borrador']);
+        $this->assertDatabaseHas('mascotas', ['id' => $available->id, 'estado' => 'disponible']);
         $this->assertDatabaseHas('solicitudes_adopcion', ['id' => $accepted->id, 'estado' => 'aceptada']);
         $this->assertDatabaseHas('solicitudes_adopcion', ['id' => $rejected->id, 'estado' => 'rechazada']);
         $this->assertSame(1, $response->viewData('postulacionesPorEstado')['cancelada']);
@@ -83,25 +83,20 @@ class ReporteManagementTest extends TestCase
 
     private function makeAcceptedRequest(User $administrator): SolicitudAdopcion
     {
-        $pet = $this->makePet($administrator, 'borrador');
-        FotoMascota::create(['mascota_id' => $pet->id, 'tipo' => 'foto', 'url' => "mascotas/{$pet->id}.jpg", 'es_principal' => true, 'orden' => 1]);
-        $pet->update(['estado' => 'disponible']);
+        $pet = $this->makePet($administrator);
         $request = SolicitudAdopcion::create([...$this->requestData(), 'solicitante_id' => User::factory()->create()->id, 'mascota_id' => $pet->id, 'estado' => 'pendiente']);
         $request->update(['estado' => 'aceptada']);
 
         return $request;
     }
 
-    private function makePet(User $administrator, string $state): Mascota
+    private function makePet(User $administrator): Mascota
     {
-        $pet = Mascota::create(['nombre' => fake()->unique()->firstName(), 'especie' => 'perro', 'raza' => 'Mestiza', 'edad' => 2, 'sexo' => 'hembra', 'tamano' => 'mediano', 'estado' => 'borrador', 'registrado_por' => $administrator->id]);
-
-        if ($state === 'disponible') {
+        return DB::transaction(function () use ($administrator): Mascota {
+            $pet = Mascota::create(['nombre' => fake()->unique()->firstName(), 'especie' => 'perro', 'raza' => 'Mestiza', 'edad' => 2, 'sexo' => 'hembra', 'tamano' => 'mediano', 'estado' => 'disponible', 'registrado_por' => $administrator->id]);
             FotoMascota::create(['mascota_id' => $pet->id, 'tipo' => 'foto', 'url' => "mascotas/{$pet->id}.jpg", 'es_principal' => true, 'orden' => 1]);
-            $pet->update(['estado' => 'disponible']);
-        }
-
-        return $pet;
+            return $pet;
+        });
     }
 
     private function requestData(): array

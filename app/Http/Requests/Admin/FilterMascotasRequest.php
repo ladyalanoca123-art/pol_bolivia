@@ -19,7 +19,7 @@ class FilterMascotasRequest extends FormRequest
             'especie' => ['nullable', Rule::in(['perro', 'gato'])],
             'sexo' => ['nullable', Rule::in(['macho', 'hembra'])],
             'tamano' => ['nullable', Rule::in(['pequeno', 'mediano', 'grande'])],
-            'estado' => ['nullable', Rule::in(['borrador', 'disponible', 'adoptada'])],
+            'estado' => ['nullable', Rule::in(['disponible', 'adoptada'])],
         ];
     }
 }
