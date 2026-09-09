@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\MascotaController;
 use App\Http\Controllers\Admin\IncidenciaController;
 use App\Http\Controllers\Admin\PostulacionVoluntariadoController as AdminPostulacionVoluntariadoController;
+use App\Http\Controllers\Admin\ReporteController;
 use App\Http\Controllers\Admin\SeguimientoAdopcionController as AdminSeguimientoAdopcionController;
 use App\Http\Controllers\Admin\SolicitudAdopcionController as AdminSolicitudAdopcionController;
 use App\Http\Controllers\Admin\UserController;
@@ -117,6 +118,8 @@ Route::middleware(['auth', 'role:administrador'])
         Route::get('/voluntarios', [AdminVoluntarioController::class, 'index'])->name('voluntarios.index');
         Route::get('/voluntarios/{voluntario}', [AdminVoluntarioController::class, 'show'])->name('voluntarios.show');
         Route::patch('/voluntarios/{voluntario}/desactivar', [AdminVoluntarioController::class, 'deactivate'])->name('voluntarios.deactivate');
+
+        Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
     });
 
 require __DIR__.'/auth.php';
