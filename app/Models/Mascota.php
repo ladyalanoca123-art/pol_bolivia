@@ -14,7 +14,7 @@ class Mascota extends Model
     protected $table = 'mascotas';
 
     protected $fillable = [
-        'nombre', 'especie', 'raza', 'edad', 'sexo',
+        'nombre', 'especie', 'raza', 'edad', 'edad_en', 'sexo',
         'color', 'tamano', 'descripcion', 'estado',
         'registrado_por',
     ];
@@ -39,5 +39,14 @@ class Mascota extends Model
     public function solicitudesAdopcion(): HasMany
     {
         return $this->hasMany(SolicitudAdopcion::class, 'mascota_id');
+    }
+
+    public function getEdadFormateadaAttribute(): string
+    {
+        if ($this->edad_en === 'meses') {
+            return sprintf('%d %s', $this->edad, $this->edad === 1 ? 'mes' : 'meses');
+        }
+
+        return sprintf('%d %s', $this->edad, $this->edad === 1 ? 'año' : 'años');
     }
 }

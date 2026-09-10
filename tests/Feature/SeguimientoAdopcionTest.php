@@ -125,7 +125,7 @@ class SeguimientoAdopcionTest extends TestCase
         $administrator = User::factory()->create(['rol' => 'administrador']);
         $citizen = User::factory()->create(['rol' => 'ciudadano']);
         $mascota = DB::transaction(function () use ($administrator): Mascota {
-            $mascota = Mascota::create(['nombre' => fake()->unique()->firstName(), 'especie' => 'perro', 'edad' => 2, 'sexo' => 'hembra', 'tamano' => 'mediano', 'estado' => 'disponible', 'registrado_por' => $administrator->id]);
+            $mascota = Mascota::create(['nombre' => fake()->unique()->firstName(), 'especie' => 'perro', 'edad' => 2, 'edad_en' => 'años', 'sexo' => 'hembra', 'tamano' => 'mediano', 'estado' => 'disponible', 'registrado_por' => $administrator->id]);
             FotoMascota::create(['mascota_id' => $mascota->id, 'tipo' => 'foto', 'url' => 'test.jpg', 'es_principal' => true, 'orden' => 1]);
             return $mascota;
         });

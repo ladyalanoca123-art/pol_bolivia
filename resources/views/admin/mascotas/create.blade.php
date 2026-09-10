@@ -34,8 +34,16 @@
 
                         <div>
                             <x-input-label for="edad" :value="__('Edad')" />
-                            <x-text-input id="edad" name="edad" type="number" min="0" class="mt-1 block w-full" :value="old('edad')" required />
+                            <div class="mt-1 flex gap-2">
+                                <x-text-input id="edad" name="edad" type="number" min="1" step="1" class="block w-full" :value="old('edad')" required />
+                                <select id="edad_en" name="edad_en" aria-label="Unidad de edad" required class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <option value="">Selecciona meses o años</option>
+                                    <option value="meses" @selected(old('edad_en') === 'meses')>Meses</option>
+                                    <option value="años" @selected(old('edad_en') === 'años')>Años</option>
+                                </select>
+                            </div>
                             <x-input-error :messages="$errors->get('edad')" class="mt-2" />
+                            <x-input-error :messages="$errors->get('edad_en')" class="mt-2" />
                         </div>
 
                         <div>

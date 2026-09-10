@@ -11,7 +11,10 @@
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <div class="mb-6 flex justify-end">
-                    <a href="{{ route('admin.mascotas.create') }}" class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">+ Registrar mascota</a>
+                    <a href="{{ route('admin.mascotas.create') }}"
+                         style="background-color: #4f46e5; color: white; padding: 10px 16px; border-radius: 6px; display: inline-block; font-weight: 600;">
+                        + Registrar mascota
+                    </a>
                 </div>
 
                 <form method="GET" action="{{ route('admin.mascotas.index') }}" class="grid grid-cols-1 gap-4 md:grid-cols-6">
@@ -45,8 +48,8 @@
                         <select id="tamano" name="tamano" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                             <option value="">Todos</option>
                             @foreach (['pequeno', 'mediano', 'grande'] as $size)
-                                <option value="{{ $size }}" @selected(($filters['tamano'] ?? '') === $size)>{{ ucfirst($size) }}</option>
-                            @endforeach
+                                <option value="{{ $size }}" @selected(($filters['tamano'] ?? '') === $size)>{{ match ($size) { 'pequeno' => 'Pequeño', 'mediano' => 'Mediano', 'grande' => 'Grande', default => ucfirst($size) } }}</option>
+                               @endforeach
                         </select>
                     </div>
 
@@ -98,9 +101,9 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $mascota->nombre }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ucfirst($mascota->especie) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $mascota->raza ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $mascota->edad }} años</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $mascota->edad_formateada }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ucfirst($mascota->sexo) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ucfirst($mascota->tamano) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ match ($mascota->tamano) { 'pequeno' => 'Pequeño', 'mediano' => 'Mediano', 'grande' => 'Grande', default => ucfirst($mascota->tamano) } }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ucfirst($mascota->estado) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $mascota->created_at->format('d/m/Y H:i') }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">

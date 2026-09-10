@@ -163,8 +163,8 @@ class MascotaManagementTest extends TestCase
     public function test_administrator_sees_pet_data_and_principal_photo(): void
     {
         $administrator = User::factory()->create(['rol' => 'administrador']);
-        $mascota = $this->createMascota(['nombre' => 'Luna', 'especie' => 'gato', 'raza' => 'Criolla', 'edad' => 4, 'sexo' => 'hembra', 'tamano' => 'pequeno']);
-        $this->actingAs($administrator)->get('/admin/mascotas')->assertOk()->assertSee('Luna')->assertSee('Gato')->assertSee('Criolla')->assertSee('4 años')->assertSee('Hembra')->assertSee('Pequeno')->assertSee('Disponible')->assertSee("mascotas/{$mascota->id}/principal.jpg");
+        $mascota = $this->createMascota(['nombre' => 'Luna', 'especie' => 'gato', 'raza' => 'Criolla', 'edad' => 4, 'edad_en' => 'años', 'sexo' => 'hembra', 'tamano' => 'pequeno']);
+        $this->actingAs($administrator)->get('/admin/mascotas')->assertOk()->assertSee('Luna')->assertSee('Gato')->assertSee('Criolla')->assertSee('4 años')->assertSee('Hembra')->assertSee('Pequeño')->assertSee('Disponible')->assertSee("mascotas/{$mascota->id}/principal.jpg");
     }
 
     public function test_administrator_can_search_and_filter_pets(): void
@@ -200,6 +200,105 @@ class MascotaManagementTest extends TestCase
         $this->assertNull(Route::getRoutes()->getByName('admin.mascotas.estado.update'));
     }
 
+    public function test_registration_normalizes_manual_text_fields(): void
+    {
+        Storage::fake('public');
+        $administrator = User::factory()->create(['rol' => 'administrador']);
+
+        $this->actingAs($administrator)->post('/admin/mascotas', [
+            ...$this->registrationData([
+                'nombre' => '  lUnA  ',
+                'raza' => '  pASTOR   ALEMÁN ',
+                'color' => '  gRIS   ATIGRADO ',
+                'descripcion' => '  luna tiene 3 meses y pesa 2 kg.  ',
+            ]),
+            'foto_principal' => UploadedFile::fake()->image('luna.jpg'),
+        ])->assertRedirect(route('admin.mascotas.index'));
+
+        $this->assertDatabaseHas('mascotas', [
+            'nombre' => 'Luna',
+            'raza' => 'Pastor alemán',
+            'color' => 'Gris atigrado',
+            'descripcion' => 'Luna tiene 3 meses y pesa 2 kg.',
+        ]);
+    }
+
+    public function test_registration_rejects_invalid_manual_text_fields(): void
+    {
+        Storage::fake('public');
+        $administrator = User::factory()->create(['rol' => 'administrador']);
+
+        foreach ([
+            'nombre' => 'Luna123',
+            'raza' => 'Pastor123',
+            'color' => 'Negro123',
+            'descripcion' => '   ',
+        ] as $field => $value) {
+            $this->actingAs($administrator)->post('/admin/mascotas', [
+                ...$this->registrationData([$field => $value]),
+                'foto_principal' => UploadedFile::fake()->image("{$field}.jpg"),
+            ])->assertSessionHasErrors($field);
+        }
+    }
+
+    public function test_registration_validates_age_and_unit_combinations(): void
+    {
+        Storage::fake('public');
+        $administrator = User::factory()->create(['rol' => 'administrador']);
+
+        foreach ([['Luna uno', 1, 'meses'], ['Luna cinco', 5, 'meses'], ['Luna once', 11, 'meses'], ['Luna anual', 1, 'años'], ['Luna adulta', 4, 'años']] as [$nombre, $edad, $unidad]) {
+            $this->actingAs($administrator)->post('/admin/mascotas', [
+                ...$this->registrationData(['nombre' => $nombre, 'edad' => $edad, 'edad_en' => $unidad]),
+                'foto_principal' => UploadedFile::fake()->image("{$edad}-{$unidad}.jpg"),
+            ])->assertRedirect(route('admin.mascotas.index'));
+        }
+
+        foreach ([[0, 'meses', ['edad']], [12, 'meses', ['edad']], [13, 'meses', ['edad']], [0, 'años', ['edad']], [-1, 'años', ['edad']], [2, 'dias', ['edad_en']]] as [$edad, $unidad, $errors]) {
+            $this->actingAs($administrator)->post('/admin/mascotas', [
+                ...$this->registrationData(['edad' => $edad, 'edad_en' => $unidad]),
+                'foto_principal' => UploadedFile::fake()->image('invalid.jpg'),
+            ])->assertSessionHasErrors($errors);
+        }
+    }
+
+    public function test_edit_normalizes_text_and_validates_age_unit_combinations(): void
+    {
+        $administrator = User::factory()->create(['rol' => 'administrador']);
+        $mascota = $this->createMascota();
+
+        $this->actingAs($administrator)->patch(route('admin.mascotas.update', $mascota), $this->registrationData([
+            'nombre' => '  rOcKY ', 'edad' => 1, 'edad_en' => 'meses',
+        ]))->assertRedirect(route('admin.mascotas.show', $mascota));
+
+        $mascota->refresh();
+        $this->assertSame('Rocky', $mascota->nombre);
+        $this->assertSame('1 mes', $mascota->edad_formateada);
+        $this->assertSame('2 meses', $mascota->forceFill(['edad' => 2, 'edad_en' => 'meses'])->edad_formateada);
+        $this->assertSame('1 año', $mascota->forceFill(['edad' => 1, 'edad_en' => 'años'])->edad_formateada);
+        $this->assertSame('4 años', $mascota->forceFill(['edad' => 4, 'edad_en' => 'años'])->edad_formateada);
+
+        $this->actingAs($administrator)->patch(route('admin.mascotas.update', $mascota), $this->registrationData([
+            'edad' => 12, 'edad_en' => 'meses',
+        ]))->assertSessionHasErrors('edad');
+    }
+
+    public function test_database_rejects_invalid_age_unit_combinations(): void
+    {
+        $administrator = User::factory()->create(['rol' => 'administrador']);
+        $this->expectException(\Illuminate\Database\QueryException::class);
+
+        DB::table('mascotas')->insert([
+            'nombre' => 'Luna',
+            'especie' => 'gato',
+            'edad' => 12,
+            'edad_en' => 'meses',
+            'sexo' => 'hembra',
+            'tamano' => 'pequeno',
+            'estado' => 'adoptada',
+            'registrado_por' => $administrator->id,
+        ]);
+    }
+
     private function createMascota(array $attributes = []): Mascota
     {
         $this->registrant ??= User::factory()->create(['rol' => 'administrador']);
@@ -219,6 +318,6 @@ class MascotaManagementTest extends TestCase
 
     private function petData(): array
     {
-        return ['nombre' => 'Canela', 'especie' => 'perro', 'raza' => 'Mestiza', 'edad' => 2, 'sexo' => 'hembra', 'color' => 'Canela', 'tamano' => 'mediano', 'descripcion' => 'Mascota registrada desde el formulario.'];
+        return ['nombre' => 'Canela', 'especie' => 'perro', 'raza' => 'Mestiza', 'edad' => 2, 'edad_en' => 'años', 'sexo' => 'hembra', 'color' => 'Canela', 'tamano' => 'mediano', 'descripcion' => 'Mascota registrada desde el formulario.'];
     }
 }

@@ -26,7 +26,19 @@
                             <x-input-error :messages="$errors->get('especie')" class="mt-2" />
                         </div>
                         <div><x-input-label for="raza" :value="__('Raza')" /><x-text-input id="raza" name="raza" type="text" class="mt-1 block w-full" :value="old('raza', $mascota->raza)" /><x-input-error :messages="$errors->get('raza')" class="mt-2" /></div>
-                        <div><x-input-label for="edad" :value="__('Edad')" /><x-text-input id="edad" name="edad" type="number" min="0" class="mt-1 block w-full" :value="old('edad', $mascota->edad)" required /><x-input-error :messages="$errors->get('edad')" class="mt-2" /></div>
+                        <div>
+                            <x-input-label for="edad" :value="__('Edad')" />
+                            <div class="mt-1 flex gap-2">
+                                <x-text-input id="edad" name="edad" type="number" min="1" step="1" class="block w-full" :value="old('edad', $mascota->edad)" required />
+                                <select id="edad_en" name="edad_en" aria-label="Unidad de edad" required class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    @foreach (['meses' => 'Meses', 'años' => 'Años'] as $value => $label)
+                                        <option value="{{ $value }}" @selected(old('edad_en', $mascota->edad_en) === $value)>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <x-input-error :messages="$errors->get('edad')" class="mt-2" />
+                            <x-input-error :messages="$errors->get('edad_en')" class="mt-2" />
+                        </div>
                         <div>
                             <x-input-label for="sexo" :value="__('Sexo')" />
                             <select id="sexo" name="sexo" required class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">

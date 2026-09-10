@@ -93,7 +93,7 @@ class ReporteManagementTest extends TestCase
     private function makePet(User $administrator): Mascota
     {
         return DB::transaction(function () use ($administrator): Mascota {
-            $pet = Mascota::create(['nombre' => fake()->unique()->firstName(), 'especie' => 'perro', 'raza' => 'Mestiza', 'edad' => 2, 'sexo' => 'hembra', 'tamano' => 'mediano', 'estado' => 'disponible', 'registrado_por' => $administrator->id]);
+            $pet = Mascota::create(['nombre' => fake()->unique()->firstName(), 'especie' => 'perro', 'raza' => 'Mestiza', 'edad' => 2, 'edad_en' => 'años', 'sexo' => 'hembra', 'tamano' => 'mediano', 'estado' => 'disponible', 'registrado_por' => $administrator->id]);
             FotoMascota::create(['mascota_id' => $pet->id, 'tipo' => 'foto', 'url' => "mascotas/{$pet->id}.jpg", 'es_principal' => true, 'orden' => 1]);
             return $pet;
         });

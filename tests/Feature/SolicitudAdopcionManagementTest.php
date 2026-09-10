@@ -387,6 +387,7 @@ class SolicitudAdopcionManagementTest extends TestCase
             'especie' => 'perro',
             'raza' => 'Mestiza',
             'edad' => 3,
+            'edad_en' => 'años',
             'sexo' => 'hembra',
             'color' => 'Canela',
             'tamano' => 'mediano',

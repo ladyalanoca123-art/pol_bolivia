@@ -7,6 +7,8 @@ use Illuminate\Validation\Rule;
 
 class RegisterMascotaRequest extends FormRequest
 {
+    use Concerns\NormalizesMascotaText;
+
     public function authorize(): bool
     {
         return true;
@@ -15,14 +17,15 @@ class RegisterMascotaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nombre' => ['required', 'string', 'max:100', 'not_regex:/^\s*$/'],
+            'nombre' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \'\-]+[\p{L}]+)*$/u'],
             'especie' => ['required', Rule::in(['perro', 'gato'])],
-            'raza' => ['nullable', 'string', 'max:100'],
-            'edad' => ['required', 'integer', 'min:0'],
+            'raza' => ['nullable', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \'\-]+[\p{L}]+)*$/u'],
+            'edad' => ['required', 'integer', 'min:1', Rule::when($this->input('edad_en') === 'meses', ['max:11'])],
+            'edad_en' => ['required', Rule::in(['meses', 'años'])],
             'sexo' => ['required', Rule::in(['macho', 'hembra'])],
-            'color' => ['nullable', 'string', 'max:50'],
+            'color' => ['nullable', 'string', 'max:50', 'regex:/^[\p{L}]+(?:[ \'\-]+[\p{L}]+)*$/u'],
             'tamano' => ['required', Rule::in(['pequeno', 'mediano', 'grande'])],
-            'descripcion' => ['nullable', 'string'],
+            'descripcion' => [Rule::requiredIf($this->has('descripcion')), 'string', 'not_regex:/^\s*$/u'],
             'foto_principal' => ['required', 'image', 'max:5120'],
         ];
     }

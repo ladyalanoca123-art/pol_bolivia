@@ -26,9 +26,9 @@
                         <div><dt class="font-medium text-gray-500">Nombre</dt><dd class="mt-1 text-gray-900">{{ $mascota->nombre }}</dd></div>
                         <div><dt class="font-medium text-gray-500">Especie</dt><dd class="mt-1 text-gray-900">{{ ucfirst($mascota->especie) }}</dd></div>
                         <div><dt class="font-medium text-gray-500">Raza</dt><dd class="mt-1 text-gray-900">{{ $mascota->raza ?? '—' }}</dd></div>
-                        <div><dt class="font-medium text-gray-500">Edad</dt><dd class="mt-1 text-gray-900">{{ $mascota->edad }} años</dd></div>
+                        <div><dt class="font-medium text-gray-500">Edad</dt><dd class="mt-1 text-gray-900">{{ $mascota->edad_formateada }}</dd></div>
                         <div><dt class="font-medium text-gray-500">Sexo</dt><dd class="mt-1 text-gray-900">{{ ucfirst($mascota->sexo) }}</dd></div>
-                        <div><dt class="font-medium text-gray-500">Tamaño</dt><dd class="mt-1 text-gray-900">{{ ucfirst($mascota->tamano) }}</dd></div>
+                        <div><dt class="font-medium text-gray-500">Tamaño</dt><dd class="mt-1 text-gray-900">{{ match ($mascota->tamano) { 'pequeno' => 'Pequeño', 'mediano' => 'Mediano', 'grande' => 'Grande', default => ucfirst($mascota->tamano) } }}</dd></div>
                         <div><dt class="font-medium text-gray-500">Color</dt><dd class="mt-1 text-gray-900">{{ $mascota->color ?? '—' }}</dd></div>
                         <div><dt class="font-medium text-gray-500">Estado</dt><dd class="mt-1 text-gray-900">{{ ucfirst($mascota->estado) }}</dd></div>
                         <div><dt class="font-medium text-gray-500">Registrada por</dt><dd class="mt-1 text-gray-900">{{ $mascota->registradoPor->nombres }} {{ $mascota->registradoPor->apellidos }}</dd></div>
