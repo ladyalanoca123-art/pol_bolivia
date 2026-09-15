@@ -15,16 +15,16 @@ class PanelPrincipalController extends Controller
 {
     public function index(): View
     {
-        return view('admin.dashboard', [
-            'indicadores' => [
-                'mascotas' => Mascota::count(),
-                'solicitudesPendientes' => SolicitudAdopcion::where('estado', 'pendiente')->count(),
-                'adopcionesAprobadas' => SolicitudAdopcion::where('estado', 'aceptada')->count(),
-                'usuarios' => User::count(),
-                'voluntariosActivos' => Voluntario::where('estado', 'activo')->count(),
-                'postulacionesPendientes' => PostulacionVoluntariado::where('estado', 'pendiente')->count(),
-                'incidenciasPendientes' => Incidencia::where('estado', 'pendiente')->count(),
-            ],
-        ]);
+        $indicadores = [
+            'mascotas' => Mascota::count(),
+            'solicitudesPendientes' => SolicitudAdopcion::where('estado', 'pendiente')->count(),
+            'adopcionesAprobadas' => SolicitudAdopcion::where('estado', 'aceptada')->count(),
+            'usuarios' => User::count(),
+            'voluntariosActivos' => Voluntario::where('estado', 'activo')->count(),
+            'postulacionesPendientes' => PostulacionVoluntariado::where('estado', 'pendiente')->count(),
+            'incidenciasPendientes' => Incidencia::where('estado', 'pendiente')->count(),
+        ];
+
+        return view('admin.dashboard', ['indicadores' => $indicadores]);
     }
 }
