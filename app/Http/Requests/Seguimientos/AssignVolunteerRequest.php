@@ -7,7 +7,11 @@ use Illuminate\Validation\Rule;
 
 class AssignVolunteerRequest extends FormRequest
 {
-    public function authorize(): bool { return true; }
+    public function authorize(): bool
+    {
+        $seguimiento = $this->route('seguimiento');
+        return auth()->user()?->can('assign', $seguimiento) ?? false;
+    }
 
     public function rules(): array
     {
