@@ -54,4 +54,21 @@ class RegistrationTest extends TestCase
             'rol' => 'ciudadano',
         ]);
     }
+
+    public function test_registration_preserves_an_intended_protected_destination(): void
+    {
+        $intended = route('postulaciones-voluntariado.create');
+
+        $this->get($intended)->assertRedirect(route('login'));
+        $this->get(route('register'))->assertOk();
+
+        $this->post(route('register'), [
+            'nombres' => 'Nueva',
+            'apellidos' => 'Ciudadana',
+            'email' => 'nueva@example.com',
+            'telefono' => '70000000',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])->assertRedirect($intended);
+    }
 }
