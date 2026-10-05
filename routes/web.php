@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CatalogoMascotaController;
 use App\Http\Controllers\DashboardRedirectController;
 use App\Http\Controllers\Admin\MascotaController;
 use App\Http\Controllers\Admin\IncidenciaController;
@@ -16,7 +17,9 @@ use App\Http\Controllers\SolicitudAdopcionController;
 use App\Http\Controllers\SeguimientoAdopcionController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome')->name('home');
+Route::get('/', [CatalogoMascotaController::class, 'home'])->name('home');
+Route::get('/mascotas', [CatalogoMascotaController::class, 'index'])->name('mascotas.catalogo');
+Route::get('/mascotas/{mascota}', [CatalogoMascotaController::class, 'show'])->name('mascotas.public.show');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', DashboardRedirectController::class)->name('dashboard');

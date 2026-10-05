@@ -1,0 +1,18 @@
+@props(['mascota'])
+@php($fotoPrincipal = $mascota->fotos->firstWhere('es_principal', true) ?? $mascota->fotos->first())
+<article x-data="{ reverso: false }" class="group [perspective:1200px]">
+    <div class="relative min-h-[31rem] transition-transform duration-500 [transform-style:preserve-3d]" :class="reverso && '[transform:rotateY(180deg)]'">
+        <section class="absolute inset-0 flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-sky-100 [backface-visibility:hidden]">
+            <div class="relative h-72 bg-stone-200">
+                @if ($fotoPrincipal)<img src="{{ Storage::disk('public')->url($fotoPrincipal->url) }}" alt="{{ $mascota->nombre }}" class="h-full w-full object-cover">@else<div class="flex h-full items-center justify-center text-sm text-stone-500">Sin fotografía disponible</div>@endif
+                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-5 pb-5 pt-12"><h3 class="text-2xl font-bold text-white">{{ $mascota->nombre }}</h3></div>
+            </div>
+            <div class="flex flex-1 flex-col gap-4 p-5"><p class="text-sm font-medium text-stone-600">{{ ucfirst($mascota->edad_formateada) }} · {{ ucfirst($mascota->sexo) }}</p><div class="grid grid-cols-2 gap-2"><a href="{{ route('mascotas.public.show', $mascota) }}" class="inline-flex min-w-0 items-center justify-center whitespace-nowrap rounded-lg border border-blue-800 px-1.5 py-2 text-center text-[11px] font-bold leading-none text-blue-900 hover:bg-sky-50 sm:px-3 sm:text-sm">VER PERFIL</a><button type="button" @click="reverso = true" class="inline-flex min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg bg-blue-800 px-1 py-2 text-[10px] font-bold leading-none text-white hover:bg-blue-900 sm:px-2.5 sm:text-xs">↻ DATOS RÁPIDOS</button></div><p class="-mx-5 -mb-5 mt-auto bg-sky-100 px-5 py-3 text-sm font-semibold text-blue-950">🐾 Disponible para adopción</p></div>
+        </section>
+        <section class="absolute inset-0 flex flex-col rounded-2xl bg-blue-950 p-6 text-white shadow-sm ring-1 ring-blue-900 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+            <h3 class="text-xl font-bold">DATOS RÁPIDOS SOBRE {{ Str::upper($mascota->nombre) }}</h3>
+            <dl class="mt-6 grid grid-cols-[auto_1fr] gap-x-4 gap-y-3 text-sm"><dt class="font-semibold text-sky-200">Especie:</dt><dd>{{ ucfirst($mascota->especie) }}</dd><dt class="font-semibold text-sky-200">Sexo:</dt><dd>{{ ucfirst($mascota->sexo) }}</dd><dt class="font-semibold text-sky-200">Edad:</dt><dd>{{ $mascota->edad_formateada }}</dd><dt class="font-semibold text-sky-200">Tamaño:</dt><dd>{{ ucfirst($mascota->tamano) }}</dd><dt class="font-semibold text-sky-200">Raza:</dt><dd>{{ $mascota->raza }}</dd><dt class="font-semibold text-sky-200">Color:</dt><dd>{{ $mascota->color }}</dd></dl>
+            <div class="mt-auto space-y-3 pt-6"><div class="grid grid-cols-2 gap-2"><a href="{{ route('mascotas.public.show', $mascota) }}" class="inline-flex items-center justify-center whitespace-nowrap rounded-lg border border-white/80 px-1.5 py-2 text-center text-[11px] font-bold leading-none hover:bg-white/10 sm:px-3 sm:text-sm">VER PERFIL</a><button type="button" @click="reverso = false" class="whitespace-nowrap rounded-lg border border-white/80 px-1.5 py-2 text-[11px] font-bold leading-none hover:bg-white/10 sm:px-3 sm:text-sm">↩ VOLVER</button></div><a href="{{ route('solicitudes-adopcion.create', $mascota) }}" class="block rounded-lg bg-white px-4 py-3 text-center text-sm font-extrabold text-blue-950 hover:bg-sky-50">ENVIAR SOLICITUD</a></div>
+        </section>
+    </div>
+</article>
