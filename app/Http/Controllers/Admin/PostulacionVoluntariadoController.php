@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\FilterPostulacionesVoluntariadoRequest;
 use App\Http\Requests\Admin\ReviewPostulacionVoluntariadoRequest;
 use App\Models\PostulacionVoluntariado;
 use Illuminate\Http\RedirectResponse;
@@ -11,11 +12,21 @@ use Illuminate\View\View;
 
 class PostulacionVoluntariadoController extends Controller
 {
-    public function index(): View
+    public function index(FilterPostulacionesVoluntariadoRequest $request): View
     {
-        $postulaciones = PostulacionVoluntariado::query()->with(['usuario', 'revisadoPor'])->latest()->paginate(15);
+        $filters = $request->validated();
 
-        return view('admin.postulaciones-voluntariado.index', compact('postulaciones'));
+        // Filtros por área de interés y día disponible (columnas JSON del cuestionario V1).
+        $postulaciones = PostulacionVoluntariado::query()
+            ->with(['usuario', 'revisadoPor'])
+            ->when($filters['estado'] ?? null, fn ($query, string $estado) => $query->where('estado', $estado))
+            ->when($filters['area'] ?? null, fn ($query, string $area) => $query->whereJsonContains('areas_interes', $area))
+            ->when($filters['dia'] ?? null, fn ($query, string $dia) => $query->whereJsonContains('dias_disponibles', $dia))
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('admin.postulaciones-voluntariado.index', compact('postulaciones', 'filters'));
     }
 
     public function show(PostulacionVoluntariado $postulacion): View

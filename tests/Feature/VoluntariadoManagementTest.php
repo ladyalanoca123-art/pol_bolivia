@@ -150,12 +150,13 @@ class VoluntariadoManagementTest extends TestCase
 
     private function makeApplication(User $citizen): PostulacionVoluntariado
     {
-        return PostulacionVoluntariado::create([...$this->applicationData(), 'usuario_id' => $citizen->id, 'estado' => 'pendiente']);
+        return PostulacionVoluntariado::create([...\Tests\Support\CuestionarioVoluntariadoDatos::registro(), 'usuario_id' => $citizen->id, 'estado' => 'pendiente']);
     }
 
+    /** Datos que envía el formulario del cuestionario V1. */
     private function applicationData(): array
     {
-        return ['motivacion' => 'Quiero ayudar a los animales.', 'habilidades' => 'Primeros auxilios', 'disponibilidad' => 'Fines de semana', 'zona_preferencia' => 'Centro'];
+        return \Tests\Support\CuestionarioVoluntariadoDatos::valido();
     }
 
     private function trackingFor(User $volunteer): SeguimientoAdopcion
@@ -167,7 +168,7 @@ class VoluntariadoManagementTest extends TestCase
             FotoMascota::create(['mascota_id' => $pet->id, 'tipo' => 'foto', 'url' => 'mascotas/principal.jpg', 'es_principal' => true, 'orden' => 1]);
             return $pet;
         });
-        $request = SolicitudAdopcion::create(['solicitante_id' => $citizen->id, 'mascota_id' => $pet->id, 'tiene_otras_mascotas' => false, 'viven_otras_personas' => true, 'tiene_espacio_adecuado' => true, 'zona_aproximada' => 'Centro', 'horario_preferido' => 'Tarde', 'declara_informacion_veraz' => true, 'estado' => 'pendiente']);
+        $request = SolicitudAdopcion::create(['solicitante_id' => $citizen->id, 'mascota_id' => $pet->id, ...\Tests\Support\CuestionarioAdopcionDatos::registro(), 'estado' => 'pendiente']);
         $request->update(['estado' => 'aceptada']);
 
         return SeguimientoAdopcion::query()->where('solicitud_id', $request->id)->sole();
