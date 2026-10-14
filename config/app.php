@@ -65,7 +65,9 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    // Por defecto UTC (comportamiento actual). La zona de Bolivia se activa con
+    // APP_TIMEZONE=America/La_Paz, siempre junto con DB_TIMEZONE (config/database.php).
+    'timezone' => env('APP_TIMEZONE', 'UTC'),
 
     /*
     |--------------------------------------------------------------------------

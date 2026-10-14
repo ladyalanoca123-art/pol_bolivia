@@ -96,6 +96,11 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Zona de la sesión PostgreSQL ("set time zone ..." en cada conexión). Debe coincidir con
+            // APP_TIMEZONE. Sin valor (null) se usa la del servidor: comportamiento actual.
+            'timezone' => env('DB_TIMEZONE'),
+            // Ruta de pg_dump para el comando respaldo:base-datos.
+            'dump_path' => env('PG_DUMP_PATH', 'pg_dump'),
         ],
 
         'sqlsrv' => [
