@@ -30,7 +30,15 @@
                     </div>
                 </details>
                 @auth
-                    <a href="{{ route('dashboard') }}" class="rounded-full bg-blue-800 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-900">Mi panel</a>
+                    @php
+                        $usuario = auth()->user();
+                        $enlaceCuenta = match (true) {
+                            $usuario->hasRole('ciudadano') => ['texto' => 'Mi cuenta', 'ruta' => route('solicitudes-adopcion.index')],
+                            $usuario->hasRole('voluntario') => ['texto' => 'Mis seguimientos', 'ruta' => route('seguimientos.index')],
+                            $usuario->hasRole('administrador') => ['texto' => 'Panel de administración', 'ruta' => route('dashboard')],
+                        };
+                    @endphp
+                    <a href="{{ $enlaceCuenta['ruta'] }}" class="rounded-full bg-blue-800 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-900">{{ $enlaceCuenta['texto'] }}</a>
                 @else
                     <a href="{{ route('login') }}" class="rounded-full bg-blue-800 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-900">Iniciar sesión</a>
                 @endauth
@@ -39,5 +47,9 @@
     </header>
     <main>@yield('content')</main>
     <footer class="border-t border-stone-200 bg-white"><div class="mx-auto max-w-7xl px-4 py-8 text-sm text-stone-600 sm:px-6 lg:px-8"><p class="font-bold text-emerald-800">POL-BOLIVIA</p><p class="mt-1">Cochabamba, Bolivia</p></div></footer>
+    {{-- Aviso de "ENVIAR SOLICITUD" para visitantes y cuentas que no son de ciudadano --}}
+    @unless (auth()->user()?->hasRole('ciudadano'))
+        <x-aviso-solicitud-adopcion />
+    @endunless
 </body>
 </html>

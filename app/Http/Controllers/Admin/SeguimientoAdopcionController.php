@@ -21,7 +21,10 @@ class SeguimientoAdopcionController extends Controller
     public function show(SeguimientoAdopcion $seguimiento): View
     {
         $seguimiento->load(['solicitud.mascota', 'solicitud.solicitante', 'voluntario', 'visitas', 'incidencias']);
-        $voluntarios = User::query()->where('rol', 'voluntario')->where('estado', true)->orderBy('nombres')->get();
+        // El adoptante no puede ser el voluntario de su propio seguimiento (conflicto de interés).
+        $voluntarios = User::query()->where('rol', 'voluntario')->where('estado', true)
+            ->whereKeyNot($seguimiento->solicitud->solicitante_id)
+            ->orderBy('nombres')->get();
         return view('admin.seguimientos.show', compact('seguimiento', 'voluntarios'));
     }
 

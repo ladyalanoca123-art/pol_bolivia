@@ -19,7 +19,7 @@
             @endcan
             @can('close', $seguimiento)
                 <form method="POST" action="{{ route('admin.seguimientos.close', $seguimiento) }}" class="pt-4">@csrf @method('PATCH')
-                    <button onclick="return confirm('¿Cerrar seguimiento?')" class="text-red-600">Cerrar seguimiento</button>
+                    <button x-data x-on:click="if (! confirm('¿Cerrar seguimiento?')) $event.preventDefault()" class="text-red-600">Cerrar seguimiento</button>
                 </form>
             @endcan
         </div>

@@ -18,17 +18,22 @@ class AuthorizationTest extends TestCase
             ->get('/admin/panel')
             ->assertOk()
             ->assertSee('Panel principal')
-            ->assertSee('Total de mascotas registradas')
-            ->assertSee('Solicitudes de adopción pendientes')
-            ->assertSee('Adopciones aprobadas')
-            ->assertSee('Usuarios registrados')
-            ->assertSee('Voluntarios activos')
-            ->assertSee('Postulaciones pendientes')
-            ->assertSee('Incidencias pendientes');
+            // Bloques del panel operativo (resources/views/admin/dashboard.blade.php).
+            ->assertSee('Solicitudes nuevas (7 días)')
+            ->assertSee('En evaluación')
+            ->assertSee('Seguimientos activos')
+            ->assertSee('Incidencias abiertas')
+            ->assertSee('Requiere tu atención')
+            ->assertSee('Agenda de la semana')
+            ->assertSee('Actividad reciente');
 
         $this->assertSame([
             'mascotas' => 0,
             'solicitudesPendientes' => 0,
+            'solicitudesEnEvaluacion' => 0,
+            'solicitudesRojas' => 0,
+            'solicitudesAmarillas' => 0,
+            'solicitudesVerdes' => 0,
             'adopcionesAprobadas' => 0,
             'usuarios' => 1,
             'voluntariosActivos' => 0,

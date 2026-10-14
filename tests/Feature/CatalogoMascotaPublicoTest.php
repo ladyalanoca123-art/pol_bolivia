@@ -22,15 +22,11 @@ class CatalogoMascotaPublicoTest extends TestCase
         $solicitud = SolicitudAdopcion::create([
             'solicitante_id' => User::factory()->create(['rol' => 'ciudadano'])->id,
             'mascota_id' => $adopted->id,
-            'tiene_otras_mascotas' => false,
-            'viven_otras_personas' => true,
-            'tiene_espacio_adecuado' => true,
-            'zona_aproximada' => 'Centro',
-            'horario_preferido' => 'Por las tardes',
-            'declara_informacion_veraz' => true,
+            ...\Tests\Support\CuestionarioAdopcionDatos::registro(),
             'estado' => 'pendiente',
         ]);
-        $this->actingAs($administrator)->patch(route('admin.solicitudes-adopcion.accept', $solicitud));
+        $solicitud->update(['estado' => 'en_espera']);
+        $this->actingAs($administrator)->patch(route('admin.solicitudes-adopcion.accept', $solicitud), ['comentarios_admin' => 'Visita realizada.']);
 
         $this->get(route('home'))
             ->assertOk()
@@ -38,7 +34,9 @@ class CatalogoMascotaPublicoTest extends TestCase
             ->assertDontSee('Nala')
             ->assertSee('Disponible para adopción')
             ->assertSee(route('mascotas.public.show', $available), false)
-            ->assertSee(route('solicitudes-adopcion.create', $available), false)
+            // La sesión es del administrador: ENVIAR SOLICITUD abre el aviso explicativo (no es ciudadano).
+            ->assertSee('ENVIAR SOLICITUD')
+            ->assertSee('abrir-aviso-adopcion', false)
             ->assertSee(route('postulaciones-voluntariado.create'), false);
 
         $this->get(route('mascotas.catalogo'))
@@ -71,7 +69,8 @@ class CatalogoMascotaPublicoTest extends TestCase
             ->assertSee('Hembra')
             ->assertSee('Pequeno')
             ->assertSee('Descripción real de Luna.')
-            ->assertSee(route('solicitudes-adopcion.create', $mascota), false);
+            // Visitante: ENVIAR SOLICITUD abre el aviso; sin JavaScript lleva al acceso de esta mascota.
+            ->assertSee(route('mascotas.solicitar-acceso', [$mascota, 'inicio']), false);
     }
 
     public function test_guest_keeps_selected_pet_context_through_existing_login_flow(): void

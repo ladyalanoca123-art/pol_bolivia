@@ -15,6 +15,19 @@ class AssignVolunteerRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['voluntario_id' => ['required', 'integer', Rule::exists('usuarios', 'id')->where(fn ($query) => $query->where('rol', 'voluntario')->where('estado', true))]];
+        // El adoptante no puede ser el voluntario de su propio seguimiento (conflicto de interés).
+        $adoptanteId = $this->route('seguimiento')->solicitud->solicitante_id;
+
+        return ['voluntario_id' => [
+            'required',
+            'integer',
+            Rule::exists('usuarios', 'id')->where(fn ($query) => $query->where('rol', 'voluntario')->where('estado', true)),
+            Rule::notIn([$adoptanteId]),
+        ]];
+    }
+
+    public function messages(): array
+    {
+        return ['voluntario_id.not_in' => 'El adoptante no puede hacer el seguimiento de su propia adopción.'];
     }
 }

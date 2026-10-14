@@ -274,6 +274,53 @@ class UserManagementTest extends TestCase
             ->assertSessionHasErrors(['nombres', 'apellidos', 'email', 'telefono']);
     }
 
+    public function test_user_edit_accepts_the_name_characters_supported_during_registration(): void
+    {
+        $administrator = User::factory()->create(['rol' => 'administrador']);
+
+        foreach ([
+            ['María José', 'Pérez-Gómez'],
+            ["D'Angelo", 'Muñoz'],
+            ['Jean-Luc', 'O’Connor'],
+            ['Ana.María', 'De la Cruz'],
+        ] as [$nombres, $apellidos]) {
+            $user = User::factory()->create();
+
+            $this->actingAs($administrator)
+                ->patch(route('admin.usuarios.update', $user), [
+                    'nombres' => $nombres,
+                    'apellidos' => $apellidos,
+                    'email' => $user->email,
+                    'telefono' => '71234567',
+                ])
+                ->assertRedirect(route('admin.usuarios.show', $user))
+                ->assertSessionHasNoErrors();
+
+            $this->assertDatabaseHas('usuarios', [
+                'id' => $user->id,
+                'nombres' => $nombres,
+                'apellidos' => $apellidos,
+            ]);
+        }
+    }
+
+    public function test_user_edit_rejects_name_formats_not_supported_during_registration(): void
+    {
+        $administrator = User::factory()->create(['rol' => 'administrador']);
+        $user = User::factory()->create();
+
+        foreach (['-Ana', 'Ana2', 'Ana_', 'Ana@', '<script>'] as $invalidName) {
+            $this->actingAs($administrator)
+                ->patch(route('admin.usuarios.update', $user), [
+                    'nombres' => $invalidName,
+                    'apellidos' => 'Quispe',
+                    'email' => $user->email,
+                    'telefono' => '71234567',
+                ])
+                ->assertSessionHasErrors('nombres');
+        }
+    }
+
     public function test_non_administrators_cannot_view_or_edit_users(): void
     {
         $target = User::factory()->create();

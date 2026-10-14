@@ -129,7 +129,7 @@ class SeguimientoAdopcionTest extends TestCase
             FotoMascota::create(['mascota_id' => $mascota->id, 'tipo' => 'foto', 'url' => 'test.jpg', 'es_principal' => true, 'orden' => 1]);
             return $mascota;
         });
-        $solicitud = SolicitudAdopcion::create(['solicitante_id' => $citizen->id, 'mascota_id' => $mascota->id, 'estado' => 'pendiente', 'tiene_otras_mascotas' => false, 'viven_otras_personas' => false, 'tiene_espacio_adecuado' => true, 'zona_aproximada' => 'Centro', 'horario_preferido' => 'Tarde', 'declara_informacion_veraz' => true]);
+        $solicitud = SolicitudAdopcion::create(['solicitante_id' => $citizen->id, 'mascota_id' => $mascota->id, 'estado' => 'pendiente', ...\Tests\Support\CuestionarioAdopcionDatos::registro()]);
         $solicitud->update(['estado' => 'aceptada']);
         return [$administrator, $solicitud->seguimiento()->firstOrFail()];
     }
