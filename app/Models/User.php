@@ -2,15 +2,20 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegistraAuditoria;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+// Verificación de correo DESACTIVADA temporalmente (se reactivará al final del proyecto).
+// Para reactivarla: volver a declarar "class User extends Authenticatable implements MustVerifyEmail".
+// Mientras tanto, el middleware 'verified' de las rutas deja pasar a todos los usuarios.
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, RegistraAuditoria;
 
     protected $table = 'usuarios';
 

@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\StoreFotoMascotaRequest;
 use App\Http\Requests\Admin\UpdateMascotaRequest;
 use App\Models\FotoMascota;
 use App\Models\Mascota;
+use App\Services\ImagenSegura;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -46,7 +47,7 @@ class MascotaController extends Controller
         return view('admin.mascotas.index', compact('mascotas', 'filters'));
     }
 
-    public function store(RegisterMascotaRequest $request): RedirectResponse
+    public function store(RegisterMascotaRequest $request, ImagenSegura $imagenSegura): RedirectResponse
     {
         $data = $request->validated();
         $photo = $data['foto_principal'];
@@ -54,14 +55,15 @@ class MascotaController extends Controller
         $path = null;
 
         try {
-            DB::transaction(function () use ($data, $photo, &$path): void {
+            DB::transaction(function () use ($data, $photo, $imagenSegura, &$path): void {
                 $mascota = Mascota::create([
                     ...$data,
                     'estado' => 'disponible',
                     'registrado_por' => auth()->id(),
                 ]);
 
-                $path = $photo->store("mascotas/{$mascota->id}", 'public');
+                // Guarda la foto sin metadatos EXIF (ver app/Services/ImagenSegura.php).
+                $path = $imagenSegura->guardar($photo, "mascotas/{$mascota->id}");
 
                 $mascota->fotos()->create([
                     'tipo' => 'foto',
@@ -110,9 +112,10 @@ class MascotaController extends Controller
             ->with('status', 'La información de la mascota fue actualizada.');
     }
 
-    public function storePhoto(StoreFotoMascotaRequest $request, Mascota $mascota): RedirectResponse
+    public function storePhoto(StoreFotoMascotaRequest $request, Mascota $mascota, ImagenSegura $imagenSegura): RedirectResponse
     {
-        $path = $request->file('foto')->store("mascotas/{$mascota->id}", 'public');
+        // Guarda la foto sin metadatos EXIF (ver app/Services/ImagenSegura.php).
+        $path = $imagenSegura->guardar($request->file('foto'), "mascotas/{$mascota->id}");
 
         try {
             DB::transaction(function () use ($mascota, $path): void {

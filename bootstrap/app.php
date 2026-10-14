@@ -3,7 +3,9 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\CabecerasSeguridad;
 use App\Http\Middleware\EnsureUserHasRole;
+use Illuminate\Session\Middleware\AuthenticateSession;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -14,6 +16,15 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
+        ]);
+
+        // Seguridad aplicada a todas las rutas web.
+        // AuthenticateSession: si la contraseña cambia (o se usa logoutOtherDevices), las sesiones
+        // abiertas con la contraseña anterior se cierran en su siguiente petición.
+        $middleware->web(append: [
+            AuthenticateSession::class,
+            CabecerasSeguridad::class,
+            'throttle:general',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

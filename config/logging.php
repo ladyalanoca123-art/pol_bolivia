@@ -123,6 +123,18 @@ return [
             'handler' => NullHandler::class,
         ],
 
+        // Eventos de autenticación (App\Support\RegistroSeguridad): un archivo por día,
+        // storage/logs/seguridad-AAAA-MM-DD.log. Nunca contiene contraseñas.
+        // En las pruebas (phpunit.xml) se usa el driver "monolog" con NullHandler para no escribir archivos.
+        'seguridad' => [
+            'driver' => env('LOG_SEGURIDAD_DRIVER', 'daily'),
+            'handler' => NullHandler::class,
+            'path' => storage_path('logs/seguridad.log'),
+            'level' => 'info',
+            'days' => env('LOG_SEGURIDAD_DAYS', 90),
+            'replace_placeholders' => true,
+        ],
+
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],

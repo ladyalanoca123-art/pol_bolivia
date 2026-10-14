@@ -23,8 +23,8 @@ class RegistrationTest extends TestCase
             'apellidos' => 'De Prueba',
             'email' => 'test@example.com',
             'telefono' => '70000000',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'ClaveSegura123',
+            'password_confirmation' => 'ClaveSegura123',
         ]);
 
         $this->assertAuthenticated();
@@ -34,7 +34,8 @@ class RegistrationTest extends TestCase
             'email' => 'test@example.com',
             'rol' => 'ciudadano',
         ]);
-        $response->assertRedirect(route('dashboard', absolute: false));
+        // Sin destino pendiente, el ciudadano va al catálogo público de mascotas.
+        $response->assertRedirect(route('mascotas.catalogo', absolute: false));
     }
 
     public function test_registration_cannot_assign_an_administrative_role(): void
@@ -44,8 +45,8 @@ class RegistrationTest extends TestCase
             'apellidos' => 'Ciudadano',
             'email' => 'ciudadano@example.com',
             'telefono' => '70000000',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'ClaveSegura123',
+            'password_confirmation' => 'ClaveSegura123',
             'rol' => 'administrador',
         ]);
 
@@ -67,8 +68,8 @@ class RegistrationTest extends TestCase
             'apellidos' => 'Ciudadana',
             'email' => 'nueva@example.com',
             'telefono' => '70000000',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'ClaveSegura123',
+            'password_confirmation' => 'ClaveSegura123',
         ])->assertRedirect($intended);
     }
 }

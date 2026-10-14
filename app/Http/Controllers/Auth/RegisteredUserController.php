@@ -3,14 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -29,28 +27,29 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(RegisterRequest $request): RedirectResponse
     {
-        $request->validate([
-            'nombres' => ['required', 'string', 'max:100'],
-            'apellidos' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('usuarios', 'email')],
-            'telefono' => ['nullable', 'string', 'max:20'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+        // Solo campos validados y normalizados (RegisterRequest). El rol y el estado los asigna
+        // la base de datos; nunca se toman del formulario.
+        $datos = $request->validated();
 
         $user = User::create([
-            'nombres' => $request->nombres,
-            'apellidos' => $request->apellidos,
-            'email' => $request->email,
-            'telefono' => $request->telefono,
-            'password' => Hash::make($request->password),
+            'nombres' => $datos['nombres'],
+            'apellidos' => $datos['apellidos'],
+            'email' => $datos['email'],
+            'telefono' => $datos['telefono'] ?? null,
+            'password' => Hash::make($datos['password']),
         ]);
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Igual que al iniciar sesión: nuevo identificador de sesión (evita la fijación de sesión).
+        $request->session()->regenerate();
+
+        // Si intentaba entrar a una página protegida, vuelve allí (url.intended, que Laravel guarda
+        // solo a partir de rutas de esta misma aplicación). Si no, al catálogo público de mascotas.
+        return redirect()->intended(route('mascotas.catalogo', absolute: false));
     }
 }

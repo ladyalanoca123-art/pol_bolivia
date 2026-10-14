@@ -30,16 +30,13 @@ class PasswordResetLinkController extends Controller
             'email' => ['required', 'email'],
         ]);
 
-        // We will send the password reset link to this user. Once we have attempted
-        // to send the link, we will examine the response then see the message we
-        // need to show to the user. Finally, we'll send out a proper response.
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
+        // Se usa el mecanismo de Laravel (envía el enlace solo si la cuenta existe), pero la
+        // respuesta visible es siempre la misma: no revela si el correo está registrado.
+        // defer(): el envío ocurre después de responder, así el tiempo de respuesta y un posible
+        // fallo del servidor de correo tampoco delatan si la cuenta existe.
+        $credenciales = $request->only('email');
+        defer(fn () => Password::sendResetLink($credenciales));
 
-        return $status == Password::RESET_LINK_SENT
-                    ? back()->with('status', __($status))
-                    : back()->withInput($request->only('email'))
-                        ->withErrors(['email' => __($status)]);
+        return back()->with('status', __('passwords.sent'));
     }
 }
