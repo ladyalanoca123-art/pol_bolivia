@@ -10,11 +10,14 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\CuestionarioAdopcionDatos;
 use Tests\TestCase;
 
 class SolicitudAdopcionManagementTest extends TestCase
 {
     use RefreshDatabase;
+
+    private const MOTIVO = ['comentarios_admin' => 'Visita realizada y hogar adecuado.'];
 
     public function test_administrator_can_access_the_administrative_request_listing(): void
     {
@@ -52,7 +55,7 @@ class SolicitudAdopcionManagementTest extends TestCase
 
         $this->actingAs($citizen)
             ->post(route('solicitudes-adopcion.store', $mascota), [
-                ...$this->requestData(),
+                ...$this->questionnaireData(),
                 'solicitante_id' => $otherCitizen->id,
                 'mascota_id' => $otherMascota->id,
                 'estado' => 'aceptada',
@@ -73,11 +76,11 @@ class SolicitudAdopcionManagementTest extends TestCase
         $mascota = $this->createAvailableMascota();
         $administrator = User::factory()->create(['rol' => 'administrador']);
         $accepted = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano']), $mascota);
-        $this->actingAs($administrator)->patch(route('admin.solicitudes-adopcion.accept', $accepted));
+        $this->acceptAfterEvaluation($administrator, $accepted);
 
         $this->actingAs($citizen)
             ->from(route('solicitudes-adopcion.create', $mascota))
-            ->post(route('solicitudes-adopcion.store', $mascota), $this->requestData())
+            ->post(route('solicitudes-adopcion.store', $mascota), $this->questionnaireData())
             ->assertSessionHasErrors('mascota');
 
         $this->assertDatabaseMissing('solicitudes_adopcion', [
@@ -93,7 +96,7 @@ class SolicitudAdopcionManagementTest extends TestCase
         $this->createSolicitud($citizen, $mascota);
 
         $this->actingAs($citizen)
-            ->post(route('solicitudes-adopcion.store', $mascota), $this->requestData())
+            ->post(route('solicitudes-adopcion.store', $mascota), $this->questionnaireData())
             ->assertSessionHasErrors('mascota');
     }
 
@@ -156,7 +159,7 @@ class SolicitudAdopcionManagementTest extends TestCase
         $mascota = $this->createAvailableMascota();
 
         $this->actingAs($volunteer)
-            ->post(route('solicitudes-adopcion.store', $mascota), $this->requestData())
+            ->post(route('solicitudes-adopcion.store', $mascota), $this->questionnaireData())
             ->assertForbidden();
     }
 
@@ -169,8 +172,10 @@ class SolicitudAdopcionManagementTest extends TestCase
             $mascota,
         );
 
+        $solicitud->update(['estado' => 'en_espera']);
+
         $this->actingAs($administrator)
-            ->patch(route('admin.solicitudes-adopcion.accept', $solicitud))
+            ->patch(route('admin.solicitudes-adopcion.accept', $solicitud), self::MOTIVO)
             ->assertRedirect(route('admin.solicitudes-adopcion.show', $solicitud));
 
         $this->assertDatabaseHas('solicitudes_adopcion', [
@@ -200,9 +205,10 @@ class SolicitudAdopcionManagementTest extends TestCase
         $pending = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano']), $mascota);
         $waiting = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano']), $mascota);
         $waiting->update(['estado' => 'en_espera']);
+        $accepted->update(['estado' => 'en_espera']);
 
         $this->actingAs($administrator)
-            ->patch(route('admin.solicitudes-adopcion.accept', $accepted))
+            ->patch(route('admin.solicitudes-adopcion.accept', $accepted), self::MOTIVO)
             ->assertRedirect();
 
         $this->assertDatabaseHas('solicitudes_adopcion', ['id' => $accepted->id, 'estado' => 'aceptada']);
@@ -228,7 +234,7 @@ class SolicitudAdopcionManagementTest extends TestCase
         $otherSolicitud = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano']), $mascota);
 
         $this->actingAs($administrator)
-            ->patch(route('admin.solicitudes-adopcion.reject', $solicitud))
+            ->patch(route('admin.solicitudes-adopcion.reject', $solicitud), self::MOTIVO)
             ->assertRedirect(route('admin.solicitudes-adopcion.show', $solicitud));
 
         $this->assertDatabaseHas('solicitudes_adopcion', [
@@ -270,12 +276,10 @@ class SolicitudAdopcionManagementTest extends TestCase
             $this->createAvailableMascota(),
         );
 
-        $this->actingAs($administrator)
-            ->patch(route('admin.solicitudes-adopcion.accept', $accepted))
-            ->assertRedirect();
+        $this->acceptAfterEvaluation($administrator, $accepted);
 
         $this->actingAs($administrator)
-            ->patch(route('admin.solicitudes-adopcion.accept', $accepted))
+            ->patch(route('admin.solicitudes-adopcion.accept', $accepted), self::MOTIVO)
             ->assertForbidden();
 
         $rejected = $this->createSolicitud(
@@ -284,11 +288,11 @@ class SolicitudAdopcionManagementTest extends TestCase
         );
 
         $this->actingAs($administrator)
-            ->patch(route('admin.solicitudes-adopcion.reject', $rejected))
+            ->patch(route('admin.solicitudes-adopcion.reject', $rejected), self::MOTIVO)
             ->assertRedirect();
 
         $this->actingAs($administrator)
-            ->patch(route('admin.solicitudes-adopcion.reject', $rejected))
+            ->patch(route('admin.solicitudes-adopcion.reject', $rejected), self::MOTIVO)
             ->assertForbidden();
     }
 
@@ -300,8 +304,11 @@ class SolicitudAdopcionManagementTest extends TestCase
             $this->createAvailableMascota(),
         );
 
+        $solicitud->update(['estado' => 'en_espera']);
+
         $this->actingAs($administrator)
             ->patch(route('admin.solicitudes-adopcion.accept', $solicitud), [
+                ...self::MOTIVO,
                 'estado' => 'rechazada',
                 'solicitante_id' => User::factory()->create(['rol' => 'ciudadano'])->id,
                 'mascota_id' => $this->createAvailableMascota()->id,
@@ -320,10 +327,10 @@ class SolicitudAdopcionManagementTest extends TestCase
         $mascota = $this->createAvailableMascota();
         $solicitud = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano']), $mascota);
         $accepted = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano']), $mascota);
-        $this->actingAs($administrator)->patch(route('admin.solicitudes-adopcion.accept', $accepted));
+        $this->acceptAfterEvaluation($administrator, $accepted);
 
         $this->actingAs($administrator)
-            ->patch(route('admin.solicitudes-adopcion.accept', $solicitud))
+            ->patch(route('admin.solicitudes-adopcion.accept', $solicitud), self::MOTIVO)
             ->assertForbidden();
 
         $this->assertDatabaseHas('solicitudes_adopcion', [
@@ -342,8 +349,17 @@ class SolicitudAdopcionManagementTest extends TestCase
 
         $this->actingAs($administrator)
             ->get(route('admin.solicitudes-adopcion.show', $solicitud))
-            ->assertSee('Aceptar')
-            ->assertSee('Rechazar');
+            ->assertSee('Continuar a entrevista o visita')
+            ->assertSee('Rechazar')
+            ->assertDontSee('Aceptar adopción');
+
+        $solicitud->update(['estado' => 'en_espera']);
+
+        $this->actingAs($administrator)
+            ->get(route('admin.solicitudes-adopcion.show', $solicitud))
+            ->assertSee('Aceptar adopción')
+            ->assertSee('Rechazar')
+            ->assertDontSee('Continuar a entrevista o visita');
 
         $solicitud->update(['estado' => 'rechazada']);
 
@@ -397,16 +413,24 @@ class SolicitudAdopcionManagementTest extends TestCase
         ], $attributes));
     }
 
+    private function acceptAfterEvaluation(User $administrator, SolicitudAdopcion $solicitud): void
+    {
+        $this->actingAs($administrator)
+            ->patch(route('admin.solicitudes-adopcion.evaluate', $solicitud), self::MOTIVO)
+            ->assertRedirect();
+        $this->actingAs($administrator)
+            ->patch(route('admin.solicitudes-adopcion.accept', $solicitud), self::MOTIVO)
+            ->assertRedirect();
+    }
+
+    private function questionnaireData(): array
+    {
+        return CuestionarioAdopcionDatos::valido();
+    }
+
+    /** Solicitud del cuestionario A2 creada directamente en la base. */
     private function requestData(): array
     {
-        return [
-            'tiene_otras_mascotas' => false,
-            'viven_otras_personas' => true,
-            'tiene_espacio_adecuado' => true,
-            'zona_aproximada' => 'Centro',
-            'horario_preferido' => 'Por las tardes',
-            'comentarios_solicitante' => 'Puedo cuidar a la mascota.',
-            'declara_informacion_veraz' => true,
-        ];
+        return CuestionarioAdopcionDatos::registro();
     }
 }

@@ -19,6 +19,7 @@ class FilterSolicitudesAdopcionRequest extends FormRequest
             'estado' => ['nullable', Rule::in([
                 'pendiente', 'en_espera', 'aceptada', 'rechazada', 'cancelada', 'cerrada',
             ])],
+            'nivel_alerta' => ['nullable', Rule::in(['verde', 'amarillo', 'rojo'])],
         ];
     }
 }

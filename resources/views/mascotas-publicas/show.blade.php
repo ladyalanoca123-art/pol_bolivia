@@ -44,7 +44,7 @@
                     </dl>
                     <h2 class="mt-7 text-lg font-bold">Sobre {{ $mascota->nombre }}</h2>
                     <p class="mt-2 whitespace-pre-line text-stone-700">{{ $mascota->descripcion }}</p>
-                    <a href="{{ route('solicitudes-adopcion.create', $mascota) }}" class="mt-8 inline-block rounded-full bg-emerald-700 px-6 py-3 font-extrabold text-white hover:bg-emerald-800">ENVIAR SOLICITUD</a>
+                    <x-boton-solicitar-adopcion :mascota="$mascota" class="mt-8 inline-block rounded-full bg-emerald-700 px-6 py-3 font-extrabold text-white hover:bg-emerald-800">ENVIAR SOLICITUD</x-boton-solicitar-adopcion>
                 </div>
             </div>
         </div>
