@@ -166,6 +166,8 @@ Route::middleware(['auth', 'verified', 'role:administrador'])
         Route::patch('/voluntarios/{voluntario}/desactivar', [AdminVoluntarioController::class, 'deactivate'])->name('voluntarios.deactivate');
 
         Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
+        Route::get('/reportes/pdf', [ReporteController::class, 'pdf'])->name('reportes.pdf');
+        Route::get('/reportes/excel', [ReporteController::class, 'excel'])->name('reportes.excel');
 
         Route::get('/auditoria', [AuditoriaController::class, 'index'])->name('auditoria.index');
     });

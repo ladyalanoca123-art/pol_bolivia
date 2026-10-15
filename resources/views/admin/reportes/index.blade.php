@@ -25,7 +25,8 @@
         <div class="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
 
             {{-- Encabezado --}}
-            <header>
+            <header class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div class="min-w-0">
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">Reportes y estadísticas</p>
                 <h1 class="mt-2 text-2xl font-bold text-blue-950 sm:text-3xl">Reportes</h1>
                 <p class="mt-1 text-sm text-slate-600 sm:text-base">
@@ -35,6 +36,19 @@
                         Totales acumulados y estado actual. Elige un período para ver comparaciones, el embudo y los indicadores de gestión.
                     @endif
                 </p>
+                </div>
+
+                {{-- Descargas: mismo período que la pantalla (parametrosExportacion), protegidas como esta ruta. --}}
+                <div class="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap lg:shrink-0" aria-label="Descargar el reporte">
+                    <a href="{{ route('admin.reportes.pdf', $parametrosExportacion) }}" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-red-700 px-5 text-sm font-semibold text-white hover:bg-red-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2">
+                        <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6"/><path d="m9 14 3 3 3-3"/></svg>
+                        Descargar PDF
+                    </a>
+                    <a href="{{ route('admin.reportes.excel', $parametrosExportacion) }}" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-emerald-700 px-5 text-sm font-semibold text-white hover:bg-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">
+                        <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/></svg>
+                        Descargar Excel
+                    </a>
+                </div>
             </header>
 
             {{-- Selector de período --}}

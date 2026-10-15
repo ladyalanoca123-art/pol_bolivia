@@ -10,9 +10,12 @@ use App\Models\PostulacionVoluntariado;
 use App\Models\SeguimientoAdopcion;
 use App\Models\SolicitudAdopcion;
 use App\Models\Voluntario;
+use App\Services\ExportadorReporte;
 use App\Services\ReporteAdministrador;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReporteController extends Controller
 {
@@ -22,6 +25,24 @@ class ReporteController extends Controller
      * usa cada uno) junto con su período anterior. Sin parámetros se conserva el cálculo anterior.
      */
     public function index(ReportPeriodRequest $request, ReporteAdministrador $reportes): View
+    {
+        return view('admin.reportes.index', $this->datos($request, $reportes));
+    }
+
+    /** Descarga en PDF de los mismos datos que muestra la pantalla para el período solicitado. */
+    public function pdf(ReportPeriodRequest $request, ReporteAdministrador $reportes, ExportadorReporte $exportador): Response
+    {
+        return $exportador->pdf($this->datos($request, $reportes));
+    }
+
+    /** Descarga en Excel (.xlsx) de los mismos datos que muestra la pantalla para el período solicitado. */
+    public function excel(ReportPeriodRequest $request, ReporteAdministrador $reportes, ExportadorReporte $exportador): StreamedResponse
+    {
+        return $exportador->excel($this->datos($request, $reportes));
+    }
+
+    /** Datos del reporte para un período validado: los comparten la pantalla y las exportaciones. */
+    private function datos(ReportPeriodRequest $request, ReporteAdministrador $reportes): array
     {
         $periodo = $request->validated();
         $periodoReporte = $request->periodoReporte();
@@ -50,8 +71,11 @@ class ReporteController extends Controller
                 ->pluck('total', 'fecha');
         }
 
-        return view('admin.reportes.index', [
+        return [
             'periodo' => $periodo,
+            // Parámetros del período para los enlaces de descarga (los mismos que validó la petición).
+            'parametrosExportacion' => $periodoReporte === null ? [] : ['periodo' => $periodoReporte->tipo, ...($periodoReporte->tipo === 'personalizado' ? $periodoReporte->fechas() : [])],
+            'generadoEn' => now(),
             'periodoReporte' => $periodoReporte,
             'periodoAnterior' => $periodoReporte?->anterior(),
             'indicadoresPeriodo' => $indicadoresPeriodo,
@@ -76,7 +100,7 @@ class ReporteController extends Controller
             'totalSeguimientos' => array_sum($seguimientosPorEstado),
             'totalIncidencias' => array_sum($incidenciasPorEstado),
             'adopcionesPorFecha' => $adopcionesPorFecha,
-        ]);
+        ];
     }
 
     private function countsByState(Builder $query, array $states, string $column = 'estado'): array
