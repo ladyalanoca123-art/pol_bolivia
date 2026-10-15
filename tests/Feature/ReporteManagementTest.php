@@ -61,6 +61,8 @@ class ReporteManagementTest extends TestCase
         $administrator = User::factory()->create(['rol' => 'administrador']);
         $old = $this->makeAcceptedRequest($administrator);
         $old->forceFill(['created_at' => now()->subDays(10)])->save();
+        // Las adopciones del período se cuentan por su fecha de resolución (resuelta_at).
+        DB::table('solicitudes_adopcion')->where('id', $old->id)->update(['resuelta_at' => now()->subDays(10)]);
         $recent = $this->makeAcceptedRequest($administrator);
 
         $response = $this->actingAs($administrator)->get(route('admin.reportes.index', [
@@ -70,8 +72,8 @@ class ReporteManagementTest extends TestCase
         $response->assertOk()->assertSee('Adopciones en el período');
         $adopcionesPorFecha = $response->viewData('adopcionesPorFecha');
         $this->assertSame(1, $response->viewData('totalAdopciones'));
-        $this->assertFalse($adopcionesPorFecha->has($old->fresh()->created_at->toDateString()));
-        $this->assertTrue($adopcionesPorFecha->has($recent->fresh()->created_at->toDateString()));
+        $this->assertFalse($adopcionesPorFecha->has($old->fresh()->resuelta_at->toDateString()));
+        $this->assertTrue($adopcionesPorFecha->has($recent->fresh()->resuelta_at->toDateString()));
         $this->assertSame(1, $adopcionesPorFecha->sum());
 
         $this->actingAs($administrator)->get(route('admin.reportes.index', [

@@ -33,6 +33,36 @@ class SeguridadTest extends TestCase
         $this->assertMatchesRegularExpression("/script-src 'self' 'nonce-[A-Za-z0-9]+'/", $csp);
     }
 
+    public function test_el_script_de_reportes_esta_autorizado_por_la_politica_de_contenido(): void
+    {
+        // Reportes ya no usa un script en línea (los gráficos son SVG): se verifica que todo script de la
+        // página esté autorizado por el nonce de esta respuesta y que no haya JavaScript en línea.
+        $administrador = User::factory()->create(['rol' => 'administrador']);
+        $response = $this->actingAs($administrador)->get(route('admin.reportes.index'))->assertOk();
+        $html = $response->getContent();
+
+        $scriptSrc = $this->directivaCsp($response->headers->get('Content-Security-Policy'), 'script-src');
+        $this->assertMatchesRegularExpression("/^script-src 'self' 'nonce-[A-Za-z0-9]{16,}'/", $scriptSrc);
+        $this->assertStringNotContainsString("'unsafe-inline'", $scriptSrc);
+        $this->assertStringNotContainsString('*', $scriptSrc);
+        $nonce = $this->nonceCsp($response->headers->get('Content-Security-Policy'));
+
+        $this->assertGreaterThan(0, preg_match_all('/<script\b/i', $html), 'la página carga los scripts de la aplicación');
+        $this->assertSame([], $this->scriptsNoAutorizados($html, $nonce));
+        $this->assertSame(0, $this->javascriptEnLinea($html));
+
+        // El nonce es nuevo en cada respuesta: el de una petición anterior no sirve en la siguiente.
+        $otra = $this->actingAs($administrador)->get(route('admin.reportes.index'));
+        $this->assertNotSame($nonce, $this->nonceCsp($otra->headers->get('Content-Security-Policy')));
+        $this->assertCount(preg_match_all('/<script\b/i', $html), $this->scriptsNoAutorizados($html, $this->nonceCsp($otra->headers->get('Content-Security-Policy'))));
+
+        // Comprobación negativa: un script inyectado sin nonce, con un nonce ajeno o como manejador en
+        // línea se detecta.
+        $inyectado = str_replace('</main>', '<script>alert(1)</script><script nonce="otro">alert(2)</script><button onclick="alert(3)">x</button><a href="javascript:alert(4)">y</a></main>', $html);
+        $this->assertCount(2, $this->scriptsNoAutorizados($inyectado, $nonce));
+        $this->assertSame(2, $this->javascriptEnLinea($inyectado));
+    }
+
     public function test_el_registro_se_bloquea_tras_demasiados_intentos(): void
     {
         foreach (range(1, 5) as $intento) {
@@ -171,5 +201,35 @@ class SeguridadTest extends TestCase
         Storage::disk('public')->assertExists($ruta);
         $this->assertStringEndsWith('.jpg', $ruta);
         $this->assertStringNotContainsString('<?php', Storage::disk('public')->get($ruta));
+    }
+
+    // ---------- Política de contenido ----------
+
+    private function directivaCsp(?string $csp, string $directiva): string
+    {
+        return (string) collect(explode(';', (string) $csp))->map(fn (string $d) => trim($d))
+            ->first(fn (string $d) => str_starts_with($d, $directiva.' '));
+    }
+
+    private function nonceCsp(?string $csp): string
+    {
+        $this->assertSame(1, preg_match("/'nonce-([A-Za-z0-9]+)'/", $this->directivaCsp($csp, 'script-src'), $nonce));
+
+        return $nonce[1];
+    }
+
+    /** Etiquetas <script> cuyo atributo nonce no es exactamente el de la respuesta. */
+    private function scriptsNoAutorizados(string $html, string $nonce): array
+    {
+        preg_match_all('/<script\b[^>]*>/i', $html, $etiquetas);
+
+        return array_values(array_filter($etiquetas[0], fn (string $etiqueta) => preg_match('/\snonce="([^"]*)"/i', $etiqueta, $valor) !== 1
+            || ! hash_equals($nonce, $valor[1])));
+    }
+
+    /** Manejadores de eventos en línea (onclick=…) y URL javascript:, que la CSP bloquearía. */
+    private function javascriptEnLinea(string $html): int
+    {
+        return preg_match_all('/\son[a-z]+\s*=\s*["\']/i', $html) + preg_match_all('/\s(?:href|src|action)\s*=\s*["\']\s*javascript:/i', $html);
     }
 }

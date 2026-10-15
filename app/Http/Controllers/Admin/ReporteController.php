@@ -10,14 +10,21 @@ use App\Models\PostulacionVoluntariado;
 use App\Models\SeguimientoAdopcion;
 use App\Models\SolicitudAdopcion;
 use App\Models\Voluntario;
+use App\Services\ReporteAdministrador;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\View\View;
 
 class ReporteController extends Controller
 {
-    public function index(ReportPeriodRequest $request): View
+    /**
+     * Los recuentos «por estado» describen el estado actual (sin período). Con un período, los
+     * indicadores de eventos y las adopciones se calculan con ReporteAdministrador (ver allí qué fecha
+     * usa cada uno) junto con su período anterior. Sin parámetros se conserva el cálculo anterior.
+     */
+    public function index(ReportPeriodRequest $request, ReporteAdministrador $reportes): View
     {
         $periodo = $request->validated();
+        $periodoReporte = $request->periodoReporte();
         $mascotasPorEstado = $this->countsByState(Mascota::query(), ['disponible', 'adoptada']);
         $mascotasPorEspecie = $this->countsByState(Mascota::query(), ['perro', 'gato'], 'especie');
         $solicitudesPorEstado = $this->countsByState(SolicitudAdopcion::query(), ['pendiente', 'en_espera', 'aceptada', 'rechazada', 'cancelada', 'cerrada']);
@@ -26,15 +33,35 @@ class ReporteController extends Controller
         $postulacionesPorEstado = $this->countsByState(PostulacionVoluntariado::query(), ['pendiente', 'aprobada', 'rechazada', 'cancelada']);
         $voluntariosPorEstado = $this->countsByState(Voluntario::query(), ['activo', 'inactivo']);
 
-        $adopciones = $this->applyPeriod(SolicitudAdopcion::query()->where('estado', 'aceptada'), $periodo);
-        $adopcionesPorFecha = $adopciones->clone()
-            ->selectRaw('DATE(created_at) as fecha, COUNT(*) as total')
-            ->groupByRaw('DATE(created_at)')
-            ->orderBy('fecha')
-            ->pluck('total', 'fecha');
+        if ($periodoReporte !== null) {
+            // Adopciones completadas por fecha de resolución (resuelta_at), solo solicitudes aceptadas.
+            $indicadoresPeriodo = $reportes->indicadores($periodoReporte);
+            $totalAdopciones = $indicadoresPeriodo['adopciones_completadas']['actual'];
+            $adopcionesPorFecha = $reportes->adopcionesPorDia($periodoReporte);
+        } else {
+            // Sin período: todas las solicitudes aceptadas, como antes.
+            $indicadoresPeriodo = null;
+            $adopciones = $this->applyPeriod(SolicitudAdopcion::query()->where('estado', 'aceptada'), $periodo);
+            $totalAdopciones = $adopciones->count();
+            $adopcionesPorFecha = $adopciones->clone()
+                ->selectRaw('DATE(created_at) as fecha, COUNT(*) as total')
+                ->groupByRaw('DATE(created_at)')
+                ->orderBy('fecha')
+                ->pluck('total', 'fecha');
+        }
 
         return view('admin.reportes.index', [
             'periodo' => $periodo,
+            'periodoReporte' => $periodoReporte,
+            'periodoAnterior' => $periodoReporte?->anterior(),
+            'indicadoresPeriodo' => $indicadoresPeriodo,
+            // Solo con período: gestión y embudo de las solicitudes recibidas en él.
+            'gestion' => $periodoReporte ? $reportes->gestion($periodoReporte) : null,
+            'embudo' => $periodoReporte ? $reportes->embudo($periodoReporte) : null,
+            // Independientes del período: evolución de los últimos 6 meses y estado actual de las mascotas.
+            'evolucionMensual' => $reportes->evolucionMensual(),
+            'disponibles' => $reportes->mascotasDisponibles(),
+            'esperanMasTiempo' => $reportes->esperanMasTiempo(),
             'mascotasPorEstado' => $mascotasPorEstado,
             'mascotasPorEspecie' => $mascotasPorEspecie,
             'solicitudesPorEstado' => $solicitudesPorEstado,
@@ -44,7 +71,7 @@ class ReporteController extends Controller
             'voluntariosPorEstado' => $voluntariosPorEstado,
             'totalMascotas' => array_sum($mascotasPorEstado),
             'totalSolicitudes' => array_sum($solicitudesPorEstado),
-            'totalAdopciones' => $adopciones->count(),
+            'totalAdopciones' => $totalAdopciones,
             'totalVoluntarios' => array_sum($voluntariosPorEstado),
             'totalSeguimientos' => array_sum($seguimientosPorEstado),
             'totalIncidencias' => array_sum($incidenciasPorEstado),
