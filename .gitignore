@@ -28,3 +28,7 @@ Thumbs.db
 /docs/ESTADO_ACTUAL_POL_BOLIVIA.md
 /.tmp.driveupload/
 /docs/PLAN_MODIFICACIONES_POL_BOLIVIA.md
+
+# Carpeta docs: todo es personal, solo se sube .gitkeep
+/docs/*
+!/docs/.gitkeep
