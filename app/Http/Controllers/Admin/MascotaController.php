@@ -118,8 +118,13 @@ class MascotaController extends Controller
         $path = $imagenSegura->guardar($request->file('foto'), "mascotas/{$mascota->id}");
 
         try {
-            DB::transaction(function () use ($mascota, $path): void {
+            $agregada = DB::transaction(function () use ($mascota, $path): bool {
                 Mascota::query()->lockForUpdate()->findOrFail($mascota->id);
+
+                // Con la mascota bloqueada: otra subida simultánea pudo completar el límite.
+                if ($mascota->fotos()->where('tipo', 'foto')->count() >= FotoMascota::MAXIMO_POR_MASCOTA) {
+                    return false;
+                }
 
                 $order = $mascota->fotos()
                     ->where('tipo', 'foto')
@@ -131,11 +136,19 @@ class MascotaController extends Controller
                     'es_principal' => false,
                     'orden' => $order,
                 ]);
+
+                return true;
             });
         } catch (\Throwable $exception) {
             Storage::disk('public')->delete($path);
 
             throw $exception;
+        }
+
+        if (! $agregada) {
+            Storage::disk('public')->delete($path);
+
+            return to_route('admin.mascotas.show', $mascota)->withErrors(['foto' => FotoMascota::MENSAJE_LIMITE]);
         }
 
         return to_route('admin.mascotas.show', $mascota)
@@ -159,17 +172,42 @@ class MascotaController extends Controller
             ->with('status', 'La foto principal fue actualizada.');
     }
 
+    /**
+     * Elimina una foto sin dejar a una mascota disponible sin foto principal, como exige PostgreSQL
+     * (trigger_validar_multimedia_publicada): la única foto de una mascota disponible no se elimina, y si
+     * se elimina la principal pasa a serlo la siguiente por orden. El archivo se borra tras confirmar.
+     */
     public function destroyPhoto(Mascota $mascota, FotoMascota $foto): RedirectResponse
     {
         $foto = $this->findPetPhoto($mascota, $foto);
-        $path = $foto->url;
 
-        DB::transaction(fn () => $foto->delete());
+        $resultado = DB::transaction(function () use ($mascota, $foto): array {
+            $estado = Mascota::query()->lockForUpdate()->findOrFail($mascota->id)->estado;
+            $fotos = $mascota->fotos()->where('tipo', 'foto')->orderBy('orden')->get();
+            $foto = $fotos->firstWhere('id', $foto->id) ?? abort(404);
 
-        Storage::disk('public')->delete($path);
+            if ($fotos->count() === 1 && $estado === 'disponible') {
+                return ['eliminada' => false];
+            }
 
-        return to_route('admin.mascotas.show', $mascota)
-            ->with('status', 'La foto fue eliminada correctamente.');
+            $nuevaPrincipal = $foto->es_principal ? $fotos->first(fn (FotoMascota $f) => $f->id !== $foto->id) : null;
+
+            $foto->delete();
+            $nuevaPrincipal?->forceFill(['es_principal' => true])->save();
+
+            return ['eliminada' => true, 'ruta' => $foto->url, 'nuevaPrincipal' => $nuevaPrincipal];
+        });
+
+        if (! $resultado['eliminada']) {
+            return to_route('admin.mascotas.show', $mascota)
+                ->withErrors(['fotos' => 'No se puede eliminar la única foto de una mascota disponible. Agrega otra foto antes de eliminar esta.']);
+        }
+
+        Storage::disk('public')->delete($resultado['ruta']);
+
+        return to_route('admin.mascotas.show', $mascota)->with('status', $resultado['nuevaPrincipal']
+            ? "La foto fue eliminada. La foto en la posición {$resultado['nuevaPrincipal']->orden} pasó a ser la principal."
+            : 'La foto fue eliminada correctamente.');
     }
 
     private function findPetPhoto(Mascota $mascota, FotoMascota $foto): FotoMascota

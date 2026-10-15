@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\ImagenLegible;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,7 +27,7 @@ class RegisterMascotaRequest extends FormRequest
             'color' => ['nullable', 'string', 'max:50', 'regex:/^[\p{L}]+(?:[ \'\-]+[\p{L}]+)*$/u'],
             'tamano' => ['required', Rule::in(['pequeno', 'mediano', 'grande'])],
             'descripcion' => [Rule::requiredIf($this->has('descripcion')), 'string', 'not_regex:/^\s*$/u'],
-            'foto_principal' => ['required', 'image', 'max:5120'],
+            'foto_principal' => ['bail', 'required', 'image', 'max:5120', new ImagenLegible],
         ];
     }
 }

@@ -19,6 +19,20 @@ class ImagenSegura
 {
     private const CALIDAD_JPEG = 85;
 
+    /** Indica si GD puede leer el archivo, que es lo que guardar() necesita para regenerarlo. */
+    public static function puedeLeer(UploadedFile $archivo): bool
+    {
+        $imagen = @imagecreatefromstring((string) file_get_contents($archivo->getRealPath()));
+
+        if ($imagen === false) {
+            return false;
+        }
+
+        imagedestroy($imagen);
+
+        return true;
+    }
+
     public function guardar(UploadedFile $archivo, string $carpeta, string $disco = 'public'): string
     {
         $imagen = @imagecreatefromstring((string) file_get_contents($archivo->getRealPath()));

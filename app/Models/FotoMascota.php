@@ -13,6 +13,11 @@ class FotoMascota extends Model
 
     protected $table = 'fotos_mascota';
 
+    /** Máximo de fotos por mascota: el mismo que exige validar_limite_multimedia() en PostgreSQL. */
+    public const MAXIMO_POR_MASCOTA = 4;
+
+    public const MENSAJE_LIMITE = 'La mascota ya tiene 4 fotos, el máximo permitido. Elimina una antes de agregar otra.';
+
     public $timestamps = false;
 
     protected $fillable = [

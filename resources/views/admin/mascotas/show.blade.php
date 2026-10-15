@@ -38,22 +38,36 @@
                 </div>
             </div>
 
+            @php
+                $maximoFotos = \App\Models\FotoMascota::MAXIMO_POR_MASCOTA;
+                $cantidadFotos = $mascota->fotos->count();
+                $unicaFotoProtegida = $cantidadFotos === 1 && $mascota->estado === 'disponible';
+            @endphp
+
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-medium text-gray-900">Agregar foto</h3>
+                <p class="mt-1 text-sm text-gray-600">{{ $cantidadFotos }} de {{ $maximoFotos }} fotos guardadas · {{ max(0, $maximoFotos - $cantidadFotos) }} {{ $maximoFotos - $cantidadFotos === 1 ? 'disponible' : 'disponibles' }}</p>
 
-                <form method="POST" action="{{ route('admin.mascotas.fotos.store', $mascota) }}" enctype="multipart/form-data" class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end">
-                    @csrf
-                    <div class="flex-1">
-                        <x-input-label for="foto" :value="__('Imagen')" />
-                        <input id="foto" name="foto" type="file" accept="image/*" required class="mt-1 block w-full text-sm text-gray-700">
-                        <x-input-error :messages="$errors->get('foto')" class="mt-2" />
-                    </div>
-                    <x-primary-button>Subir foto</x-primary-button>
-                </form>
+                @if ($cantidadFotos < $maximoFotos)
+                    <form method="POST" action="{{ route('admin.mascotas.fotos.store', $mascota) }}" enctype="multipart/form-data" class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end">
+                        @csrf
+                        <div class="flex-1">
+                            <x-input-label for="foto" :value="__('Imagen')" />
+                            <input id="foto" name="foto" type="file" accept="image/*" required class="mt-1 block w-full text-sm text-gray-700">
+                            <p class="mt-1 text-xs text-gray-500">Imagen de hasta 5 MB.</p>
+                            <x-input-error :messages="$errors->get('foto')" class="mt-2" />
+                        </div>
+                        <x-primary-button>Subir foto</x-primary-button>
+                    </form>
+                @else
+                    <p class="mt-4 rounded-md bg-amber-50 p-3 text-sm text-amber-800">La mascota ya tiene {{ $maximoFotos }} fotos, el máximo permitido. Elimina una para agregar otra.</p>
+                    <x-input-error :messages="$errors->get('foto')" class="mt-2" />
+                @endif
             </div>
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-medium text-gray-900">Fotos</h3>
+                <x-input-error :messages="$errors->get('fotos')" class="mt-2" />
 
                 @forelse ($mascota->fotos as $foto)
                     <div class="mt-4 flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center">
@@ -72,11 +86,15 @@
                                     <button class="text-indigo-600 hover:text-indigo-900">Establecer principal</button>
                                 </form>
                             @endif
-                            <form method="POST" action="{{ route('admin.mascotas.fotos.destroy', [$mascota, $foto]) }}">
-                                @csrf
-                                @method('DELETE')
-                                <button class="text-red-600 hover:text-red-900">Eliminar</button>
-                            </form>
+                            @if ($unicaFotoProtegida)
+                                <span class="text-gray-500">Es la única foto: agrega otra antes de eliminarla.</span>
+                            @else
+                                <form method="POST" action="{{ route('admin.mascotas.fotos.destroy', [$mascota, $foto]) }}">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="text-red-600 hover:text-red-900">Eliminar</button>
+                                </form>
+                            @endif
                         </div>
                     </div>
                 @empty
