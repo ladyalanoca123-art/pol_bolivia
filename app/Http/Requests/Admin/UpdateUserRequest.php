@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use App\Models\User;
 use App\Rules\TelefonoBoliviano;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -34,7 +35,14 @@ class UpdateUserRequest extends FormRequest
         return [
             'nombres' => ['required', 'string', 'max:100', "regex:/^\pL[\pL\pM '’.\-]*$/u"],
             'apellidos' => ['required', 'string', 'max:100', "regex:/^\pL[\pL\pM '’.\-]*$/u"],
-            'email' => ['required', 'email:rfc', 'max:255', Rule::unique('usuarios', 'email')->ignore($user)],
+            'email' => ['required', 'email:rfc', 'max:255', Rule::unique('usuarios', 'email')->ignore($user),
+                // Se comprueba en el servidor aunque la vista muestre el campo como solo lectura.
+                function (string $attribute, mixed $value, Closure $fail) use ($user): void {
+                    if ($value !== $user->email && $this->user()?->cannot('updateEmail', $user)) {
+                        $fail('No puedes cambiar el correo de otro administrador.');
+                    }
+                },
+            ],
             'telefono' => ['nullable', new TelefonoBoliviano],
         ];
     }
