@@ -47,6 +47,8 @@ class SolicitudAdopcion extends Model
             'declara_informacion_veraz' => 'boolean',
             'respuestas' => 'array',
             'alertas' => 'array',
+            // La registra PostgreSQL (trigger_registrar_resolucion_solicitud) al pasar a un estado resuelto.
+            'resuelta_at' => 'datetime',
         ];
     }
 
