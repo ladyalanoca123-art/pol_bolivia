@@ -58,7 +58,7 @@ class MascotaManagementTest extends TestCase
 
         $this->actingAs($administrator)->post('/admin/mascotas', [
             ...$this->registrationData(),
-            'foto_principal' => UploadedFile::fake()->image('canela.jpg'),
+            'foto_principal' => UploadedFile::fake()->image('canela.jpg', 400, 400),
             'estado' => 'adoptada',
             'registrado_por' => $otherUser->id,
         ])->assertRedirect(route('admin.mascotas.index'))
@@ -121,7 +121,7 @@ class MascotaManagementTest extends TestCase
         Storage::fake('public');
         $administrator = User::factory()->create(['rol' => 'administrador']);
         $mascota = $this->createMascota();
-        $this->actingAs($administrator)->post(route('admin.mascotas.fotos.store', $mascota), ['foto' => UploadedFile::fake()->image('luna.jpg')])
+        $this->actingAs($administrator)->post(route('admin.mascotas.fotos.store', $mascota), ['foto' => UploadedFile::fake()->image('luna.jpg', 400, 400)])
             ->assertRedirect(route('admin.mascotas.show', $mascota));
         $foto = $mascota->fotos()->where('es_principal', false)->firstOrFail();
         Storage::disk('public')->assertExists($foto->url);
@@ -212,7 +212,7 @@ class MascotaManagementTest extends TestCase
                 'color' => '  gRIS   ATIGRADO ',
                 'descripcion' => '  luna tiene 3 meses y pesa 2 kg.  ',
             ]),
-            'foto_principal' => UploadedFile::fake()->image('luna.jpg'),
+            'foto_principal' => UploadedFile::fake()->image('luna.jpg', 400, 400),
         ])->assertRedirect(route('admin.mascotas.index'));
 
         $this->assertDatabaseHas('mascotas', [
@@ -236,7 +236,7 @@ class MascotaManagementTest extends TestCase
         ] as $field => $value) {
             $this->actingAs($administrator)->post('/admin/mascotas', [
                 ...$this->registrationData([$field => $value]),
-                'foto_principal' => UploadedFile::fake()->image("{$field}.jpg"),
+                'foto_principal' => UploadedFile::fake()->image("{$field}.jpg", 400, 400),
             ])->assertSessionHasErrors($field);
         }
     }
@@ -249,14 +249,14 @@ class MascotaManagementTest extends TestCase
         foreach ([['Luna uno', 1, 'meses'], ['Luna cinco', 5, 'meses'], ['Luna once', 11, 'meses'], ['Luna anual', 1, 'años'], ['Luna adulta', 4, 'años']] as [$nombre, $edad, $unidad]) {
             $this->actingAs($administrator)->post('/admin/mascotas', [
                 ...$this->registrationData(['nombre' => $nombre, 'edad' => $edad, 'edad_en' => $unidad]),
-                'foto_principal' => UploadedFile::fake()->image("{$edad}-{$unidad}.jpg"),
+                'foto_principal' => UploadedFile::fake()->image("{$edad}-{$unidad}.jpg", 400, 400),
             ])->assertRedirect(route('admin.mascotas.index'));
         }
 
         foreach ([[0, 'meses', ['edad']], [12, 'meses', ['edad']], [13, 'meses', ['edad']], [0, 'años', ['edad']], [-1, 'años', ['edad']], [2, 'dias', ['edad_en']]] as [$edad, $unidad, $errors]) {
             $this->actingAs($administrator)->post('/admin/mascotas', [
                 ...$this->registrationData(['edad' => $edad, 'edad_en' => $unidad]),
-                'foto_principal' => UploadedFile::fake()->image('invalid.jpg'),
+                'foto_principal' => UploadedFile::fake()->image('invalid.jpg', 400, 400),
             ])->assertSessionHasErrors($errors);
         }
     }

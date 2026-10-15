@@ -9,10 +9,10 @@ use App\Http\Requests\Admin\StoreFotoMascotaRequest;
 use App\Http\Requests\Admin\UpdateMascotaRequest;
 use App\Models\FotoMascota;
 use App\Models\Mascota;
+use App\Services\ImagenNoProcesada;
 use App\Services\ImagenSegura;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class MascotaController extends Controller
@@ -74,7 +74,12 @@ class MascotaController extends Controller
             });
         } catch (\Throwable $exception) {
             if ($path !== null) {
-                Storage::disk('public')->delete($path);
+                $imagenSegura->eliminar($path);
+            }
+
+            // La transacción ya se deshizo: la mascota no queda registrada sin su foto.
+            if ($exception instanceof ImagenNoProcesada) {
+                return back()->withInput()->withErrors(['foto_principal' => $exception->getMessage()]);
             }
 
             throw $exception;
@@ -114,8 +119,12 @@ class MascotaController extends Controller
 
     public function storePhoto(StoreFotoMascotaRequest $request, Mascota $mascota, ImagenSegura $imagenSegura): RedirectResponse
     {
-        // Guarda la foto sin metadatos EXIF (ver app/Services/ImagenSegura.php).
-        $path = $imagenSegura->guardar($request->file('foto'), "mascotas/{$mascota->id}");
+        // Guarda la foto sin metadatos EXIF, reducida y con su miniatura (ver app/Services/ImagenSegura.php).
+        try {
+            $path = $imagenSegura->guardar($request->file('foto'), "mascotas/{$mascota->id}");
+        } catch (ImagenNoProcesada $exception) {
+            return to_route('admin.mascotas.show', $mascota)->withErrors(['foto' => $exception->getMessage()]);
+        }
 
         try {
             $agregada = DB::transaction(function () use ($mascota, $path): bool {
@@ -140,13 +149,13 @@ class MascotaController extends Controller
                 return true;
             });
         } catch (\Throwable $exception) {
-            Storage::disk('public')->delete($path);
+            $imagenSegura->eliminar($path);
 
             throw $exception;
         }
 
         if (! $agregada) {
-            Storage::disk('public')->delete($path);
+            $imagenSegura->eliminar($path);
 
             return to_route('admin.mascotas.show', $mascota)->withErrors(['foto' => FotoMascota::MENSAJE_LIMITE]);
         }
@@ -177,7 +186,7 @@ class MascotaController extends Controller
      * (trigger_validar_multimedia_publicada): la única foto de una mascota disponible no se elimina, y si
      * se elimina la principal pasa a serlo la siguiente por orden. El archivo se borra tras confirmar.
      */
-    public function destroyPhoto(Mascota $mascota, FotoMascota $foto): RedirectResponse
+    public function destroyPhoto(Mascota $mascota, FotoMascota $foto, ImagenSegura $imagenSegura): RedirectResponse
     {
         $foto = $this->findPetPhoto($mascota, $foto);
 
@@ -203,7 +212,8 @@ class MascotaController extends Controller
                 ->withErrors(['fotos' => 'No se puede eliminar la única foto de una mascota disponible. Agrega otra foto antes de eliminar esta.']);
         }
 
-        Storage::disk('public')->delete($resultado['ruta']);
+        // Borra la imagen y su miniatura.
+        $imagenSegura->eliminar($resultado['ruta']);
 
         return to_route('admin.mascotas.show', $mascota)->with('status', $resultado['nuevaPrincipal']
             ? "La foto fue eliminada. La foto en la posición {$resultado['nuevaPrincipal']->orden} pasó a ser la principal."

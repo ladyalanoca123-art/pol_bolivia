@@ -71,7 +71,7 @@
 
                 @forelse ($mascota->fotos as $foto)
                     <div class="mt-4 flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center">
-                        <img src="{{ Storage::disk('public')->url($foto->url) }}" alt="Foto de {{ $mascota->nombre }}" class="h-24 w-24 rounded-md object-cover">
+                        <img src="{{ $foto->url_miniatura }}" alt="Foto de {{ $mascota->nombre }}" class="h-24 w-24 rounded-md object-cover">
                         <div class="flex-1 text-sm text-gray-600">
                             <p>Orden: {{ $foto->orden }}</p>
                             @if ($foto->es_principal)

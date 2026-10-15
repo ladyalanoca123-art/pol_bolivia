@@ -21,7 +21,7 @@
                     @if ($fotos->count() > 1)
                         <div class="grid grid-cols-3 gap-3">
                             @foreach ($fotos->reject(fn ($foto) => $foto->id === $fotoPrincipal?->id) as $foto)
-                                <img src="{{ Storage::disk('public')->url($foto->url) }}" alt="Foto de {{ $mascota->nombre }}" class="aspect-square rounded-lg object-cover">
+                                <img src="{{ $foto->url_miniatura }}" alt="Foto de {{ $mascota->nombre }}" class="aspect-square rounded-lg object-cover">
                             @endforeach
                         </div>
                     @endif

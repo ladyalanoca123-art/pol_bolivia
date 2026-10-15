@@ -24,7 +24,7 @@
 
             <div class="mb-6 flex flex-col gap-4 rounded-lg bg-blue-950 p-6 text-white sm:flex-row sm:items-center">
                 @if ($fotoPrincipal)
-                    <img src="{{ Storage::disk('public')->url($fotoPrincipal->url) }}" alt="Foto de {{ $mascota->nombre }}" class="h-16 w-16 shrink-0 rounded-xl object-cover ring-2 ring-amber-400 sm:h-20 sm:w-20">
+                    <img src="{{ $fotoPrincipal->url_miniatura }}" alt="Foto de {{ $mascota->nombre }}" class="h-16 w-16 shrink-0 rounded-xl object-cover ring-2 ring-amber-400 sm:h-20 sm:w-20">
                 @else
                     <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-blue-900 text-amber-300 ring-2 ring-amber-400 sm:h-20 sm:w-20" role="img" aria-label="{{ $mascota->nombre }} todavía no tiene foto">
                         <svg class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="9" r="2.2"/><circle cx="9.5" cy="5" r="2.2"/><circle cx="14.5" cy="5" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M12 10.5c-3.2 0-6 3.6-6 6.3 0 1.9 1.5 2.7 3 2.7 1.2 0 2-.6 3-.6s1.8.6 3 .6c1.5 0 3-.8 3-2.7 0-2.7-2.8-6.3-6-6.3z"/></svg>

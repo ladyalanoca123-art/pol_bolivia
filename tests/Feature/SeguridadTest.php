@@ -185,7 +185,7 @@ class SeguridadTest extends TestCase
         Storage::fake('public');
 
         // Imagen válida con código PHP escondido al final del archivo.
-        $imagen = imagecreatetruecolor(20, 20);
+        $imagen = imagecreatetruecolor(400, 400);
         ob_start();
         imagejpeg($imagen);
         $contenido = ob_get_clean().'<?php echo "malicioso"; ?>';

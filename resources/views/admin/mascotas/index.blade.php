@@ -93,7 +93,7 @@
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         @if ($fotoPrincipal)
-                                            <img src="{{ asset('storage/' . $fotoPrincipal->url) }}" alt="{{ $mascota->nombre }}" class="h-12 w-12 rounded-md object-cover">
+                                            <img src="{{ $fotoPrincipal->url_miniatura }}" alt="{{ $mascota->nombre }}" class="h-12 w-12 rounded-md object-cover">
                                         @else
                                             <span class="text-sm text-gray-400">Sin foto</span>
                                         @endif

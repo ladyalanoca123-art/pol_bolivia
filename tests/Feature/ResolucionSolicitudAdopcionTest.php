@@ -169,6 +169,9 @@ class ResolucionSolicitudAdopcionTest extends TestCase
 
     public function test_sin_auditoria_valida_usa_updated_at_sin_modificarlo(): void
     {
+        // created_at anterior a la transacción de la prueba: el trigger pone en updated_at su CURRENT_TIMESTAMP
+        // (el inicio de la transacción), que si no podría quedar en el segundo anterior a created_at.
+        $this->travelTo(CarbonImmutable::parse('2026-10-01 08:00:00', 'America/La_Paz'));
         $solicitud = $this->solicitud();
         DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update(['estado' => 'cancelada']); // sin auditoría
         $this->olvidarResolucion($solicitud);
@@ -292,6 +295,8 @@ class ResolucionSolicitudAdopcionTest extends TestCase
 
     public function test_sin_fecha_auditada_de_la_aceptacion_el_cierre_usa_su_propio_updated_at(): void
     {
+        // Igual que en test_sin_auditoria_valida_usa_updated_at_sin_modificarlo: created_at anterior a la transacción.
+        $this->travelTo(CarbonImmutable::parse('2026-10-01 08:00:00', 'America/La_Paz'));
         $mascota = $this->mascota();
         $aceptada = $this->solicitud($mascota);
         $cerrada = $this->solicitud($mascota);
