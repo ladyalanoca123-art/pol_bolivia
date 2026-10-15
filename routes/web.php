@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\AccesoSolicitudAdopcionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CatalogoMascotaController;
 use App\Http\Controllers\DashboardRedirectController;
+use App\Http\Controllers\Admin\AuditoriaController;
 use App\Http\Controllers\Admin\MascotaController;
 use App\Http\Controllers\Admin\IncidenciaController;
 use App\Http\Controllers\Admin\PostulacionVoluntariadoController as AdminPostulacionVoluntariadoController;
@@ -17,9 +19,19 @@ use App\Http\Controllers\SolicitudAdopcionController;
 use App\Http\Controllers\SeguimientoAdopcionController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [CatalogoMascotaController::class, 'home'])->name('home');
-Route::get('/mascotas', [CatalogoMascotaController::class, 'index'])->name('mascotas.catalogo');
-Route::get('/mascotas/{mascota}', [CatalogoMascotaController::class, 'show'])->name('mascotas.public.show');
+// Páginas públicas: máximo 60 peticiones por minuto por IP.
+Route::middleware('throttle:publico')->group(function () {
+    Route::get('/', [CatalogoMascotaController::class, 'home'])->name('home');
+    Route::get('/mascotas', [CatalogoMascotaController::class, 'index'])->name('mascotas.catalogo');
+    Route::get('/mascotas/{mascota}', [CatalogoMascotaController::class, 'show'])->name('mascotas.public.show');
+
+    // Desde el aviso "Para adoptar necesitas una cuenta" (solo visitantes): guarda como destino la
+    // solicitud de esa mascota y lleva al registro o al inicio de sesión.
+    Route::get('/mascotas/{mascota}/solicitar/{accion}', AccesoSolicitudAdopcionController::class)
+        ->whereIn('accion', ['registro', 'inicio'])
+        ->middleware('guest')
+        ->name('mascotas.solicitar-acceso');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', DashboardRedirectController::class)->name('dashboard');
@@ -34,35 +46,43 @@ Route::middleware('auth')->group(function () {
         ->name('profile.destroy');
 });
 
-Route::middleware(['auth', 'role:ciudadano'])->group(function () {
+// 'verified': solo usuarios con el correo verificado.
+Route::middleware(['auth', 'verified', 'role:ciudadano'])->group(function () {
     Route::get('/mascotas/{mascota}/solicitudes-adopcion/create', [SolicitudAdopcionController::class, 'create'])
         ->name('solicitudes-adopcion.create');
 
     Route::post('/mascotas/{mascota}/solicitudes-adopcion', [SolicitudAdopcionController::class, 'store'])
+        ->middleware('throttle:formularios')
         ->name('solicitudes-adopcion.store');
 
+    Route::get('/postulaciones-voluntariado/create', [PostulacionVoluntariadoController::class, 'create'])->name('postulaciones-voluntariado.create');
+    Route::post('/postulaciones-voluntariado', [PostulacionVoluntariadoController::class, 'store'])->middleware('throttle:formularios')->name('postulaciones-voluntariado.store');
+});
+
+// Consultar las propias solicitudes y postulaciones: ciudadano y voluntario (al aprobarse la
+// postulación el rol pasa a voluntario y conserva su historial). Crear (create/store) sigue siendo
+// solo para ciudadano. Cada show() verifica que el registro sea del usuario.
+Route::middleware(['auth', 'verified', 'role:ciudadano,voluntario'])->group(function () {
     Route::get('/mis-solicitudes-adopcion', [SolicitudAdopcionController::class, 'index'])
         ->name('solicitudes-adopcion.index');
 
     Route::get('/mis-solicitudes-adopcion/{solicitud}', [SolicitudAdopcionController::class, 'show'])
         ->name('solicitudes-adopcion.show');
 
-    Route::get('/postulaciones-voluntariado/create', [PostulacionVoluntariadoController::class, 'create'])->name('postulaciones-voluntariado.create');
-    Route::post('/postulaciones-voluntariado', [PostulacionVoluntariadoController::class, 'store'])->name('postulaciones-voluntariado.store');
     Route::get('/mis-postulaciones-voluntariado', [PostulacionVoluntariadoController::class, 'index'])->name('postulaciones-voluntariado.index');
     Route::get('/mis-postulaciones-voluntariado/{postulacion}', [PostulacionVoluntariadoController::class, 'show'])->name('postulaciones-voluntariado.show');
 });
 
-Route::middleware(['auth', 'role:voluntario'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:voluntario'])->group(function () {
     Route::get('/seguimientos', [SeguimientoAdopcionController::class, 'index'])->name('seguimientos.index');
     Route::get('/seguimientos/{seguimiento}', [SeguimientoAdopcionController::class, 'show'])->name('seguimientos.show');
-    Route::post('/seguimientos/{seguimiento}/visitas', [SeguimientoAdopcionController::class, 'storeVisit'])->name('seguimientos.visitas.store');
+    Route::post('/seguimientos/{seguimiento}/visitas', [SeguimientoAdopcionController::class, 'storeVisit'])->middleware('throttle:formularios')->name('seguimientos.visitas.store');
     Route::patch('/seguimientos/{seguimiento}/visitas/{visita}/realizar', [SeguimientoAdopcionController::class, 'completeVisit'])->name('seguimientos.visitas.complete');
-    Route::post('/seguimientos/{seguimiento}/incidencias', [SeguimientoAdopcionController::class, 'storeIncident'])->name('seguimientos.incidencias.store');
+    Route::post('/seguimientos/{seguimiento}/incidencias', [SeguimientoAdopcionController::class, 'storeIncident'])->middleware('throttle:formularios')->name('seguimientos.incidencias.store');
     Route::patch('/seguimientos/{seguimiento}/incidencias/{incidencia}/atender', [SeguimientoAdopcionController::class, 'attendIncident'])->name('seguimientos.incidencias.attend');
 });
 
-Route::middleware(['auth', 'role:administrador'])
+Route::middleware(['auth', 'verified', 'role:administrador'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
@@ -117,6 +137,12 @@ Route::middleware(['auth', 'role:administrador'])
         Route::get('/solicitudes-adopcion/{solicitud}', [AdminSolicitudAdopcionController::class, 'show'])
             ->name('solicitudes-adopcion.show');
 
+        Route::patch('/solicitudes-adopcion/{solicitud}/evaluar', [AdminSolicitudAdopcionController::class, 'evaluate'])
+            ->name('solicitudes-adopcion.evaluate');
+
+        Route::patch('/solicitudes-adopcion/{solicitud}/solicitar-informacion', [AdminSolicitudAdopcionController::class, 'requestInformation'])
+            ->name('solicitudes-adopcion.request-information');
+
         Route::patch('/solicitudes-adopcion/{solicitud}/aceptar', [AdminSolicitudAdopcionController::class, 'accept'])
             ->name('solicitudes-adopcion.accept');
 
@@ -140,6 +166,8 @@ Route::middleware(['auth', 'role:administrador'])
         Route::patch('/voluntarios/{voluntario}/desactivar', [AdminVoluntarioController::class, 'deactivate'])->name('voluntarios.deactivate');
 
         Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
+
+        Route::get('/auditoria', [AuditoriaController::class, 'index'])->name('auditoria.index');
     });
 
 require __DIR__.'/auth.php';

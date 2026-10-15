@@ -101,6 +101,6 @@ class ReporteManagementTest extends TestCase
 
     private function requestData(): array
     {
-        return ['tiene_otras_mascotas' => false, 'viven_otras_personas' => true, 'tiene_espacio_adecuado' => true, 'zona_aproximada' => 'Centro', 'horario_preferido' => 'Tardes', 'declara_informacion_veraz' => true];
+        return \Tests\Support\CuestionarioAdopcionDatos::registro();
     }
 }
