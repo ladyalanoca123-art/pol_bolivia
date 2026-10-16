@@ -138,7 +138,7 @@ class MascotaManagementTest extends TestCase
         $administrator = User::factory()->create(['rol' => 'administrador']);
         $mascota = $this->createMascota();
         $this->actingAs($administrator)->post(route('admin.mascotas.fotos.store', $mascota), ['foto' => UploadedFile::fake()->create('documento.pdf', 100, 'application/pdf')])->assertSessionHasErrors('foto');
-        $this->actingAs($administrator)->post(route('admin.mascotas.fotos.store', $mascota), ['foto' => UploadedFile::fake()->image('grande.jpg')->size(5121)])->assertSessionHasErrors('foto');
+        $this->actingAs($administrator)->post(route('admin.mascotas.fotos.store', $mascota), ['foto' => UploadedFile::fake()->image('grande.jpg', 400, 400)->size(10241)])->assertSessionHasErrors(['foto' => 'La imagen foto no debe pesar más de 10 MB.']);
     }
 
     public function test_administrator_can_set_a_non_principal_photo_as_principal(): void

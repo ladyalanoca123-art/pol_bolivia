@@ -6,7 +6,8 @@
     <div class="py-12">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <form method="POST" action="{{ route('admin.mascotas.store') }}" enctype="multipart/form-data" class="space-y-6">
+                <form method="POST" action="{{ route('admin.mascotas.store') }}" enctype="multipart/form-data" class="space-y-6"
+                      x-data="optimizadorFotos({ maximoBytes: {{ config('pol.mascotas.foto_max_kb') * 1024 }}, textoEnviando: 'Registrando mascota…' })" x-on:submit="enviar($event)" x-on:pageshow.window="enviando = false">
                     @csrf
 
                     <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -80,15 +81,30 @@
                         <x-input-error :messages="$errors->get('descripcion')" class="mt-2" />
                     </div>
 
-                    <div>
+                    <div class="space-y-1">
                         <x-input-label for="foto_principal" :value="__('Foto principal')" />
-                        <input id="foto_principal" name="foto_principal" type="file" accept="image/*" required class="mt-1 block w-full text-sm text-gray-700">
-                        <p class="mt-1 text-sm text-gray-500">Esta imagen se mostrará como foto principal de la mascota.</p>
+                        <input id="foto_principal" name="foto_principal" type="file" accept="image/jpeg,image/png,image/webp" required data-maximo="1"
+                               x-on:change="optimizar($event.target)" class="mt-1 block w-full text-sm text-gray-700">
+                        <p class="text-sm text-gray-500">Esta imagen se mostrará como foto principal de la mascota.</p>
+                        @include('admin.mascotas.partials.ayuda-fotos', ['campo' => 'foto_principal'])
                         <x-input-error :messages="$errors->get('foto_principal')" class="mt-2" />
                     </div>
 
+                    @php($maximoAdicionales = \App\Models\FotoMascota::MAXIMO_POR_MASCOTA - 1)
+                    <div class="space-y-1">
+                        <x-input-label for="fotos_adicionales" :value="__('Fotos adicionales (opcional)')" />
+                        <input id="fotos_adicionales" name="fotos_adicionales[]" type="file" accept="image/jpeg,image/png,image/webp" multiple
+                               data-maximo="{{ $maximoAdicionales }}" data-aviso="Puedes subir como máximo {{ $maximoAdicionales }} fotos adicionales (4 en total con la principal)."
+                               x-on:change="optimizar($event.target)" class="mt-1 block w-full text-sm text-gray-700">
+                        <p class="text-sm text-gray-500">Hasta {{ $maximoAdicionales }} fotos más; se mostrarán después de la principal.</p>
+                        @include('admin.mascotas.partials.ayuda-fotos', ['campo' => 'fotos_adicionales[]', 'ayuda' => false])
+                        <x-input-error :messages="[...$errors->get('fotos_adicionales'), ...\Illuminate\Support\Arr::flatten($errors->get('fotos_adicionales.*'))]" class="mt-2" />
+                    </div>
+
                     <div class="flex items-center gap-4">
-                        <x-primary-button>Registrar mascota</x-primary-button>
+                        <x-primary-button x-bind:disabled="bloqueado || enviando" class="disabled:cursor-not-allowed disabled:opacity-60">
+                            <span x-text="enviando ? textoEnviando : (procesando ? 'Optimizando fotos…' : 'Registrar mascota')">Registrar mascota</span>
+                        </x-primary-button>
                         <a href="{{ route('admin.mascotas.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Cancelar</a>
                     </div>
                 </form>

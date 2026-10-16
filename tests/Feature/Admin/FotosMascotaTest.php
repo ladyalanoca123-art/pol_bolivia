@@ -41,9 +41,9 @@ class FotosMascotaTest extends TestCase
 
         $this->actingAs($this->admin)->get(route('admin.mascotas.show', $mascota))
             ->assertOk()
-            ->assertSee('4 de 4 fotos guardadas')
-            ->assertSee('La mascota ya tiene 4 fotos, el máximo permitido. Elimina una para agregar otra.')
-            ->assertDontSee('Subir foto');
+            ->assertSee('Fotos: 4 de 4')
+            ->assertSee('Esta mascota ya tiene el máximo de 4 fotos. Elimina una para subir otra.')
+            ->assertDontSee('Subir fotos');
     }
 
     public function test_no_se_sube_una_quinta_foto(): void

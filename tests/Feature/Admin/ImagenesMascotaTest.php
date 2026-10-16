@@ -96,7 +96,7 @@ class ImagenesMascotaTest extends TestCase
     public function test_una_imagen_de_dimensiones_excesivas_se_rechaza_antes_de_decodificarla(): void
     {
         $mascota = $this->mascota();
-        $mensaje = 'La imagen es demasiado grande (12000 × 12000 px). El máximo es 10.000 px por lado y 40 megapíxeles.';
+        $mensaje = 'La imagen es demasiado grande (12000 × 12000 px). El máximo es 10.000 px por lado.';
 
         $this->subir($mascota, $this->archivo('enorme.png', Img::cabeceraPng(12000, 12000)))->assertSessionHasErrors(['foto' => $mensaje]);
         $this->assertSame(1, $mascota->fotos()->count());

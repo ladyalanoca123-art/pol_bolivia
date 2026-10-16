@@ -38,8 +38,10 @@ class ImagenSeguraTest extends TestCase
         $this->assertNull(ImagenSegura::problema($this->archivo(ImagenesDePrueba::jpeg(400, 400))));
         $this->assertSame('La imagen es demasiado pequeña (300 × 500 px). El mínimo es 400 × 400 px.', ImagenSegura::problema($this->archivo(ImagenesDePrueba::jpeg(300, 500))));
         $this->assertNull(ImagenSegura::problema($this->archivo(ImagenesDePrueba::jpeg(300, 500)), exigirMinimo: false));
-        $this->assertSame('La imagen es demasiado grande (12000 × 12000 px). El máximo es 10.000 px por lado y 40 megapíxeles.', ImagenSegura::problema($this->archivo(ImagenesDePrueba::cabeceraPng(12000, 12000))));
-        $this->assertStringStartsWith('La imagen es demasiado grande (9000 × 5000 px)', ImagenSegura::problema($this->archivo(ImagenesDePrueba::cabeceraPng(9000, 5000))));
+        $this->assertSame('La imagen es demasiado grande (12000 × 12000 px). El máximo es 10.000 px por lado.', ImagenSegura::problema($this->archivo(ImagenesDePrueba::cabeceraPng(12000, 12000))));
+        // 9000 × 5000 = 45 MP y 6000 × 4500 = 27 MP: por debajo de 10.000 px por lado, pero más de 25 MP.
+        $this->assertSame('La imagen tiene una resolución demasiado alta (máximo 25 megapíxeles).', ImagenSegura::problema($this->archivo(ImagenesDePrueba::cabeceraPng(9000, 5000))));
+        $this->assertSame('La imagen tiene una resolución demasiado alta (máximo 25 megapíxeles).', ImagenSegura::problema($this->archivo(ImagenesDePrueba::cabeceraPng(6000, 4500))));
         $this->assertSame('El archivo no es una imagen válida o está dañado.', ImagenSegura::problema($this->archivo('no es una imagen')));
     }
 

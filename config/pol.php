@@ -21,4 +21,10 @@ return [
         'actividad_limite' => 8,
     ],
 
+    // Fotos de mascotas (App\Rules\ImagenLegible::reglas()).
+    'mascotas' => [
+        // Peso máximo de cada foto, en kilobytes. PHP debe admitirlo: upload_max_filesize y post_max_size.
+        'foto_max_kb' => 10240,
+    ],
+
 ];

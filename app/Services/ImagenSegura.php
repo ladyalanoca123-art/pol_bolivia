@@ -32,13 +32,13 @@ class ImagenSegura
     public const LADO_MINIMO = 400;
 
     /**
-     * Límites antes de decodificar. GD guarda cada píxel en 4 bytes: 40 megapíxeles son unos 160 MB, más la
-     * memoria de trabajo del decodificador. Cubren de sobra las fotos de cámaras y celulares (12-24 MP)
+     * Límites antes de decodificar. GD guarda cada píxel en 4 bytes: 25 megapíxeles son unos 100 MB, más la
+     * memoria de trabajo del decodificador. Cubren las fotos de cámaras y celulares (12-24 MP)
      * y cortan las "bombas" de descompresión (pocos KB en disco, decenas de miles de píxeles por lado).
      */
     public const LADO_MAXIMO = 10000;
 
-    public const MEGAPIXELES_MAXIMOS = 40;
+    public const MEGAPIXELES_MAXIMOS = 25;
 
     /** Memoria estimada por píxel al decodificar (4 bytes de GD + margen del decodificador). */
     private const BYTES_POR_PIXEL = 5;
@@ -64,9 +64,12 @@ class ImagenSegura
 
         [$ancho, $alto] = $info;
 
-        if (max($ancho, $alto) > self::LADO_MAXIMO || $ancho * $alto > self::MEGAPIXELES_MAXIMOS * 1_000_000) {
-            return "La imagen es demasiado grande ({$ancho} × {$alto} px). El máximo es ".number_format(self::LADO_MAXIMO, 0, ',', '.')
-                .' px por lado y '.self::MEGAPIXELES_MAXIMOS.' megapíxeles.';
+        if (max($ancho, $alto) > self::LADO_MAXIMO) {
+            return "La imagen es demasiado grande ({$ancho} × {$alto} px). El máximo es ".number_format(self::LADO_MAXIMO, 0, ',', '.').' px por lado.';
+        }
+
+        if ($ancho * $alto > self::MEGAPIXELES_MAXIMOS * 1_000_000) {
+            return 'La imagen tiene una resolución demasiado alta (máximo '.self::MEGAPIXELES_MAXIMOS.' megapíxeles).';
         }
 
         if (! self::memoriaSuficiente($ancho, $alto)) {

@@ -41,33 +41,41 @@
             @php
                 $maximoFotos = \App\Models\FotoMascota::MAXIMO_POR_MASCOTA;
                 $cantidadFotos = $mascota->fotos->count();
+                $espaciosLibres = max(0, $maximoFotos - $cantidadFotos);
                 $unicaFotoProtegida = $cantidadFotos === 1 && $mascota->estado === 'disponible';
+                // Errores de la subida ("fotos", "fotos.N" o el campo antiguo "foto") y de la eliminación ("fotos").
+                $erroresFotos = [...$errors->get('foto'), ...$errors->get('fotos'), ...\Illuminate\Support\Arr::flatten($errors->get('fotos.*'))];
             @endphp
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-lg font-medium text-gray-900">Agregar foto</h3>
-                <p class="mt-1 text-sm text-gray-600">{{ $cantidadFotos }} de {{ $maximoFotos }} fotos guardadas · {{ max(0, $maximoFotos - $cantidadFotos) }} {{ $maximoFotos - $cantidadFotos === 1 ? 'disponible' : 'disponibles' }}</p>
+                <h3 class="text-lg font-medium text-gray-900">Agregar fotos</h3>
+                <p class="mt-1 text-sm text-gray-600">Fotos: {{ $cantidadFotos }} de {{ $maximoFotos }}@if ($espaciosLibres > 0) · Puedes agregar {{ $espaciosLibres }} más @endif</p>
 
-                @if ($cantidadFotos < $maximoFotos)
-                    <form method="POST" action="{{ route('admin.mascotas.fotos.store', $mascota) }}" enctype="multipart/form-data" class="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end">
+                @if ($espaciosLibres > 0)
+                    <form method="POST" action="{{ route('admin.mascotas.fotos.store', $mascota) }}" enctype="multipart/form-data" class="mt-4 space-y-3"
+                          x-data="optimizadorFotos({ maximoBytes: {{ config('pol.mascotas.foto_max_kb') * 1024 }} })" x-on:submit="enviar($event)" x-on:pageshow.window="enviando = false">
                         @csrf
-                        <div class="flex-1">
-                            <x-input-label for="foto" :value="__('Imagen')" />
-                            <input id="foto" name="foto" type="file" accept="image/*" required class="mt-1 block w-full text-sm text-gray-700">
-                            <p class="mt-1 text-xs text-gray-500">Imagen de hasta 5 MB.</p>
-                            <x-input-error :messages="$errors->get('foto')" class="mt-2" />
+                        <div class="flex flex-col gap-4 sm:flex-row sm:items-end">
+                            <div class="flex-1">
+                                <x-input-label for="fotos" :value="__('Imágenes')" />
+                                <input id="fotos" name="fotos[]" type="file" accept="image/jpeg,image/png,image/webp" multiple required data-maximo="{{ $espaciosLibres }}" data-aviso="{{ \App\Models\FotoMascota::mensajeEspaciosLibres($espaciosLibres) }}"
+                                       x-on:change="optimizar($event.target)" class="mt-1 block w-full text-sm text-gray-700">
+                            </div>
+                            <x-primary-button x-bind:disabled="bloqueado || enviando" class="disabled:cursor-not-allowed disabled:opacity-60">
+                                <span x-text="enviando ? textoEnviando : (procesando ? 'Optimizando fotos…' : 'Subir fotos')">Subir fotos</span>
+                            </x-primary-button>
                         </div>
-                        <x-primary-button>Subir foto</x-primary-button>
+                        @include('admin.mascotas.partials.ayuda-fotos', ['campo' => 'fotos[]'])
+                        <x-input-error :messages="$erroresFotos" class="mt-2" />
                     </form>
                 @else
-                    <p class="mt-4 rounded-md bg-amber-50 p-3 text-sm text-amber-800">La mascota ya tiene {{ $maximoFotos }} fotos, el máximo permitido. Elimina una para agregar otra.</p>
-                    <x-input-error :messages="$errors->get('foto')" class="mt-2" />
+                    <p class="mt-4 rounded-md bg-amber-50 p-3 text-sm text-amber-800">Esta mascota ya tiene el máximo de {{ $maximoFotos }} fotos. Elimina una para subir otra.</p>
+                    <x-input-error :messages="$erroresFotos" class="mt-2" />
                 @endif
             </div>
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-medium text-gray-900">Fotos</h3>
-                <x-input-error :messages="$errors->get('fotos')" class="mt-2" />
 
                 @forelse ($mascota->fotos as $foto)
                     <div class="mt-4 flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center">

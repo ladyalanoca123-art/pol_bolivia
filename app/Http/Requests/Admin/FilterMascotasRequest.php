@@ -7,6 +7,8 @@ use Illuminate\Validation\Rule;
 
 class FilterMascotasRequest extends FormRequest
 {
+    use Concerns\ValidaFotosMascota;
+
     public function authorize(): bool
     {
         return true;

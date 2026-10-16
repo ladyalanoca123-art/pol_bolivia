@@ -1,6 +1,8 @@
-@php($fotos = $mascota->fotos->where('tipo', 'foto'))
-@php($videos = $mascota->fotos->where('tipo', 'video'))
-@php($fotoPrincipal = $fotos->firstWhere('es_principal', true) ?? $fotos->first())
+@php
+    $fotos = $mascota->fotos->where('tipo', 'foto');
+    $videos = $mascota->fotos->where('tipo', 'video');
+    $fotoPrincipal = $fotos->firstWhere('es_principal', true) ?? $fotos->first();
+@endphp
 
 @extends('layouts.public')
 
@@ -13,17 +15,49 @@
             <div class="mt-6 grid gap-10 lg:grid-cols-2">
                 <div class="space-y-4">
                     @if ($fotoPrincipal)
-                        <img src="{{ Storage::disk('public')->url($fotoPrincipal->url) }}" alt="{{ $mascota->nombre }}" class="aspect-square w-full rounded-2xl object-cover">
+                        @php
+                            // La principal primero y después por orden (CatalogoMascotaController@show ya las ordena así).
+                            $galeria = $fotos->sortByDesc(fn ($foto) => $foto->id === $fotoPrincipal->id)->values();
+                            $total = $galeria->count();
+                            $lista = $galeria->map(fn ($foto, $i) => [
+                                'url' => Storage::disk('public')->url($foto->url),
+                                'alt' => 'Foto '.($i + 1)." de {$total} de {$mascota->nombre}",
+                            ])->all();
+                        @endphp
+
+                        {{-- Sin JavaScript se ve la primera foto; con Alpine, las miniaturas y las flechas la cambian. --}}
+                        <div x-data="galeriaFotos(@js($lista))" class="space-y-3"
+                             @if ($total > 1) x-on:keydown.arrow-left.prevent="anterior()" x-on:keydown.arrow-right.prevent="siguiente()" @endif>
+                            <div class="relative flex h-80 items-center justify-center overflow-hidden rounded-2xl bg-stone-100 sm:h-[28rem]"
+                                 @if ($total > 1) tabindex="0" role="region" aria-label="Galería de fotos de {{ $mascota->nombre }}. Usa las flechas del teclado para cambiar de foto." @endif>
+                                <img src="{{ $lista[0]['url'] }}" x-bind:src="fotos[actual].url" alt="{{ $lista[0]['alt'] }}" x-bind:alt="fotos[actual].alt"
+                                     class="h-full w-full object-contain" data-galeria="principal">
+
+                                @if ($total > 1)
+                                    <button type="button" x-on:click="anterior()" aria-label="Foto anterior" data-galeria="anterior"
+                                            class="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-xl font-bold text-blue-950 shadow hover:bg-white focus:outline-none focus:ring-4 focus:ring-amber-400">←</button>
+                                    <button type="button" x-on:click="siguiente()" aria-label="Foto siguiente" data-galeria="siguiente"
+                                            class="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-xl font-bold text-blue-950 shadow hover:bg-white focus:outline-none focus:ring-4 focus:ring-amber-400">→</button>
+                                    <p class="absolute bottom-3 right-3 rounded-full bg-blue-950/80 px-3 py-1 text-xs font-bold text-white" aria-live="polite"
+                                       x-text="`${actual + 1} / ${fotos.length}`">1 / {{ $total }}</p>
+                                @endif
+                            </div>
+
+                            @if ($total > 1)
+                                <div class="grid grid-cols-4 gap-3">
+                                    @foreach ($galeria as $i => $foto)
+                                        <button type="button" x-on:click="ir({{ $i }})" aria-label="Ver foto {{ $i + 1 }} de {{ $total }}"
+                                                x-bind:aria-current="actual === {{ $i }} ? 'true' : 'false'" aria-current="{{ $i === 0 ? 'true' : 'false' }}"
+                                                class="overflow-hidden rounded-lg border-4 hover:opacity-100 focus:outline-none focus:ring-4 focus:ring-blue-300 {{ $i === 0 ? 'border-amber-400' : 'border-transparent opacity-80' }}"
+                                                x-bind:class="{ 'border-amber-400': actual === {{ $i }}, 'border-transparent opacity-80': actual !== {{ $i }} }" data-galeria="miniatura">
+                                            <img src="{{ $foto->url_miniatura }}" alt="" class="aspect-square w-full object-cover">
+                                        </button>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
                     @else
                         <div class="flex aspect-square items-center justify-center rounded-2xl bg-stone-200 text-stone-500">Sin fotografía disponible</div>
-                    @endif
-
-                    @if ($fotos->count() > 1)
-                        <div class="grid grid-cols-3 gap-3">
-                            @foreach ($fotos->reject(fn ($foto) => $foto->id === $fotoPrincipal?->id) as $foto)
-                                <img src="{{ $foto->url_miniatura }}" alt="Foto de {{ $mascota->nombre }}" class="aspect-square rounded-lg object-cover">
-                            @endforeach
-                        </div>
                     @endif
 
                     @foreach ($videos as $video)

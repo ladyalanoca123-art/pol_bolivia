@@ -1,5 +1,5 @@
 {{--
-    Plantilla de las páginas de error de POL-Bolivia (419, 429 y 500).
+    Plantilla de las páginas de error de POL-Bolivia (413, 419, 429 y 500).
     No usa @vite, base de datos ni sesión: debe mostrarse aunque falle cualquier otra parte del sistema.
     Nunca muestra trazas, consultas SQL ni rutas internas.
 --}}

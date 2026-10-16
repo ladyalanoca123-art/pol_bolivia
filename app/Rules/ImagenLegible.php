@@ -21,10 +21,13 @@ class ImagenLegible implements ValidationRule
 
         $problema = ImagenSegura::problema($value->getRealPath());
 
+        if ($problema === null && ! ImagenSegura::puedeLeer($value)) {
+            $problema = 'El archivo no es una imagen válida o está dañado.';
+        }
+
         if ($problema !== null) {
-            $fail($problema);
-        } elseif (! ImagenSegura::puedeLeer($value)) {
-            $fail('El archivo no es una imagen válida o está dañado.');
+            // En una selección de varias fotos ("fotos.1") se indica cuál es: "Foto n.º 2: …".
+            $fail(str_contains($attribute, '.') ? ":Attribute: {$problema}" : $problema);
         }
     }
 }

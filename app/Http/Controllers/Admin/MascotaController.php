@@ -11,6 +11,7 @@ use App\Models\FotoMascota;
 use App\Models\Mascota;
 use App\Services\ImagenNoProcesada;
 use App\Services\ImagenSegura;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -50,36 +51,51 @@ class MascotaController extends Controller
     public function store(RegisterMascotaRequest $request, ImagenSegura $imagenSegura): RedirectResponse
     {
         $data = $request->validated();
-        $photo = $data['foto_principal'];
-        unset($data['foto_principal']);
-        $path = null;
+        // La principal (orden 1) y las adicionales (orden 2, 3 y 4), con su campo para los errores.
+        $photos = ['foto_principal' => $data['foto_principal']];
+
+        foreach ($data['fotos_adicionales'] ?? [] as $index => $photo) {
+            $photos["fotos_adicionales.{$index}"] = $photo;
+        }
+
+        unset($data['foto_principal'], $data['fotos_adicionales']);
+        $paths = [];
+        $field = 'foto_principal';
 
         try {
-            DB::transaction(function () use ($data, $photo, $imagenSegura, &$path): void {
+            DB::transaction(function () use ($data, $photos, $imagenSegura, &$paths, &$field): void {
                 $mascota = Mascota::create([
                     ...$data,
                     'estado' => 'disponible',
                     'registrado_por' => auth()->id(),
                 ]);
 
-                // Guarda la foto sin metadatos EXIF (ver app/Services/ImagenSegura.php).
-                $path = $imagenSegura->guardar($photo, "mascotas/{$mascota->id}");
+                // Guarda las fotos sin metadatos EXIF (ver app/Services/ImagenSegura.php) y después sus registros.
+                foreach ($photos as $field => $photo) {
+                    $paths[] = $imagenSegura->guardar($photo, "mascotas/{$mascota->id}");
+                }
 
-                $mascota->fotos()->create([
-                    'tipo' => 'foto',
-                    'url' => $path,
-                    'es_principal' => true,
-                    'orden' => 1,
-                ]);
+                foreach ($paths as $index => $path) {
+                    $mascota->fotos()->create([
+                        'tipo' => 'foto',
+                        'url' => $path,
+                        'es_principal' => $index === 0,
+                        'orden' => $index + 1,
+                    ]);
+                }
             });
         } catch (\Throwable $exception) {
-            if ($path !== null) {
-                $imagenSegura->eliminar($path);
+            // La transacción ya se deshizo: se borran solo los archivos de este registro.
+            $this->deletePhotos($imagenSegura, $paths);
+
+            if ($exception instanceof ImagenNoProcesada) {
+                return back()->withInput()->withErrors([$field => $this->photoErrorPrefix($field).$exception->getMessage()]);
             }
 
-            // La transacción ya se deshizo: la mascota no queda registrada sin su foto.
-            if ($exception instanceof ImagenNoProcesada) {
-                return back()->withInput()->withErrors(['foto_principal' => $exception->getMessage()]);
+            if ($exception instanceof QueryException) {
+                report($exception);
+
+                return back()->withInput()->withErrors(['foto_principal' => 'No se pudieron guardar las fotos. Inténtalo de nuevo.']);
             }
 
             throw $exception;
@@ -117,51 +133,84 @@ class MascotaController extends Controller
             ->with('status', 'La información de la mascota fue actualizada.');
     }
 
+    /**
+     * Agrega una o varias fotos (nunca la principal). Primero guarda cada archivo; después crea todos los
+     * registros en una transacción. Si algo falla no queda nada de esta subida: ni registros ni archivos.
+     */
     public function storePhoto(StoreFotoMascotaRequest $request, Mascota $mascota, ImagenSegura $imagenSegura): RedirectResponse
     {
-        // Guarda la foto sin metadatos EXIF, reducida y con su miniatura (ver app/Services/ImagenSegura.php).
+        $field = $request->campo();
+        $photos = $field === 'foto' ? ['foto' => $request->file('foto')] : [];
+
+        foreach ($field === 'fotos' ? $request->file('fotos') : [] as $index => $photo) {
+            $photos["fotos.{$index}"] = $photo;
+        }
+
+        $paths = [];
+
+        // Guarda las fotos sin metadatos EXIF, reducidas y con su miniatura (ver app/Services/ImagenSegura.php).
         try {
-            $path = $imagenSegura->guardar($request->file('foto'), "mascotas/{$mascota->id}");
+            foreach ($photos as $key => $photo) {
+                $paths[] = $imagenSegura->guardar($photo, "mascotas/{$mascota->id}");
+            }
         } catch (ImagenNoProcesada $exception) {
-            return to_route('admin.mascotas.show', $mascota)->withErrors(['foto' => $exception->getMessage()]);
+            $this->deletePhotos($imagenSegura, $paths);
+
+            return to_route('admin.mascotas.show', $mascota)->withErrors([$field => $this->photoErrorPrefix($key).$exception->getMessage()]);
         }
 
         try {
-            $agregada = DB::transaction(function () use ($mascota, $path): bool {
+            $freeSlots = DB::transaction(function () use ($mascota, $paths): ?int {
                 Mascota::query()->lockForUpdate()->findOrFail($mascota->id);
 
-                // Con la mascota bloqueada: otra subida simultánea pudo completar el límite.
-                if ($mascota->fotos()->where('tipo', 'foto')->count() >= FotoMascota::MAXIMO_POR_MASCOTA) {
-                    return false;
+                // Con la mascota bloqueada: otra subida simultánea pudo ocupar los espacios libres.
+                $freeSlots = FotoMascota::MAXIMO_POR_MASCOTA - $mascota->fotos()->where('tipo', 'foto')->count();
+
+                if (count($paths) > $freeSlots) {
+                    return max(0, $freeSlots);
                 }
 
                 $order = $mascota->fotos()
                     ->where('tipo', 'foto')
-                    ->max('orden') + 1;
+                    ->max('orden');
 
-                $mascota->fotos()->create([
-                    'tipo' => 'foto',
-                    'url' => $path,
-                    'es_principal' => false,
-                    'orden' => $order,
-                ]);
+                foreach ($paths as $path) {
+                    $mascota->fotos()->create([
+                        'tipo' => 'foto',
+                        'url' => $path,
+                        'es_principal' => false,
+                        'orden' => ++$order,
+                    ]);
+                }
 
-                return true;
+                return null;
             });
+        } catch (QueryException $exception) {
+            $this->deletePhotos($imagenSegura, $paths);
+
+            // Respaldo: el conteo de arriba ya lo evita, pero si validar_limite_multimedia() rechaza el INSERT por el
+            // límite de fotos (no el de video) se informa igual. Cualquier otro error queda registrado.
+            if (FotoMascota::esErrorDeLimiteDeFotos($exception)) {
+                return to_route('admin.mascotas.show', $mascota)->withErrors([$field => FotoMascota::MENSAJE_LIMITE]);
+            }
+
+            report($exception);
+
+            return to_route('admin.mascotas.show', $mascota)->withErrors([$field => 'No se pudo guardar la foto. Inténtalo de nuevo.']);
         } catch (\Throwable $exception) {
-            $imagenSegura->eliminar($path);
+            $this->deletePhotos($imagenSegura, $paths);
 
             throw $exception;
         }
 
-        if (! $agregada) {
-            $imagenSegura->eliminar($path);
+        if ($freeSlots !== null) {
+            $this->deletePhotos($imagenSegura, $paths);
 
-            return to_route('admin.mascotas.show', $mascota)->withErrors(['foto' => FotoMascota::MENSAJE_LIMITE]);
+            return to_route('admin.mascotas.show', $mascota)->withErrors([$field => FotoMascota::mensajeEspaciosLibres($freeSlots)]);
         }
 
         return to_route('admin.mascotas.show', $mascota)
-            ->with('status', 'La foto fue agregada correctamente.');
+            ->with('status', count($paths) === 1 ? 'La foto fue agregada correctamente.' : 'Se agregaron '.count($paths).' fotos correctamente.');
     }
 
     public function setPrincipalPhoto(Mascota $mascota, FotoMascota $foto): RedirectResponse
@@ -218,6 +267,24 @@ class MascotaController extends Controller
         return to_route('admin.mascotas.show', $mascota)->with('status', $resultado['nuevaPrincipal']
             ? "La foto fue eliminada. La foto en la posición {$resultado['nuevaPrincipal']->orden} pasó a ser la principal."
             : 'La foto fue eliminada correctamente.');
+    }
+
+    /** Borra las imágenes (y sus miniaturas) guardadas en esta operación; nunca las anteriores. */
+    private function deletePhotos(ImagenSegura $imagenSegura, array $paths): void
+    {
+        foreach ($paths as $path) {
+            $imagenSegura->eliminar($path);
+        }
+    }
+
+    /** En una selección de varias fotos indica cuál falló: "Foto n.º 2: ", "Foto adicional n.º 1: ". */
+    private function photoErrorPrefix(string $key): string
+    {
+        if (! preg_match('/^(fotos|fotos_adicionales)\.(\d+)$/', $key, $match)) {
+            return '';
+        }
+
+        return ($match[1] === 'fotos' ? 'Foto' : 'Foto adicional').' n.º '.($match[2] + 1).': ';
     }
 
     private function findPetPhoto(Mascota $mascota, FotoMascota $foto): FotoMascota

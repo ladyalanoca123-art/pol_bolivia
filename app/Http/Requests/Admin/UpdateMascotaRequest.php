@@ -8,6 +8,7 @@ use Illuminate\Validation\Rule;
 class UpdateMascotaRequest extends FormRequest
 {
     use Concerns\NormalizesMascotaText;
+    use Concerns\ValidaFotosMascota;
 
     public function authorize(): bool
     {

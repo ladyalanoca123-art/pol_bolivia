@@ -2,12 +2,30 @@
 
 return [
     'accepted' => 'El campo :attribute debe ser aceptado.',
+    'array' => 'El campo :attribute debe ser una lista.',
     'confirmed' => 'La confirmación de :attribute no coincide.',
     'current_password' => 'La contraseña es incorrecta.',
+    'dimensions' => 'La imagen :attribute no tiene las dimensiones permitidas.',
     'email' => 'El campo :attribute debe ser una dirección de correo electrónico válida.',
+    'image' => 'El archivo :attribute debe ser una imagen.',
+    'in' => 'El valor seleccionado en :attribute no es válido.',
+    'integer' => 'El campo :attribute debe ser un número entero.',
     'lowercase' => 'El campo :attribute debe estar en minúsculas.',
-    'max' => ['string' => 'El campo :attribute no debe ser mayor que :max caracteres.'],
-    'min' => ['string' => 'El campo :attribute debe tener al menos :min caracteres.'],
+    'max' => [
+        'array' => 'El campo :attribute no debe tener más de :max elementos.',
+        'file' => 'El archivo :attribute no debe pesar más de :max kilobytes.',
+        'numeric' => 'El campo :attribute no debe ser mayor que :max.',
+        'string' => 'El campo :attribute no debe ser mayor que :max caracteres.',
+    ],
+    'mimes' => 'El archivo :attribute debe ser de tipo: :values.',
+    'min' => [
+        'file' => 'El archivo :attribute debe pesar al menos :min kilobytes.',
+        'numeric' => 'El campo :attribute debe ser al menos :min.',
+        'string' => 'El campo :attribute debe tener al menos :min caracteres.',
+    ],
+    'not_regex' => 'El formato de :attribute no es válido.',
+    'regex' => 'El formato de :attribute no es válido.',
+    'uploaded' => 'El archivo :attribute no se pudo subir. Puede que supere el tamaño permitido por el servidor.',
     'password' => [
         'letters' => 'El campo :attribute debe contener al menos una letra.',
         'mixed' => 'El campo :attribute debe contener al menos una letra mayúscula y una minúscula.',
