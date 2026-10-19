@@ -18,8 +18,9 @@ use Illuminate\Support\Facades\Log;
  * fallidos de un ataque no deben generar escrituras en la base de datos.
  *
  * Solo se guarda: evento, ID de usuario, correo intentado (fallos y bloqueos), rol y resultado (eliminación de
- * cuenta), IP, agente de usuario (máx. 255 caracteres) y fecha. NUNCA la contraseña ni otras credenciales.
- * Eventos: login, login_fallido, bloqueo, logout, registro_honeypot y eliminacion_cuenta.
+ * cuenta), acción y roles (cambios de administrador), IP, agente de usuario (máx. 255 caracteres) y fecha.
+ * NUNCA la contraseña ni otras credenciales.
+ * Eventos: login, login_fallido, bloqueo, logout, registro_honeypot, eliminacion_cuenta y rol_administrador.
  */
 class RegistroSeguridad
 {
@@ -68,6 +69,19 @@ class RegistroSeguridad
         $this->registrar('eliminacion_cuenta', $usuario?->getAuthIdentifier(), null, [
             'rol' => $usuario?->rol,
             'resultado' => $resultado,
+        ]);
+    }
+
+    /**
+     * Un usuario pasó a ser administrador (accion=promovido) o dejó de serlo (accion=retirado), desde la consola
+     * (pol:promover-administrador y pol:retirar-administrador).
+     */
+    public function rolAdministrador(User $usuario, string $accion, string $rolAnterior, string $rolNuevo): void
+    {
+        $this->registrar('rol_administrador', $usuario->getAuthIdentifier(), null, [
+            'accion' => $accion,
+            'rol_anterior' => $rolAnterior,
+            'rol_nuevo' => $rolNuevo,
         ]);
     }
 
