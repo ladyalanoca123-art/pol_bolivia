@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Auth\Events\Login;
@@ -16,9 +17,9 @@ use Illuminate\Support\Facades\Log;
  * (creado / actualizado / eliminado) y su pantalla solo filtra esas acciones; además, los intentos
  * fallidos de un ataque no deben generar escrituras en la base de datos.
  *
- * Solo se guarda: evento, ID de usuario, correo intentado (fallos y bloqueos), IP, agente de usuario
- * (máx. 255 caracteres) y fecha. NUNCA la contraseña ni otras credenciales.
- * Eventos: login, login_fallido, bloqueo, logout y registro_honeypot.
+ * Solo se guarda: evento, ID de usuario, correo intentado (fallos y bloqueos), rol y resultado (eliminación de
+ * cuenta), IP, agente de usuario (máx. 255 caracteres) y fecha. NUNCA la contraseña ni otras credenciales.
+ * Eventos: login, login_fallido, bloqueo, logout, registro_honeypot y eliminacion_cuenta.
  */
 class RegistroSeguridad
 {
@@ -57,12 +58,26 @@ class RegistroSeguridad
         $this->registrar('registro_honeypot', null);
     }
 
-    private function registrar(string $evento, mixed $usuarioId, mixed $correo = null): void
+    /**
+     * Intento de eliminar la propia cuenta desde el perfil (ProfileController::destroy y el límite "eliminar-cuenta").
+     * Resultados: eliminada, bloqueada_por_rol, bloqueada_por_historial, contrasena_incorrecta y limite_de_intentos.
+     * Se guarda el rol y el resultado, nunca la contraseña escrita.
+     */
+    public function eliminacionCuenta(?User $usuario, string $resultado): void
+    {
+        $this->registrar('eliminacion_cuenta', $usuario?->getAuthIdentifier(), null, [
+            'rol' => $usuario?->rol,
+            'resultado' => $resultado,
+        ]);
+    }
+
+    private function registrar(string $evento, mixed $usuarioId, mixed $correo = null, array $detalles = []): void
     {
         $contexto = array_filter([
             'evento' => $evento,
             'usuario_id' => $usuarioId,
             'correo' => is_string($correo) ? mb_substr($correo, 0, 255) : null,
+            ...$detalles,
             'ip' => $this->request->ip(),
             'user_agent' => mb_substr((string) $this->request->userAgent(), 0, 255),
             'fecha' => now()->toIso8601String(),

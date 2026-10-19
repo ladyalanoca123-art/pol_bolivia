@@ -43,6 +43,7 @@ Route::middleware('auth')->group(function () {
         ->name('profile.update');
 
     Route::delete('/profile', [ProfileController::class, 'destroy'])
+        ->middleware('throttle:eliminar-cuenta')
         ->name('profile.destroy');
 });
 

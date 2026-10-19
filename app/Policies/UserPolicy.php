@@ -32,6 +32,17 @@ class UserPolicy
             && $user->hasRole('ciudadano');
     }
 
+    /**
+     * Eliminar la propia cuenta desde el perfil: solo un ciudadano activo y solo la suya.
+     * Un administrador no (así nunca se elimina el último) ni un voluntario (su historial se conserva).
+     */
+    public function deleteOwnAccount(User $actor, User $user): bool
+    {
+        return $actor->estado
+            && $actor->hasRole('ciudadano')
+            && $actor->is($user);
+    }
+
     private function isActiveAdministrator(User $user): bool
     {
         return $user->estado && $user->hasRole('administrador');

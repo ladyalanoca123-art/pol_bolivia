@@ -39,7 +39,19 @@
             <div class="rounded-2xl border border-red-200 bg-red-50/50 p-4 shadow-sm sm:p-8">
                 <p class="mb-4 text-xs font-bold uppercase tracking-wider text-red-700">Zona de riesgo</p>
                 <div class="max-w-xl">
-                    @include('profile.partials.delete-user-form')
+                    {{-- Solo un ciudadano activo puede eliminar su cuenta (UserPolicy::deleteOwnAccount). --}}
+                    @can('deleteOwnAccount', $user)
+                        @include('profile.partials.delete-user-form')
+                    @else
+                        <section>
+                            <h2 class="text-lg font-medium text-gray-900">Eliminar cuenta</h2>
+                            <p class="mt-1 text-sm text-gray-600">
+                                {{ $user->hasRole('administrador')
+                                    ? 'Las cuentas de administración no se eliminan desde el perfil.'
+                                    : 'Tu cuenta de voluntario no se puede eliminar desde el perfil. Comunícate con POL-Bolivia para gestionarla.' }}
+                            </p>
+                        </section>
+                    @endcan
                 </div>
             </div>
         </div>

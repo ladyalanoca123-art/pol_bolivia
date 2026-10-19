@@ -3,14 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\User;
+use App\Support\RegistroSeguridad;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
+    private const HISTORY_MESSAGE = 'No podemos eliminar tu cuenta porque tiene historial registrado (solicitudes o postulaciones) '
+        .'que POL-Bolivia debe conservar. Si ya no deseas usarla, comunícate con la fundación para desactivarla.';
+
+    /** Relaciones de App\Models\User cuyas claves foráneas impiden borrar al usuario (ON DELETE RESTRICT). */
+    private const HISTORY_RELATIONS = [
+        'mascotasRegistradas', 'solicitudesAdopcion', 'seguimientosAsignados', 'visitasSeguimiento',
+        'incidenciasReportadas', 'incidenciasAtendidas', 'postulacionesVoluntariado', 'postulacionesRevisadas',
+        'perfilVoluntario',
+    ];
+
     /**
      * Display the user's profile form.
      */
@@ -39,22 +55,75 @@ class ProfileController extends Controller
 
     /**
      * Delete the user's account.
+     *
+     * Solo un ciudadano activo (UserPolicy::deleteOwnAccount) y solo si no tiene historial: PostgreSQL protege
+     * esos registros (ON DELETE RESTRICT) y POL-Bolivia debe conservarlos. La sesión se cierra solo si se eliminó.
+     * Cada intento queda en el log "seguridad" con su resultado (App\Support\RegistroSeguridad), sin la contraseña.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request, RegistroSeguridad $registro): RedirectResponse
     {
-        $request->validateWithBag('userDeletion', [
-            'password' => ['required', 'current_password'],
-        ]);
-
         $user = $request->user();
 
-        Auth::logout();
+        $authorization = Gate::inspect('deleteOwnAccount', $user);
 
-        $user->delete();
+        if ($authorization->denied()) {
+            $registro->eliminacionCuenta($user, 'bloqueada_por_rol');
+        }
+
+        $authorization->authorize();
+
+        try {
+            $request->validateWithBag('userDeletion', [
+                'password' => ['required', 'current_password'],
+            ]);
+        } catch (ValidationException $exception) {
+            $registro->eliminacionCuenta($user, 'contrasena_incorrecta');
+
+            throw $exception;
+        }
+
+        if ($this->hasHistory($user)) {
+            $registro->eliminacionCuenta($user, 'bloqueada_por_historial');
+
+            return $this->historyPreserved();
+        }
+
+        try {
+            DB::transaction(fn () => $user->delete());
+        } catch (QueryException $exception) {
+            // Respaldo: un registro relacionado que hasHistory() no conoce (SQLSTATE 23503, clave foránea).
+            // Cualquier otro error sigue el manejo normal.
+            if ($exception->getCode() !== '23503') {
+                throw $exception;
+            }
+
+            $registro->eliminacionCuenta($user, 'bloqueada_por_historial');
+
+            return $this->historyPreserved();
+        }
+
+        $registro->eliminacionCuenta($user, 'eliminada');
+
+        // Auth::logout() renueva el token «Recordarme» guardando el modelo: sobre un usuario ya eliminado,
+        // save() lo volvería a insertar. Sin token no guarda nada y sigue registrando el cierre de sesión.
+        $user->setRememberToken(null);
+
+        Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return Redirect::to('/');
+    }
+
+    /** Si el usuario tiene registros que le hacen referencia con ON DELETE RESTRICT (las 9 claves foráneas hacia usuarios). */
+    private function hasHistory(User $user): bool
+    {
+        return collect(self::HISTORY_RELATIONS)->contains(fn (string $relation) => $user->{$relation}()->exists());
+    }
+
+    private function historyPreserved(): RedirectResponse
+    {
+        return Redirect::route('profile.edit')->withErrors(['cuenta' => self::HISTORY_MESSAGE], 'userDeletion');
     }
 }

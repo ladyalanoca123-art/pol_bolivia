@@ -69,6 +69,16 @@ class AppServiceProvider extends ServiceProvider
         // Envío de formularios (solicitudes, postulaciones, visitas, incidencias): 10 por minuto.
         RateLimiter::for('formularios', fn (Request $request) => Limit::perMinute(10)
             ->by($request->user()?->id ?: $request->ip()));
+
+        // Eliminar la propia cuenta (DELETE /profile): 5 intentos por minuto por usuario, para que la confirmación
+        // con contraseña no sirva para adivinarla. El rechazo queda en el log "seguridad" y usa la página 429.
+        RateLimiter::for('eliminar-cuenta', fn (Request $request) => Limit::perMinute(5)
+            ->by('eliminar-cuenta:'.($request->user()?->id ?: $request->ip()))
+            ->response(function (Request $request, array $headers) {
+                app(RegistroSeguridad::class)->eliminacionCuenta($request->user(), 'limite_de_intentos');
+
+                return response()->view('errors.429', [], 429, $headers);
+            }));
     }
 
     /**
