@@ -22,7 +22,7 @@ trait GestionaAdministradores
         $this->table(['Nombre', 'Correo', 'Rol actual', 'Estado'], [[
             trim("{$usuario->nombres} {$usuario->apellidos}"),
             $usuario->email,
-            self::ROLES[$usuario->rol] ?? $usuario->rol,
+            $usuario->es_principal ? 'Administrador principal' : (self::ROLES[$usuario->rol] ?? $usuario->rol),
             $usuario->estado ? 'Activa' : 'Desactivada',
         ]]);
     }

@@ -7,9 +7,12 @@
         <p><span class="font-medium">Apellidos:</span> {{ $user->apellidos }}</p>
         <p><span class="font-medium">Correo:</span> {{ $user->email }}</p>
         <p><span class="font-medium">Teléfono:</span> {{ $user->telefono ?? 'No registrado' }}</p>
-        <p><span class="font-medium">Rol:</span> {{ ucfirst($user->rol) }}</p>
+        <p><span class="font-medium">Rol:</span> {{ ucfirst($user->rol) }}@if ($user->es_principal) <span class="ml-1 inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 ring-1 ring-inset ring-amber-300">Administrador principal</span>@endif</p>
         <p><span class="font-medium">Estado:</span> {{ $user->estado ? 'Activo' : 'Inactivo' }}</p>
         <p><span class="font-medium">Fecha de registro:</span> {{ $user->created_at->format('d/m/Y H:i') }}</p>
-        <div class="pt-4 border-t"><a class="text-indigo-600 hover:text-indigo-900" href="{{ route('admin.usuarios.edit', $user) }}">Editar usuario</a><a class="ml-4 text-gray-600 hover:text-gray-900" href="{{ route('admin.usuarios.index') }}">Volver al listado</a></div>
+        @cannot('update', $user)
+            <p class="rounded-md bg-amber-50 p-3 text-sm text-amber-800">Al administrador principal solo lo edita él mismo.</p>
+        @endcannot
+        <div class="pt-4 border-t">@can('update', $user)<a class="mr-4 text-indigo-600 hover:text-indigo-900" href="{{ route('admin.usuarios.edit', $user) }}">Editar usuario</a>@endcan<a class="text-gray-600 hover:text-gray-900" href="{{ route('admin.usuarios.index') }}">Volver al listado</a></div>
     </div></div></div>
 </x-app-layout>

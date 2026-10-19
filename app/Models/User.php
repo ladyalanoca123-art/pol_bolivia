@@ -34,6 +34,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'estado' => 'boolean',
+            // Administrador principal (una sola cuenta): lo protege PostgreSQL (trigger_proteger_administrador_principal).
+            'es_principal' => 'boolean',
         ];
     }
 

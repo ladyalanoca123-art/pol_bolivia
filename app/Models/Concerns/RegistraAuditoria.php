@@ -3,6 +3,7 @@
 namespace App\Models\Concerns;
 
 use App\Models\Auditoria;
+use App\Support\EjecutorConsola;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -55,7 +56,9 @@ trait RegistraAuditoria
             'valores_anteriores' => $anteriores,
             'valores_nuevos' => $nuevos,
             'ip' => $request?->ip(),
-            'user_agent' => $request ? mb_substr((string) $request->userAgent(), 0, 255) : null,
+            // Comandos de administradores (App\Support\EjecutorConsola): quién lo ejecutó, en lugar del navegador.
+            'user_agent' => EjecutorConsola::descripcion()
+                ?? ($request ? mb_substr((string) $request->userAgent(), 0, 255) : null),
         ]);
     }
 }

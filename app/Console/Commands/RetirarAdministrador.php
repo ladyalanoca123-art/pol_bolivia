@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Support\EjecutorConsola;
 use App\Support\RegistroSeguridad;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -11,7 +12,9 @@ use Illuminate\Support\Facades\DB;
  * Quita el rol de administrador a una cuenta (pasa a ciudadano). Nunca deja el sistema sin administradores activos:
  * dentro de la transacción se bloquean las filas de los administradores activos (lockForUpdate), así dos ejecuciones
  * simultáneas no pueden retirar a los dos últimos. Cierra sus sesiones guardadas y anula su «Recordarme».
- * Queda en la auditoría (cambio de rol) y en el log "seguridad" (rol_administrador, accion=retirado).
+ * El administrador principal no se retira: primero se transfiere ese rol (pol:transferir-principal).
+ * Queda en la auditoría (cambio de rol) y en el log "seguridad" (rol_administrador, accion=retirado), con quién
+ * lo ejecutó (usuario del sistema y equipo, App\Support\EjecutorConsola).
  */
 class RetirarAdministrador extends Command
 {
@@ -51,6 +54,12 @@ class RetirarAdministrador extends Command
             return self::FAILURE;
         }
 
+        if ($usuario->es_principal) {
+            $this->error(self::mensajePrincipal($usuario));
+
+            return self::FAILURE;
+        }
+
         $this->mostrarUsuario($usuario);
 
         if (! $this->confirmar("¿Quitar el rol de administrador a {$usuario->email}? Pasará a ser {$rolNuevo}.")) {
@@ -59,13 +68,18 @@ class RetirarAdministrador extends Command
             return self::FAILURE;
         }
 
-        $resultado = DB::transaction(function () use ($usuario, $rolNuevo): string {
+        $resultado = EjecutorConsola::durante(fn () => DB::transaction(function () use ($usuario, $rolNuevo): string {
             // Bloquea a todos los administradores activos (siempre en el mismo orden) antes de contar.
             $activos = User::query()->where('rol', 'administrador')->where('estado', true)->orderBy('id')->lockForUpdate()->get();
             $actual = User::query()->whereKey($usuario->id)->lockForUpdate()->first();
 
             if ($actual === null || ! $actual->hasRole('administrador')) {
                 return 'ya_no_es';
+            }
+
+            // Pudo pasar a ser el principal mientras se confirmaba (PostgreSQL también lo impide).
+            if ($actual->es_principal) {
+                return 'principal';
             }
 
             if ($activos->reject(fn (User $activo) => $activo->is($actual))->isEmpty()) {
@@ -80,7 +94,13 @@ class RetirarAdministrador extends Command
             }
 
             return 'retirado';
-        });
+        }));
+
+        if ($resultado === 'principal') {
+            $this->error(self::mensajePrincipal($usuario));
+
+            return self::FAILURE;
+        }
 
         if ($resultado === 'ultimo') {
             $this->error("No se puede retirar a {$usuario->email}: es el último administrador activo y el sistema no puede quedar sin administradores. Promueve antes a otra persona.");
@@ -98,5 +118,11 @@ class RetirarAdministrador extends Command
         $this->info("{$usuario->email} ya no es administrador (ahora es {$rolNuevo}). Pierde el acceso al panel de inmediato.");
 
         return self::SUCCESS;
+    }
+
+    private static function mensajePrincipal(User $usuario): string
+    {
+        return "No se puede retirar a {$usuario->email}: es el administrador principal. "
+            .'Primero transfiere ese rol a otro administrador con php artisan pol:transferir-principal {correo}.';
     }
 }

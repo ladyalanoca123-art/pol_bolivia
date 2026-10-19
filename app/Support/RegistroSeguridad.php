@@ -18,9 +18,10 @@ use Illuminate\Support\Facades\Log;
  * fallidos de un ataque no deben generar escrituras en la base de datos.
  *
  * Solo se guarda: evento, ID de usuario, correo intentado (fallos y bloqueos), rol y resultado (eliminación de
- * cuenta), acción y roles (cambios de administrador), IP, agente de usuario (máx. 255 caracteres) y fecha.
- * NUNCA la contraseña ni otras credenciales.
- * Eventos: login, login_fallido, bloqueo, logout, registro_honeypot, eliminacion_cuenta y rol_administrador.
+ * cuenta), acción y roles (cambios de administrador), quién ejecutó un comando (usuario del sistema y equipo), IP,
+ * agente de usuario (máx. 255 caracteres) y fecha. NUNCA la contraseña ni otras credenciales.
+ * Eventos: login, login_fallido, bloqueo, logout, registro_honeypot, eliminacion_cuenta, rol_administrador y
+ * administrador_principal.
  */
 class RegistroSeguridad
 {
@@ -74,7 +75,7 @@ class RegistroSeguridad
 
     /**
      * Un usuario pasó a ser administrador (accion=promovido) o dejó de serlo (accion=retirado), desde la consola
-     * (pol:promover-administrador y pol:retirar-administrador).
+     * (pol:promover-administrador y pol:retirar-administrador). Incluye quién lo ejecutó (usuario_so y equipo).
      */
     public function rolAdministrador(User $usuario, string $accion, string $rolAnterior, string $rolNuevo): void
     {
@@ -82,6 +83,19 @@ class RegistroSeguridad
             'accion' => $accion,
             'rol_anterior' => $rolAnterior,
             'rol_nuevo' => $rolNuevo,
+            ...EjecutorConsola::identificar(),
+        ]);
+    }
+
+    /**
+     * El rol de administrador principal pasó a $nuevo (pol:transferir-principal). $anterior es null si no había
+     * ninguno. El anterior sigue siendo administrador. Incluye quién lo ejecutó (usuario_so y equipo).
+     */
+    public function administradorPrincipal(User $nuevo, ?User $anterior): void
+    {
+        $this->registrar('administrador_principal', $nuevo->getAuthIdentifier(), null, [
+            'principal_anterior_id' => $anterior?->getAuthIdentifier(),
+            ...EjecutorConsola::identificar(),
         ]);
     }
 

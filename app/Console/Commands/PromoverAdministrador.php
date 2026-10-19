@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Support\EjecutorConsola;
 use App\Support\RegistroSeguridad;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -10,7 +11,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Convierte en administradora una cuenta de ciudadano activa. Solo por consola: la web no permite cambiar roles.
  * La persona se registra antes por su cuenta y entra con su propia contraseña; este comando nunca la pide ni la cambia.
- * Queda en la auditoría (cambio de rol) y en el log "seguridad" (rol_administrador, accion=promovido).
+ * Queda en la auditoría (cambio de rol) y en el log "seguridad" (rol_administrador, accion=promovido), con quién
+ * lo ejecutó (usuario del sistema y equipo, App\Support\EjecutorConsola).
  */
 class PromoverAdministrador extends Command
 {
@@ -59,7 +61,7 @@ class PromoverAdministrador extends Command
         }
 
         // Con la fila bloqueada se vuelve a comprobar: pudo cambiar mientras se pedía la confirmación.
-        $promovido = DB::transaction(function () use ($usuario): bool {
+        $promovido = EjecutorConsola::durante(fn () => DB::transaction(function () use ($usuario): bool {
             $actual = User::query()->whereKey($usuario->id)->lockForUpdate()->first();
 
             if ($actual === null || ! $actual->estado || ! $actual->hasRole('ciudadano')) {
@@ -69,7 +71,7 @@ class PromoverAdministrador extends Command
             $actual->forceFill(['rol' => 'administrador'])->save();
 
             return true;
-        });
+        }));
 
         if (! $promovido) {
             $this->error('La cuenta cambió mientras se confirmaba (ya no es un ciudadano activo); no se hizo ningún cambio.');

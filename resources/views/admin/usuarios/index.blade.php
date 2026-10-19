@@ -83,6 +83,9 @@
                                     <td class="whitespace-nowrap px-4 py-4 text-sm text-gray-600">{{ $user->telefono ?? '—' }}</td>
                                     <td class="whitespace-nowrap px-4 py-4 text-sm">
                                         <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset {{ $coloresRol[$user->rol] ?? 'bg-gray-100 text-gray-700 ring-gray-300' }}">{{ ucfirst($user->rol) }}</span>
+                                        @if ($user->es_principal)
+                                            <span class="ml-1 inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 ring-1 ring-inset ring-amber-300">Administrador principal</span>
+                                        @endif
                                     </td>
                                     <td class="whitespace-nowrap px-4 py-4 text-sm">
                                         <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $user->estado ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
@@ -97,7 +100,9 @@
                                     <td class="px-6 py-4 text-right text-sm">
                                         <div class="flex flex-wrap items-center justify-end gap-2">
                                             <a href="{{ route('admin.usuarios.show', $user) }}" class="rounded-full border border-gray-300 px-3 py-1 text-xs font-semibold text-blue-900 hover:bg-gray-50">Ver</a>
-                                            <a href="{{ route('admin.usuarios.edit', $user) }}" class="rounded-full border border-gray-300 px-3 py-1 text-xs font-semibold text-blue-900 hover:bg-gray-50">Editar</a>
+                                            @can('update', $user)
+                                                <a href="{{ route('admin.usuarios.edit', $user) }}" class="rounded-full border border-gray-300 px-3 py-1 text-xs font-semibold text-blue-900 hover:bg-gray-50">Editar</a>
+                                            @endcan
                                             @if ($user->hasRole('voluntario'))
                                                 <a href="{{ route('admin.voluntarios.index') }}" class="px-1 text-xs text-gray-500 hover:text-blue-900 hover:underline" title="El estado de un voluntario se gestiona desde Voluntarios">Gestionar en Voluntarios</a>
                                             @elseif (auth()->user()->can('updateStatus', $user))

@@ -27,4 +27,10 @@ return [
         'foto_max_kb' => 10240,
     ],
 
+    // Administrador inicial (Database\Seeders\AdministradorInicialSeeder). Solo se usa al crearlo por primera vez.
+    // Se lee desde aquí y no con env() para que funcione con "php artisan config:cache".
+    'administrador_inicial' => [
+        'password' => env('INITIAL_ADMIN_PASSWORD'),
+    ],
+
 ];
