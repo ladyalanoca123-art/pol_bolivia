@@ -40,6 +40,7 @@ Route::middleware('auth')->group(function () {
         ->name('profile.edit');
 
     Route::patch('/profile', [ProfileController::class, 'update'])
+        ->middleware('throttle:perfil')
         ->name('profile.update');
 
     Route::delete('/profile', [ProfileController::class, 'destroy'])

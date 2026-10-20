@@ -60,6 +60,8 @@ class ProfileTest extends TestCase
                 'nombres' => 'Test',
                 'apellidos' => 'User',
                 'email' => 'test@example.com',
+                // Cambiar el correo exige la contraseña actual (ProfileUpdateRequest).
+                'current_password' => 'password',
             ]);
 
         $response

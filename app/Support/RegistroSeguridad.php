@@ -21,7 +21,8 @@ use Illuminate\Support\Facades\Log;
  * cuenta), acción y roles (cambios de administrador), quién ejecutó un comando (usuario del sistema y equipo), IP,
  * agente de usuario (máx. 255 caracteres) y fecha. NUNCA la contraseña ni otras credenciales.
  * Eventos: login, login_fallido, bloqueo, logout, registro_honeypot, eliminacion_cuenta, rol_administrador,
- * administrador_principal, recuperacion_solicitada (correo enmascarado si no hay cuenta) y contrasena_restablecida.
+ * administrador_principal, recuperacion_solicitada (correo enmascarado si no hay cuenta), contrasena_restablecida,
+ * correo_cambiado (ambos correos enmascarados) y contrasena_cambiada_perfil.
  */
 class RegistroSeguridad
 {
@@ -116,6 +117,21 @@ class RegistroSeguridad
     public function contrasenaRestablecida(User $usuario): void
     {
         $this->registrar('contrasena_restablecida', $usuario->getAuthIdentifier());
+    }
+
+    /** Se cambió el correo de la cuenta desde «Mi perfil»: ambos correos van enmascarados. */
+    public function correoCambiado(User $usuario, string $anterior, string $nuevo): void
+    {
+        $this->registrar('correo_cambiado', $usuario->getAuthIdentifier(), null, [
+            'correo_anterior' => self::enmascararCorreo($anterior),
+            'correo_nuevo' => self::enmascararCorreo($nuevo),
+        ]);
+    }
+
+    /** Se cambió la contraseña desde «Mi perfil» (nunca se guarda la contraseña). */
+    public function contrasenaCambiadaPerfil(User $usuario): void
+    {
+        $this->registrar('contrasena_cambiada_perfil', $usuario->getAuthIdentifier());
     }
 
     /** "juan.perez@gmail.com" → "ju***@gmail.com". Sin "@" válido: "***". */

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\User;
+use App\Notifications\CorreoCambiadoNotification;
 use App\Support\RegistroSeguridad;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -11,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -39,16 +41,37 @@ class ProfileController extends Controller
 
     /**
      * Update the user's profile information.
+     *
+     * Si el correo cambia (ProfileUpdateRequest ya exigió la contraseña actual): como en Breeze, el correo nuevo
+     * queda sin verificar (email_verified_at = null), se avisa al correo ANTERIOR y queda en el log "seguridad".
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(ProfileUpdateRequest $request, RegistroSeguridad $registro): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $datos = $request->validated();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        // Solo cambian mayúsculas y minúsculas: se conserva el correo guardado (no es un cambio de correo).
+        if (! $request->cambiaElCorreo()) {
+            unset($datos['email']);
         }
 
-        $request->user()->save();
+        $correoAnterior = $user->email;
+        $user->fill($datos);
+        $cambioElCorreo = $user->isDirty('email');
+
+        if ($cambioElCorreo) {
+            $user->email_verified_at = null;
+        }
+
+        $user->save();
+
+        if ($cambioElCorreo) {
+            $registro->correoCambiado($user, $correoAnterior, $user->email);
+            $correoNuevo = $user->email;
+            // Después de responder: un fallo del servidor de correo no deshace el cambio.
+            defer(fn () => Notification::route('mail', $correoAnterior)
+                ->notify(new CorreoCambiadoNotification($user->nombres, $correoNuevo)));
+        }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }

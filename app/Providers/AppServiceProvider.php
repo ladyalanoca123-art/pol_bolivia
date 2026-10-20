@@ -89,6 +89,13 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('formularios', fn (Request $request) => Limit::perMinute(10)
             ->by($request->user()?->id ?: $request->ip()));
 
+        // «Mi perfil»: guardar los datos (PATCH /profile) y cambiar la contraseña (PUT /password), 5 por minuto
+        // por usuario cada uno, para que la contraseña actual que piden no sirva para adivinarla. Página 429.
+        RateLimiter::for('perfil', fn (Request $request) => Limit::perMinute(5)
+            ->by('perfil:'.($request->user()?->id ?: $request->ip())));
+        RateLimiter::for('cambiar-clave', fn (Request $request) => Limit::perMinute(5)
+            ->by('cambiar-clave:'.($request->user()?->id ?: $request->ip())));
+
         // Eliminar la propia cuenta (DELETE /profile): 5 intentos por minuto por usuario, para que la confirmación
         // con contraseña no sirva para adivinarla. El rechazo queda en el log "seguridad" y usa la página 429.
         RateLimiter::for('eliminar-cuenta', fn (Request $request) => Limit::perMinute(5)
