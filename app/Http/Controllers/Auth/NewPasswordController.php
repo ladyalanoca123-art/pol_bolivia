@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
+use App\Notifications\ContrasenaCambiadaNotification;
+use App\Support\RegistroSeguridad;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -27,37 +31,58 @@ class NewPasswordController extends Controller
     /**
      * Handle an incoming new password request.
      *
+     * La nueva contraseña cumple la misma política que el registro (y con sus mensajes). Un enlace inválido o
+     * vencido, o de una cuenta inexistente o desactivada, recibe el mismo mensaje genérico. Tras el cambio se
+     * renueva el «Recordarme», se cierran todas las sesiones de la cuenta y se le avisa por correo.
+     *
      * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, RegistroSeguridad $registro): RedirectResponse
     {
         $request->validate([
-            'token' => ['required'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+            'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
+        ], (new RegisterRequest)->messages());
 
-        // Here we will attempt to reset the user's password. If it is successful we
-        // will update the password on an actual user model and persist it to the
-        // database. Otherwise we will parse the error and return the response.
+        // El token va en un campo oculto: si falta, el mismo mensaje genérico que un enlace inválido (en "email",
+        // que es el error que muestra la pantalla).
+        $token = $request->input('token');
+        $usuario = User::query()->whereRaw('lower(email) = ?', [mb_strtolower(trim((string) $request->input('email')))])->first();
+
+        if (! is_string($token) || $token === '' || $usuario === null || ! $usuario->estado) {
+            return $this->enlaceInvalido($request);
+        }
+
         $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
+            ['email' => $usuario->email, ...$request->only('password', 'password_confirmation', 'token')],
             function (User $user) use ($request) {
                 $user->forceFill([
                     'password' => Hash::make($request->password),
                     'remember_token' => Str::random(60),
                 ])->save();
 
+                // Sesiones guardadas en la base (SESSION_DRIVER=database): se cierran todas las de la cuenta.
+                if (config('session.driver') === 'database') {
+                    DB::table(config('session.table', 'sessions'))->where('user_id', $user->id)->delete();
+                }
+
                 event(new PasswordReset($user));
             }
         );
 
-        // If the password was successfully reset, we will redirect the user back to
-        // the application's home authenticated view. If there is an error we can
-        // redirect them back to where they came from with their error message.
-        return $status == Password::PASSWORD_RESET
-                    ? redirect()->route('login')->with('status', __($status))
-                    : back()->withInput($request->only('email'))
-                        ->withErrors(['email' => __($status)]);
+        if ($status !== Password::PASSWORD_RESET) {
+            return $this->enlaceInvalido($request);
+        }
+
+        $registro->contrasenaRestablecida($usuario);
+        // Después de responder: un fallo del servidor de correo no impide el cambio ya hecho.
+        defer(fn () => $usuario->notify(new ContrasenaCambiadaNotification));
+
+        return redirect()->route('login')->with('status', __('passwords.reset'));
+    }
+
+    private function enlaceInvalido(Request $request): RedirectResponse
+    {
+        return back()->withInput($request->only('email'))->withErrors(['email' => __('passwords.token')]);
     }
 }

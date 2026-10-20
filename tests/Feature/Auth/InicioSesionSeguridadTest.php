@@ -3,8 +3,8 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
+use App\Notifications\RestablecerContrasenaNotification;
 use Illuminate\Auth\Events\Lockout;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Log\Events\MessageLogged;
@@ -27,7 +27,7 @@ class InicioSesionSeguridadTest extends TestCase
 
     private const ERROR_DESACTIVADA = 'Tu cuenta está desactivada. Comunícate con la fundación.';
 
-    private const RESPUESTA_RECUPERAR = 'Si el correo está registrado, te enviaremos un enlace para restablecer tu contraseña.';
+    private const RESPUESTA_RECUPERAR = 'Si el correo está registrado, te enviaremos un enlace para restablecer tu contraseña. Revisa también tu carpeta de spam.';
 
     /** @var array<int, array{mensaje: string, contexto: array}> */
     private array $registros = [];
@@ -222,8 +222,8 @@ class InicioSesionSeguridadTest extends TestCase
         $this->assertSame([], $erroresInexistente);
 
         // El enlace sí se envía a la cuenta existente.
-        Notification::assertSentTo($usuario, ResetPassword::class);
-        Notification::assertSentTimes(ResetPassword::class, 1);
+        Notification::assertSentTo($usuario, RestablecerContrasenaNotification::class);
+        Notification::assertSentTimes(RestablecerContrasenaNotification::class, 1);
 
         $this->get('/forgot-password')->assertSee(self::RESPUESTA_RECUPERAR);
     }

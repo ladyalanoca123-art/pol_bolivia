@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\RegistraAuditoria;
+use App\Notifications\RestablecerContrasenaNotification;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -42,6 +43,12 @@ class User extends Authenticatable
     public function getEmailForPasswordReset(): string
     {
         return $this->email;
+    }
+
+    /** Enlace para restablecer la contraseña, en español (reemplaza a la notificación de Laravel). */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new RestablecerContrasenaNotification($token));
     }
 
     public function hasRole(string ...$roles): bool

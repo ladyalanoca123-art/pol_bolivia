@@ -1,10 +1,12 @@
 <?php
 
 return [
-    'reset' => 'Tu contraseña ha sido restablecida.',
-    // Respuesta única al pedir el enlace, exista o no la cuenta (evita revelar correos registrados).
-    'sent' => 'Si el correo está registrado, te enviaremos un enlace para restablecer tu contraseña.',
+    'reset' => 'Tu contraseña se actualizó. Ya puedes iniciar sesión.',
+    // Respuesta única al pedir el enlace: exista o no la cuenta, esté desactivada o se haya alcanzado el límite
+    // de envíos (evita revelar qué correos están registrados).
+    'sent' => 'Si el correo está registrado, te enviaremos un enlace para restablecer tu contraseña. Revisa también tu carpeta de spam.',
     'throttled' => 'Espera antes de volver a intentarlo.',
-    'token' => 'Este token para restablecer la contraseña no es válido.',
-    'user' => 'No encontramos un usuario con esa dirección de correo electrónico.',
+    // Enlace inválido, vencido o de una cuenta inexistente o desactivada: el mismo mensaje genérico.
+    'token' => 'El enlace no es válido o ya expiró. Solicita uno nuevo.',
+    'user' => 'El enlace no es válido o ya expiró. Solicita uno nuevo.',
 ];

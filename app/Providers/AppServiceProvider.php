@@ -63,8 +63,27 @@ class AppServiceProvider extends ServiceProvider
         // 5 intentos fallidos por correo e IP que aplica LoginRequest, y no lo reemplaza.
         RateLimiter::for('login', fn (Request $request) => Limit::perMinute(20)->by('login:'.$request->ip()));
 
-        // Recuperar / restablecer contraseña: 5 por minuto por IP (evita spam de correos).
-        RateLimiter::for('recuperar-clave', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+        // Pedir el enlace (POST /forgot-password): 3 por correo cada 15 minutos y 10 por IP por hora (evita spam de
+        // correos). El correo cuenta exista o no la cuenta, así el 429 no revela nada; queda en el log "seguridad".
+        RateLimiter::for('recuperar-clave', function (Request $request) {
+            $correo = mb_strtolower(trim((string) $request->input('email')));
+            $rechazo = function (Request $request, array $headers) use ($correo) {
+                app(RegistroSeguridad::class)->recuperacionSolicitada(null, $correo, 'limite');
+
+                return response()->view('errors.429', [], 429, $headers);
+            };
+
+            return [
+                Limit::perMinutes(15, 3)->by('recuperar-correo:'.hash('sha256', $correo))->response($rechazo),
+                Limit::perHour(10)->by('recuperar-ip:'.$request->ip())->response($rechazo),
+            ];
+        });
+
+        // Cambiar la contraseña con el enlace (POST /reset-password): 5 por minuto por IP y 5 por correo cada 15 minutos.
+        RateLimiter::for('restablecer-clave', fn (Request $request) => [
+            Limit::perMinute(5)->by('restablecer-ip:'.$request->ip()),
+            Limit::perMinutes(15, 5)->by('restablecer-correo:'.hash('sha256', mb_strtolower(trim((string) $request->input('email'))))),
+        ]);
 
         // Envío de formularios (solicitudes, postulaciones, visitas, incidencias): 10 por minuto.
         RateLimiter::for('formularios', fn (Request $request) => Limit::perMinute(10)

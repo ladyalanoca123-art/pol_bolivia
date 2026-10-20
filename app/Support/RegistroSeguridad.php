@@ -20,8 +20,8 @@ use Illuminate\Support\Facades\Log;
  * Solo se guarda: evento, ID de usuario, correo intentado (fallos y bloqueos), rol y resultado (eliminación de
  * cuenta), acción y roles (cambios de administrador), quién ejecutó un comando (usuario del sistema y equipo), IP,
  * agente de usuario (máx. 255 caracteres) y fecha. NUNCA la contraseña ni otras credenciales.
- * Eventos: login, login_fallido, bloqueo, logout, registro_honeypot, eliminacion_cuenta, rol_administrador y
- * administrador_principal.
+ * Eventos: login, login_fallido, bloqueo, logout, registro_honeypot, eliminacion_cuenta, rol_administrador,
+ * administrador_principal, recuperacion_solicitada (correo enmascarado si no hay cuenta) y contrasena_restablecida.
  */
 class RegistroSeguridad
 {
@@ -97,6 +97,38 @@ class RegistroSeguridad
             'principal_anterior_id' => $anterior?->getAuthIdentifier(),
             ...EjecutorConsola::identificar(),
         ]);
+    }
+
+    /**
+     * Solicitud del enlace para restablecer la contraseña. Resultados: enviado, correo_inexistente,
+     * cuenta_desactivada y limite. Si hay cuenta se guarda su ID; si no, el correo ENMASCARADO (enmascararCorreo()).
+     * Nunca se guarda el token.
+     */
+    public function recuperacionSolicitada(?User $usuario, ?string $correo, string $resultado): void
+    {
+        $this->registrar('recuperacion_solicitada', $usuario?->getAuthIdentifier(),
+            $usuario === null && $correo !== null ? self::enmascararCorreo($correo) : null,
+            ['resultado' => $resultado],
+        );
+    }
+
+    /** La contraseña se restableció con un enlace válido (nunca se guarda la contraseña ni el token). */
+    public function contrasenaRestablecida(User $usuario): void
+    {
+        $this->registrar('contrasena_restablecida', $usuario->getAuthIdentifier());
+    }
+
+    /** "juan.perez@gmail.com" → "ju***@gmail.com". Sin "@" válido: "***". */
+    public static function enmascararCorreo(string $correo): string
+    {
+        $correo = trim($correo);
+        $arroba = mb_strrpos($correo, '@');
+
+        if ($arroba === false || $arroba === 0) {
+            return '***';
+        }
+
+        return mb_substr($correo, 0, min(2, $arroba)).'***'.mb_substr($correo, $arroba);
     }
 
     private function registrar(string $evento, mixed $usuarioId, mixed $correo = null, array $detalles = []): void

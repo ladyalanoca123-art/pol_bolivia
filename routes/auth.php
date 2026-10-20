@@ -35,7 +35,7 @@ Route::middleware('guest')->group(function () {
         ->name('password.reset');
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
-        ->middleware('throttle:recuperar-clave')
+        ->middleware('throttle:restablecer-clave')
         ->name('password.store');
 });
 

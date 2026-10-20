@@ -74,7 +74,8 @@ class SeguridadTest extends TestCase
 
     public function test_recuperar_contrasena_se_bloquea_tras_demasiados_intentos(): void
     {
-        foreach (range(1, 5) as $intento) {
+        // 3 por correo cada 15 minutos (AppServiceProvider, limitador recuperar-clave).
+        foreach (range(1, 3) as $intento) {
             $this->post('/forgot-password', ['email' => 'alguien@example.com'])->assertStatus(302);
         }
 
