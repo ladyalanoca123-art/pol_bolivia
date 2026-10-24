@@ -109,14 +109,14 @@
                             <dd class="mt-2 text-xs text-slate-500"><x-reportes.variacion :indicador="$i['solicitudes_recibidas']" /></dd>
                         </div>
                         <div class="{{ $tarjeta }} min-w-0 p-4 sm:p-5">
-                            <dt class="text-sm font-medium text-slate-600">Tasa de aprobación</dt>
+                            <dt class="text-sm font-medium text-slate-600">Adopciones concretadas / (concretadas + rechazadas)</dt>
                             @if ($gestion['tasa_aprobacion']['actual'] === null)
                                 <dd class="mt-2 text-xl font-semibold text-slate-400">Sin decisiones</dd>
-                                <dd class="mt-2 text-xs text-slate-500">Ninguna solicitud aceptada ni rechazada en el período</dd>
+                                <dd class="mt-2 text-xs text-slate-500">Ninguna adopción concretada ni rechazo en el período</dd>
                             @else
                                 <dd class="mt-2 text-3xl font-bold text-blue-950">{{ $numero($gestion['tasa_aprobacion']['actual'], 0) }} <span class="text-lg font-semibold text-slate-500">%</span></dd>
                                 <dd class="mt-2 text-xs text-slate-500">
-                                    {{ $gestion['tasa_aprobacion']['aceptadas'] }} {{ $gestion['tasa_aprobacion']['aceptadas'] === 1 ? 'aceptada' : 'aceptadas' }} de {{ $gestion['tasa_aprobacion']['resueltas'] }} {{ $gestion['tasa_aprobacion']['resueltas'] === 1 ? 'resuelta' : 'resueltas' }}
+                                    {{ $gestion['tasa_aprobacion']['aceptadas'] }} {{ $gestion['tasa_aprobacion']['aceptadas'] === 1 ? 'adopción concretada' : 'adopciones concretadas' }} de {{ $gestion['tasa_aprobacion']['resueltas'] }} {{ $gestion['tasa_aprobacion']['resueltas'] === 1 ? 'solicitud aceptada o rechazada' : 'solicitudes aceptadas o rechazadas' }}. Excluye entregas no concretadas y cancelaciones.
                                     @if ($gestion['tasa_aprobacion']['anterior'] !== null) · antes {{ $numero($gestion['tasa_aprobacion']['anterior'], 0) }} % @endif
                                 </dd>
                             @endif
@@ -126,9 +126,10 @@
                             @php $t = $gestion['tiempo_respuesta']; @endphp
                             @if ($t['actual'] === null)
                                 <dd class="mt-2 text-xl font-semibold text-slate-400">Sin decisiones</dd>
-                                <dd class="mt-2 text-xs text-slate-500">Desde la solicitud hasta su aceptación o rechazo</dd>
+                                <dd class="mt-2 text-xs text-slate-500">Desde la creación hasta la decisión administrativa; excluye aprobadas históricas sin aprobada_at, porque resuelta_at puede corresponder a la entrega.</dd>
                             @else
                                 <dd class="mt-2 text-3xl font-bold text-blue-950">{{ $numero($t['actual']) }} <span class="text-lg font-semibold text-slate-500">{{ (float) $t['actual'] === 1.0 ? 'día' : 'días' }}</span></dd>
+                                <dd class="mt-1 text-xs text-slate-500">Desde la creación de la solicitud hasta la decisión administrativa; no incluye el tiempo posterior hasta la entrega. Se excluyen aceptadas históricas sin aprobada_at porque resuelta_at puede corresponder a la entrega.</dd>
                                 <dd class="mt-2 text-xs text-slate-500">
                                     @if ($t['diferencia'] === null)
                                         Sin decisiones en el período anterior
@@ -210,7 +211,7 @@
                         </div>
                     </details>
                     <div class="mt-3 flex flex-col gap-1 border-t border-slate-100 pt-3 text-xs text-slate-500 sm:flex-row sm:justify-between">
-                        <p>* Mes en curso. Adopciones por fecha de aceptación; solicitudes por fecha de envío.</p>
+                        <p>* Mes en curso. Adopciones concretadas por fecha de resolución; solicitudes por fecha de envío. El total acumulado incluye {{ $adopcionesSinFechaResolucion }} {{ $adopcionesSinFechaResolucion === 1 ? 'adopción aceptada sin fecha de resolución verificable' : 'adopciones aceptadas sin fecha de resolución verificable' }} que no aparece{{ $adopcionesSinFechaResolucion === 1 ? '' : 'n' }} en la serie mensual; no se les asigna una fecha.</p>
                         @if ($conPeriodo)
                             <p class="font-medium text-slate-700">Adopciones en el período: {{ $totalAdopciones }}</p>
                         @endif
@@ -227,7 +228,7 @@
                         <p class="mt-6 {{ $vacio }}">No se recibieron solicitudes en este período.</p>
                     @else
                         <ol class="mt-4 space-y-3">
-                            @foreach ([['Solicitudes recibidas', 'recibidas', 'fill-blue-900'], ['Evaluadas por el equipo', 'evaluadas', 'fill-blue-700'], ['Aceptadas', 'aceptadas', 'fill-blue-500'], ['Seguimiento cerrado', 'seguimiento_cerrado', 'fill-blue-300']] as [$etiqueta, $clave, $color])
+                            @foreach ([['Solicitudes recibidas', 'recibidas', 'fill-blue-900'], ['Evaluadas por el equipo', 'evaluadas', 'fill-blue-700'], ['Adopción concretada', 'aceptadas', 'fill-blue-500'], ['Seguimiento cerrado', 'seguimiento_cerrado', 'fill-blue-300']] as [$etiqueta, $clave, $color])
                                 @php $pct = round($embudo[$clave] / $embudo['recibidas'] * 100); @endphp
                                 <li>
                                     <div class="flex items-baseline justify-between gap-2 text-sm"><span class="text-slate-700">{{ $etiqueta }}</span><span class="font-semibold text-blue-950">{{ $embudo[$clave] }} <span class="text-xs font-normal text-slate-500">({{ $pct }} %)</span></span></div>
@@ -321,8 +322,8 @@
                 <p class="text-sm text-slate-500">Cantidades a hoy, sin filtro de período</p>
                 <div class="mt-4 grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 xl:grid-cols-5">
                     @foreach ([
-                        'Mascotas' => ['Total mascotas' => $totalMascotas, 'Mascotas disponibles' => $mascotasPorEstado['disponible'], 'Mascotas adoptadas' => $mascotasPorEstado['adoptada'], 'Perros' => $mascotasPorEspecie['perro'], 'Gatos' => $mascotasPorEspecie['gato']],
-                        'Solicitudes de adopción' => ['Pendientes' => $solicitudesPorEstado['pendiente'], 'En evaluación' => $solicitudesPorEstado['en_espera'], 'Aceptadas' => $solicitudesPorEstado['aceptada'], 'Rechazadas' => $solicitudesPorEstado['rechazada'], 'Canceladas' => $solicitudesPorEstado['cancelada'], 'Cerradas al adoptarse la mascota' => $solicitudesPorEstado['cerrada']],
+                        'Mascotas' => ['Total mascotas' => $totalMascotas, 'Mascotas disponibles' => $mascotasPorEstado['disponible'], 'Mascotas reservadas' => $mascotasPorEstado['reservada'], 'Mascotas adoptadas' => $mascotasPorEstado['adoptada'], 'Perros' => $mascotasPorEspecie['perro'], 'Gatos' => $mascotasPorEspecie['gato']],
+                        'Solicitudes de adopción' => ['Pendientes' => $solicitudesPorEstado['pendiente'], 'En evaluación' => $solicitudesPorEstado['en_espera'], 'Aprobadas (entrega pendiente)' => $solicitudesPorEstado['aprobada'], 'Adopciones concretadas' => $solicitudesPorEstado['aceptada'], 'Rechazadas' => $solicitudesPorEstado['rechazada'], 'Canceladas' => $solicitudesPorEstado['cancelada'], 'Cerradas al adoptarse la mascota' => $solicitudesPorEstado['cerrada'], 'Entregas no concretadas' => $solicitudesPorEstado['no_concretada']],
                         'Seguimientos' => ['Sin asignar' => $seguimientosPorEstado['sin_asignar'], 'Activos' => $seguimientosPorEstado['activo'], 'Cerrados' => $seguimientosPorEstado['cerrado']],
                         'Incidencias' => ['Pendientes' => $incidenciasPorEstado['pendiente'], 'En proceso' => $incidenciasPorEstado['en_proceso'], 'Atendidas' => $incidenciasPorEstado['atendida']],
                         'Voluntariado' => ['Voluntarios activos' => $voluntariosPorEstado['activo'], 'Voluntarios inactivos' => $voluntariosPorEstado['inactivo'], 'Postulaciones pendientes' => $postulacionesPorEstado['pendiente'], 'Postulaciones aprobadas' => $postulacionesPorEstado['aprobada'], 'Postulaciones rechazadas' => $postulacionesPorEstado['rechazada'], 'Postulaciones canceladas' => $postulacionesPorEstado['cancelada']],

@@ -90,6 +90,7 @@
                 <tr><td>Seguimientos sin voluntario (estado actual)</td><td class="num">{{ $s['seguimientosSinVoluntario'] }}</td><td class="num">—</td></tr>
             </tbody>
         </table>
+        <p class="nota">{{ $s['notaTiempoRespuesta'] }}</p>
 
         <div class="bloque">
         <h2>Embudo de adopción</h2>
@@ -119,7 +120,7 @@
             @endforeach
         </tbody>
     </table>
-    <p class="nota">Últimos 6 meses, independiente del período. Solicitudes por fecha de envío; adopciones por fecha de aceptación.</p>
+    <p class="nota">Últimos 6 meses, independiente del período. Solicitudes por fecha de envío; adopciones concretadas por fecha de resolución. En el estado actual, {{ $s['adopcionesSinFechaResolucion'] }} {{ $s['adopcionesSinFechaResolucion'] === 1 ? 'adopción aceptada carece' : 'adopciones aceptadas carecen' }} de fecha de resolución verificable y no aparece{{ $s['adopcionesSinFechaResolucion'] === 1 ? '' : 'n' }} en la serie; no se asigna una fecha.</p>
 
     <div class="bloque">
     <h2>Mascotas disponibles (estado actual)</h2>

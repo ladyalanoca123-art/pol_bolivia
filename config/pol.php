@@ -9,6 +9,8 @@ return [
     'panel' => [
         // Días sin respuesta a partir de los cuales una solicitud pendiente genera aviso.
         'solicitud_dias_alerta' => 7,
+        // Días desde la aprobación sin registrar la entrega a partir de los cuales una solicitud aprobada genera aviso.
+        'aprobada_dias_alerta' => 7,
         // Días sin voluntario a partir de los cuales un seguimiento genera aviso.
         'seguimiento_sin_asignar_dias' => 3,
         // Días sin revisión a partir de los cuales una postulación genera aviso.

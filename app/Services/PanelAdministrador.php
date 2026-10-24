@@ -119,11 +119,14 @@ class PanelAdministrador
     public function avisos(CarbonInterface $ahora): array
     {
         $diasSolicitud = (int) config('pol.panel.solicitud_dias_alerta');
+        $diasAprobada = (int) config('pol.panel.aprobada_dias_alerta');
         $diasSeguimiento = (int) config('pol.panel.seguimiento_sin_asignar_dias');
         $diasPostulacion = (int) config('pol.panel.postulacion_dias_alerta');
         $hoy = $ahora->toDateString();
 
         $solicitudes = SolicitudAdopcion::query()->where('estado', 'pendiente')->where('created_at', '<', $ahora->subDays($diasSolicitud))->count();
+        $entregasPendientes = SolicitudAdopcion::query()->where('estado', 'aprobada')->whereNotNull('aprobada_at')
+            ->where('aprobada_at', '<', $ahora->subDays($diasAprobada))->count();
         $seguimientos = SeguimientoAdopcion::query()->where('estado', 'sin_asignar')->where('created_at', '<', $ahora->subDays($diasSeguimiento))->count();
         $visitas = VisitaSeguimiento::query()->where('estado', 'programada')->where('fecha_programada', '<', $hoy)->count();
         $postulaciones = PostulacionVoluntariado::query()->where('estado', 'pendiente')->where('created_at', '<', $ahora->subDays($diasPostulacion))->count();
@@ -146,6 +149,13 @@ class PanelAdministrador
                 'accion' => 'Revisar',
                 'ruta' => 'admin.solicitudes-adopcion.index',
                 'parametros' => ['estado' => 'pendiente'],
+            ],
+            'entregas_aprobadas_pendientes' => [
+                'total' => $entregasPendientes,
+                'texto' => self::cantidad($entregasPendientes, 'solicitud aprobada lleva', 'solicitudes aprobadas llevan').' más de '.self::dias($diasAprobada).' sin registrar la entrega. No son adopciones concretadas.',
+                'accion' => 'Revisar entregas',
+                'ruta' => 'admin.solicitudes-adopcion.index',
+                'parametros' => ['estado' => 'aprobada'],
             ],
             'seguimientos_sin_asignar' => [
                 'total' => $seguimientos,

@@ -30,6 +30,7 @@ class ExportadorReporte
         'adopciones_completadas' => 'Adopciones completadas',
         'solicitudes_rechazadas' => 'Solicitudes rechazadas',
         'solicitudes_canceladas' => 'Solicitudes canceladas',
+        'solicitudes_no_concretadas' => 'Entregas no concretadas',
         'solicitudes_cerradas' => 'Solicitudes cerradas al adoptarse la mascota',
         'mascotas_registradas' => 'Mascotas registradas',
         'postulaciones_recibidas' => 'Postulaciones recibidas',
@@ -44,8 +45,8 @@ class ExportadorReporte
 
     /** indicador de gestión => [etiqueta, unidad] */
     public const GESTION = [
-        'tasa_aprobacion' => ['Tasa de aprobación', 'porcentaje'],
-        'tiempo_respuesta' => ['Tiempo promedio de respuesta', 'dias'],
+        'tasa_aprobacion' => ['Adopciones concretadas / (concretadas + rechazadas)', 'porcentaje'],
+        'tiempo_respuesta' => ['Tiempo promedio hasta decisión administrativa', 'dias'],
         'dias_hasta_adopcion' => ['Días promedio hasta la adopción', 'dias'],
         'atencion_incidencias' => ['Atención de incidencias', 'dias'],
         'revision_postulaciones' => ['Revisión de postulaciones', 'dias'],
@@ -72,6 +73,8 @@ class ExportadorReporte
             'periodo' => $periodo ? $periodo->etiqueta() : 'Sin período: totales acumulados y estado actual',
             'comparacion' => $periodo ? 'Comparado con el período anterior: '.$datos['periodoAnterior']->rango() : null,
             'sinPeriodo' => self::SIN_PERIODO,
+            'adopcionesSinFechaResolucion' => $datos['adopcionesSinFechaResolucion'],
+            'notaTiempoRespuesta' => 'Tiempo entre creación y decisión administrativa. Se excluyen aceptadas históricas sin aprobada_at porque resuelta_at puede corresponder a la entrega.',
             'resumen' => $periodo
                 ? [
                     ['Adopciones realizadas', $i['adopciones_completadas']['actual'], $i['adopciones_completadas']['anterior']],
@@ -100,7 +103,7 @@ class ExportadorReporte
             'embudo' => $datos['embudo'] === null ? null : [
                 'recibidas' => $datos['embudo']['recibidas'],
                 'porcentajeAdopcion' => $datos['embudo']['porcentaje_adopcion'],
-                'etapas' => collect(['recibidas' => 'Solicitudes recibidas', 'evaluadas' => 'Evaluadas por el equipo', 'aceptadas' => 'Aceptadas', 'seguimiento_cerrado' => 'Seguimiento cerrado'])
+                'etapas' => collect(['recibidas' => 'Solicitudes recibidas', 'evaluadas' => 'Evaluadas por el equipo', 'aceptadas' => 'Adopciones concretadas', 'seguimiento_cerrado' => 'Seguimiento cerrado'])
                     ->map(fn (string $etiqueta, string $clave) => [$etiqueta, $datos['embudo'][$clave], $datos['embudo']['recibidas'] > 0 ? round($datos['embudo'][$clave] / $datos['embudo']['recibidas'] * 100, 1) : null])
                     ->values()->all(),
             ],
@@ -123,8 +126,8 @@ class ExportadorReporte
                 'dias' => $e['dias'],
             ])->all(),
             'estado' => [
-                'Mascotas' => ['Total mascotas' => $datos['totalMascotas'], 'Mascotas disponibles' => $datos['mascotasPorEstado']['disponible'], 'Mascotas adoptadas' => $datos['mascotasPorEstado']['adoptada'], 'Perros' => $datos['mascotasPorEspecie']['perro'], 'Gatos' => $datos['mascotasPorEspecie']['gato']],
-                'Solicitudes de adopción' => ['Pendientes' => $datos['solicitudesPorEstado']['pendiente'], 'En evaluación' => $datos['solicitudesPorEstado']['en_espera'], 'Aceptadas' => $datos['solicitudesPorEstado']['aceptada'], 'Rechazadas' => $datos['solicitudesPorEstado']['rechazada'], 'Canceladas' => $datos['solicitudesPorEstado']['cancelada'], 'Cerradas al adoptarse la mascota' => $datos['solicitudesPorEstado']['cerrada']],
+                'Mascotas' => ['Total mascotas' => $datos['totalMascotas'], 'Mascotas disponibles' => $datos['mascotasPorEstado']['disponible'], 'Mascotas reservadas' => $datos['mascotasPorEstado']['reservada'], 'Mascotas adoptadas' => $datos['mascotasPorEstado']['adoptada'], 'Perros' => $datos['mascotasPorEspecie']['perro'], 'Gatos' => $datos['mascotasPorEspecie']['gato']],
+                'Solicitudes de adopción' => ['Pendientes' => $datos['solicitudesPorEstado']['pendiente'], 'En evaluación' => $datos['solicitudesPorEstado']['en_espera'], 'Aprobadas (entrega pendiente)' => $datos['solicitudesPorEstado']['aprobada'], 'Adopciones concretadas' => $datos['solicitudesPorEstado']['aceptada'], 'Rechazadas' => $datos['solicitudesPorEstado']['rechazada'], 'Canceladas' => $datos['solicitudesPorEstado']['cancelada'], 'Cerradas al adoptarse la mascota' => $datos['solicitudesPorEstado']['cerrada'], 'Entregas no concretadas' => $datos['solicitudesPorEstado']['no_concretada']],
                 'Seguimientos' => ['Sin asignar' => $datos['seguimientosPorEstado']['sin_asignar'], 'Activos' => $datos['seguimientosPorEstado']['activo'], 'Cerrados' => $datos['seguimientosPorEstado']['cerrado']],
                 'Incidencias' => ['Pendientes' => $datos['incidenciasPorEstado']['pendiente'], 'En proceso' => $datos['incidenciasPorEstado']['en_proceso'], 'Atendidas' => $datos['incidenciasPorEstado']['atendida']],
                 'Voluntariado' => ['Voluntarios activos' => $datos['voluntariosPorEstado']['activo'], 'Voluntarios inactivos' => $datos['voluntariosPorEstado']['inactivo'], 'Postulaciones pendientes' => $datos['postulacionesPorEstado']['pendiente'], 'Postulaciones aprobadas' => $datos['postulacionesPorEstado']['aprobada'], 'Postulaciones rechazadas' => $datos['postulacionesPorEstado']['rechazada'], 'Postulaciones canceladas' => $datos['postulacionesPorEstado']['cancelada']],
@@ -202,6 +205,8 @@ class ExportadorReporte
             foreach ($s['gestion'] as $g) {
                 $fila = $this->filaGestion($hoja, $fila, $g, true);
             }
+            $this->texto($hoja, "A{$fila}", $s['notaTiempoRespuesta']);
+            $fila += 2;
             $hoja->setCellValueExplicit("A{$fila}", 'Seguimientos sin voluntario (estado actual)', DataType::TYPE_STRING);
             $hoja->setCellValue("B{$fila}", $s['seguimientosSinVoluntario']);
             $fila += 2;
@@ -218,7 +223,10 @@ class ExportadorReporte
         // Evolución mensual
         $hoja = $this->hoja($libro, 'Evolución mensual', $s);
         $this->tabla($hoja, 6, ['Mes', 'Solicitudes recibidas', 'Adopciones'], $s['evolucion']);
-        $this->texto($hoja, 'A14', 'Últimos 6 meses. Solicitudes por fecha de envío; adopciones por fecha de aceptación.');
+        $this->texto($hoja, 'A14', 'Últimos 6 meses. Solicitudes por fecha de envío; adopciones concretadas por fecha de resolución.');
+        $cantidadSinFecha = $s['adopcionesSinFechaResolucion'];
+        $descripcionSinFecha = $cantidadSinFecha === 1 ? '1 adopción aceptada carece' : $cantidadSinFecha.' adopciones aceptadas carecen';
+        $this->texto($hoja, 'A15', 'En el estado actual, '.$descripcionSinFecha.' de fecha de resolución verificable y no aparece en la serie; no se asigna una fecha.');
 
         // Mascotas disponibles
         $hoja = $this->hoja($libro, 'Mascotas disponibles', $s);

@@ -37,6 +37,7 @@ class ReporteAdministrador
             'adopciones_completadas' => ['resuelta_at', "estado = 'aceptada'"],
             'solicitudes_rechazadas' => ['resuelta_at', "estado = 'rechazada'"],
             'solicitudes_canceladas' => ['resuelta_at', "estado = 'cancelada'"],
+            'solicitudes_no_concretadas' => ['resuelta_at', "estado = 'no_concretada'"],
             'solicitudes_cerradas' => ['resuelta_at', "estado = 'cerrada'"],
         ],
         'mascotas' => [
@@ -90,6 +91,15 @@ class ReporteAdministrador
         return $resultado;
     }
 
+    /** Cantidad histórica de adopciones aceptadas que no tienen fecha de resolución verificable. */
+    public function adopcionesSinFechaResolucion(): int
+    {
+        return (int) DB::table('solicitudes_adopcion')
+            ->where('estado', 'aceptada')
+            ->whereNull('resuelta_at')
+            ->count();
+    }
+
     /**
      * Adopciones completadas por día de resolución (fecha de La Paz) dentro del período.
      *
@@ -108,8 +118,12 @@ class ReporteAdministrador
 
     /**
      * Indicadores de gestión del período y del anterior (promedios en días; null si no hay casos).
-     *  - tasa_aprobacion: aceptadas / (aceptadas + rechazadas) resueltas en el período (resuelta_at).
-     *  - tiempo_respuesta: días entre created_at y resuelta_at de las aceptadas y rechazadas.
+     *  - tasa_aprobacion: adopciones concretadas / (concretadas + rechazadas); excluye entregas no concretadas
+     *    y cancelaciones, que no representan una decisión de rechazo.
+     *  - tiempo_respuesta: días entre created_at y la decisión administrativa. Usa aprobada_at para aprobaciones
+     *    (también aceptadas, no_concretadas o canceladas después de aprobar) y resuelta_at para rechazos.
+     *    Aceptadas antiguas sin aprobada_at quedan fuera: resuelta_at puede representar la entrega, no la decisión.
+     *    No_concretadas sin aprobación registrada y cancelaciones anteriores a la aprobación también quedan fuera.
      *  - dias_hasta_adopcion: lo mismo, solo aceptadas.
      *  - atencion_incidencias: días entre created_at y atendida_at de las atendidas (atendida_at).
      *  - revision_postulaciones: días entre created_at y revisado_at de las aprobadas y rechazadas.
@@ -124,7 +138,7 @@ class ReporteAdministrador
         $s = $this->porPeriodo('solicitudes_adopcion', [
             'aceptadas' => "count(*) filter (where estado = 'aceptada' and %resuelta_at%)",
             'rechazadas' => "count(*) filter (where estado = 'rechazada' and %resuelta_at%)",
-            'respuesta' => "avg(extract(epoch from resuelta_at - created_at) / 86400) filter (where estado in ('aceptada', 'rechazada') and %resuelta_at%)",
+            'respuesta' => "avg(extract(epoch from (case when estado = 'rechazada' then resuelta_at when estado in ('aprobada', 'aceptada', 'no_concretada', 'cancelada') then aprobada_at end - created_at)) / 86400) filter (where %fecha_decision%)",
             'adopcion' => "avg(extract(epoch from resuelta_at - created_at) / 86400) filter (where estado = 'aceptada' and %resuelta_at%)",
         ], $periodo, $anterior);
         foreach (['actual', 'anterior'] as $p) {
@@ -160,8 +174,9 @@ class ReporteAdministrador
 
     /**
      * Embudo de las solicitudes recibidas en el período (created_at), según su estado actual:
-     * evaluadas por el equipo (en evaluación, aceptadas o rechazadas), aceptadas y con seguimiento cerrado.
-     * Las canceladas y las cerradas automáticamente no se cuentan como evaluadas.
+     * evaluadas por el equipo (en evaluación, aprobadas, aceptadas, rechazadas o no concretadas),
+     * adopciones concretadas (aceptadas) y con seguimiento cerrado. Las canceladas y las cerradas
+     * automáticamente no se cuentan como evaluadas.
      *
      * @return array{recibidas: int, evaluadas: int, aceptadas: int, seguimiento_cerrado: int, porcentaje_adopcion: float|null}
      */
@@ -169,11 +184,12 @@ class ReporteAdministrador
     {
         $fila = DB::selectOne(
             "select count(*) as recibidas,
-                    count(*) filter (where s.estado in ('en_espera', 'aceptada', 'rechazada')) as evaluadas,
+                    count(*) filter (where s.estado in ('en_espera', 'aprobada', 'aceptada', 'rechazada', 'no_concretada')) as evaluadas,
                     count(*) filter (where s.estado = 'aceptada') as aceptadas,
-                    count(*) filter (where s.estado = 'aceptada' and g.estado = 'cerrado') as seguimiento_cerrado
+                    count(*) filter (where s.estado = 'aceptada' and exists (
+                        select 1 from seguimientos_adopcion g where g.solicitud_id = s.id and g.estado = 'cerrado'
+                    )) as seguimiento_cerrado
              from solicitudes_adopcion s
-             left join seguimientos_adopcion g on g.solicitud_id = s.id
              where s.created_at >= ?::timestamptz and s.created_at < ?::timestamptz",
             self::limites($periodo)
         );
@@ -291,6 +307,11 @@ class ReporteAdministrador
         foreach (['actual' => $periodo, 'anterior' => $anterior] as $sufijo => $p) {
             foreach ($expresiones as $nombre => $expresion) {
                 $columnas[] = preg_replace_callback('/%([a-z_]+)(:date)?%/', function (array $m) use ($p, &$enlaces) {
+                    if ($m[1] === 'fecha_decision') {
+                        $decision = "case when estado = 'rechazada' then resuelta_at when estado in ('aprobada', 'aceptada', 'no_concretada', 'cancelada') then aprobada_at end";
+                        array_push($enlaces, ...self::limites($p));
+                        return "({$decision}) >= ?::timestamptz and ({$decision}) < ?::timestamptz";
+                    }
                     if (($m[2] ?? '') === ':date') {
                         array_push($enlaces, $p->inicio->toDateString(), $p->finExclusivo->toDateString());
 

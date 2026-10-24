@@ -22,7 +22,8 @@ class ReporteController extends Controller
     /**
      * Los recuentos «por estado» describen el estado actual (sin período). Con un período, los
      * indicadores de eventos y las adopciones se calculan con ReporteAdministrador (ver allí qué fecha
-     * usa cada uno) junto con su período anterior. Sin parámetros se conserva el cálculo anterior.
+     * usa cada uno) junto con su período anterior. Sin período, las adopciones también se agrupan por
+     * resuelta_at; filas aceptadas sin esa fecha solo se incluyen en el total histórico.
      */
     public function index(ReportPeriodRequest $request, ReporteAdministrador $reportes): View
     {
@@ -46,9 +47,10 @@ class ReporteController extends Controller
     {
         $periodo = $request->validated();
         $periodoReporte = $request->periodoReporte();
-        $mascotasPorEstado = $this->countsByState(Mascota::query(), ['disponible', 'adoptada']);
+        $mascotasPorEstado = $this->countsByState(Mascota::query(), ['disponible', 'reservada', 'adoptada']);
         $mascotasPorEspecie = $this->countsByState(Mascota::query(), ['perro', 'gato'], 'especie');
-        $solicitudesPorEstado = $this->countsByState(SolicitudAdopcion::query(), ['pendiente', 'en_espera', 'aceptada', 'rechazada', 'cancelada', 'cerrada']);
+        $solicitudesPorEstado = $this->countsByState(SolicitudAdopcion::query(), ['pendiente', 'en_espera', 'aprobada', 'aceptada', 'rechazada', 'cancelada', 'cerrada', 'no_concretada']);
+        $adopcionesSinFechaResolucion = $reportes->adopcionesSinFechaResolucion();
         $seguimientosPorEstado = $this->countsByState(SeguimientoAdopcion::query(), ['sin_asignar', 'activo', 'cerrado']);
         $incidenciasPorEstado = $this->countsByState(Incidencia::query(), ['pendiente', 'en_proceso', 'atendida']);
         $postulacionesPorEstado = $this->countsByState(PostulacionVoluntariado::query(), ['pendiente', 'aprobada', 'rechazada', 'cancelada']);
@@ -64,9 +66,12 @@ class ReporteController extends Controller
             $indicadoresPeriodo = null;
             $adopciones = $this->applyPeriod(SolicitudAdopcion::query()->where('estado', 'aceptada'), $periodo);
             $totalAdopciones = $adopciones->count();
+            // Sin período también se agrupan solo las adopciones concretadas con fecha de resolución.
+            // Las filas sin resuelta_at siguen en el total histórico, pero no reciben fecha inventada.
             $adopcionesPorFecha = $adopciones->clone()
-                ->selectRaw('DATE(created_at) as fecha, COUNT(*) as total')
-                ->groupByRaw('DATE(created_at)')
+                ->whereNotNull('resuelta_at')
+                ->selectRaw("(resuelta_at AT TIME ZONE 'America/La_Paz')::date as fecha, COUNT(*) as total")
+                ->groupByRaw("(resuelta_at AT TIME ZONE 'America/La_Paz')::date")
                 ->orderBy('fecha')
                 ->pluck('total', 'fecha');
         }
@@ -96,6 +101,7 @@ class ReporteController extends Controller
             'totalMascotas' => array_sum($mascotasPorEstado),
             'totalSolicitudes' => array_sum($solicitudesPorEstado),
             'totalAdopciones' => $totalAdopciones,
+            'adopcionesSinFechaResolucion' => $adopcionesSinFechaResolucion,
             'totalVoluntarios' => array_sum($voluntariosPorEstado),
             'totalSeguimientos' => array_sum($seguimientosPorEstado),
             'totalIncidencias' => array_sum($incidenciasPorEstado),
