@@ -71,6 +71,9 @@ Route::middleware(['auth', 'verified', 'role:ciudadano,voluntario'])->group(func
     Route::get('/mis-solicitudes-adopcion/{solicitud}', [SolicitudAdopcionController::class, 'show'])
         ->name('solicitudes-adopcion.show');
 
+    Route::patch('/mis-solicitudes-adopcion/{solicitud}/cancelar', [SolicitudAdopcionController::class, 'cancel'])
+        ->name('solicitudes-adopcion.cancel');
+
     Route::get('/mis-postulaciones-voluntariado', [PostulacionVoluntariadoController::class, 'index'])->name('postulaciones-voluntariado.index');
     Route::get('/mis-postulaciones-voluntariado/{postulacion}', [PostulacionVoluntariadoController::class, 'show'])->name('postulaciones-voluntariado.show');
 });
@@ -139,14 +142,39 @@ Route::middleware(['auth', 'verified', 'role:administrador'])
         Route::get('/solicitudes-adopcion/{solicitud}', [AdminSolicitudAdopcionController::class, 'show'])
             ->name('solicitudes-adopcion.show');
 
+        Route::get('/solicitudes-adopcion/{solicitud}/compromiso', [AdminSolicitudAdopcionController::class, 'commitmentPdf'])
+            ->name('solicitudes-adopcion.commitment-pdf');
+
+        Route::post('/solicitudes-adopcion/{solicitud}/compromiso-evidencia', [AdminSolicitudAdopcionController::class, 'uploadCommitmentEvidence'])
+            ->middleware('throttle:formularios')
+            ->name('solicitudes-adopcion.commitment-evidence.store');
+
+        Route::get('/solicitudes-adopcion/{solicitud}/compromiso-evidencia', [AdminSolicitudAdopcionController::class, 'downloadCommitmentEvidence'])
+            ->name('solicitudes-adopcion.commitment-evidence.download');
+
         Route::patch('/solicitudes-adopcion/{solicitud}/evaluar', [AdminSolicitudAdopcionController::class, 'evaluate'])
             ->name('solicitudes-adopcion.evaluate');
 
         Route::patch('/solicitudes-adopcion/{solicitud}/solicitar-informacion', [AdminSolicitudAdopcionController::class, 'requestInformation'])
             ->name('solicitudes-adopcion.request-information');
 
-        Route::patch('/solicitudes-adopcion/{solicitud}/aceptar', [AdminSolicitudAdopcionController::class, 'accept'])
-            ->name('solicitudes-adopcion.accept');
+        Route::patch('/solicitudes-adopcion/{solicitud}/entrevista', [AdminSolicitudAdopcionController::class, 'recordInterview'])
+            ->name('solicitudes-adopcion.interview');
+
+        Route::patch('/solicitudes-adopcion/{solicitud}/visita-previa', [AdminSolicitudAdopcionController::class, 'recordHomeVisit'])
+            ->name('solicitudes-adopcion.home-visit');
+
+        Route::patch('/solicitudes-adopcion/{solicitud}/aprobar', [AdminSolicitudAdopcionController::class, 'approve'])
+            ->name('solicitudes-adopcion.approve');
+
+        Route::patch('/solicitudes-adopcion/{solicitud}/fecha-entrega', [AdminSolicitudAdopcionController::class, 'updateDeliveryDate'])
+            ->name('solicitudes-adopcion.delivery-date');
+
+        Route::patch('/solicitudes-adopcion/{solicitud}/registrar-entrega', [AdminSolicitudAdopcionController::class, 'deliver'])
+            ->name('solicitudes-adopcion.deliver');
+
+        Route::patch('/solicitudes-adopcion/{solicitud}/entrega-no-concretada', [AdminSolicitudAdopcionController::class, 'markNotDelivered'])
+            ->name('solicitudes-adopcion.not-delivered');
 
         Route::patch('/solicitudes-adopcion/{solicitud}/rechazar', [AdminSolicitudAdopcionController::class, 'reject'])
             ->name('solicitudes-adopcion.reject');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\SolicitudAdopcion;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,9 +17,7 @@ class FilterSolicitudesAdopcionRequest extends FormRequest
     {
         return [
             'buscar' => ['nullable', 'string', 'max:100'],
-            'estado' => ['nullable', Rule::in([
-                'pendiente', 'en_espera', 'aceptada', 'rechazada', 'cancelada', 'cerrada',
-            ])],
+            'estado' => ['nullable', Rule::in(array_keys(SolicitudAdopcion::ESTADOS_LEGIBLES))],
             'nivel_alerta' => ['nullable', Rule::in(['verde', 'amarillo', 'rojo'])],
         ];
     }

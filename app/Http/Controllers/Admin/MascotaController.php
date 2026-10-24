@@ -32,6 +32,7 @@ class MascotaController extends Controller
                 'fotos' => fn ($query) => $query
                     ->where('tipo', 'foto')
                     ->where('es_principal', true),
+                'solicitudAprobada:id,mascota_id',
             ])
             ->when(
                 $filters['buscar'] ?? null,
@@ -109,6 +110,7 @@ class MascotaController extends Controller
     {
         $mascota->load([
             'registradoPor',
+            'solicitudAprobada:id,mascota_id',
             'fotos' => fn ($query) => $query
                 ->where('tipo', 'foto')
                 ->orderBy('orden'),
@@ -244,7 +246,8 @@ class MascotaController extends Controller
             $fotos = $mascota->fotos()->where('tipo', 'foto')->orderBy('orden')->get();
             $foto = $fotos->firstWhere('id', $foto->id) ?? abort(404);
 
-            if ($fotos->count() === 1 && $estado === 'disponible') {
+            // Una mascota reservada puede volver a estar disponible: también conserva su foto principal.
+            if ($fotos->count() === 1 && in_array($estado, ['disponible', 'reservada'], true)) {
                 return ['eliminada' => false];
             }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Mascota;
+use App\Models\SolicitudAdopcion;
 use App\Support\CuestionarioAdopcion as C;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -126,11 +127,13 @@ class StoreSolicitudAdopcionRequest extends FormRequest
                 return;
             }
 
-            if ($this->user()?->solicitudesAdopcion()
-                ->where('mascota_id', $mascota->id)
-                ->whereIn('estado', ['pendiente', 'en_espera'])
-                ->exists()) {
+            $activas = $this->user()?->solicitudesAdopcion()->whereIn('estado', SolicitudAdopcion::ESTADOS_ACTIVOS);
+
+            if ((clone $activas)->where('mascota_id', $mascota->id)->exists()) {
                 $validator->errors()->add('mascota', 'Ya tienes una solicitud activa para esta mascota.');
+            } elseif ($activas->count() >= SolicitudAdopcion::MAX_ACTIVAS) {
+                // PostgreSQL lo exige también (validar_limite_solicitudes_activas), con bloqueo ante envíos simultáneos.
+                $validator->errors()->add('mascota', SolicitudAdopcion::LIMITE_ALCANZADO);
             }
         }];
     }
