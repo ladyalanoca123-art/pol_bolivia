@@ -81,6 +81,7 @@ Route::middleware(['auth', 'verified', 'role:ciudadano,voluntario'])->group(func
 Route::middleware(['auth', 'verified', 'role:voluntario'])->group(function () {
     Route::get('/seguimientos', [SeguimientoAdopcionController::class, 'index'])->name('seguimientos.index');
     Route::get('/seguimientos/{seguimiento}', [SeguimientoAdopcionController::class, 'show'])->name('seguimientos.show');
+    Route::get('/seguimientos/{seguimiento}/visitas/{visita}/foto', [SeguimientoAdopcionController::class, 'visitPhoto'])->name('seguimientos.visitas.foto');
     Route::post('/seguimientos/{seguimiento}/visitas', [SeguimientoAdopcionController::class, 'storeVisit'])->middleware('throttle:formularios')->name('seguimientos.visitas.store');
     Route::patch('/seguimientos/{seguimiento}/visitas/{visita}/realizar', [SeguimientoAdopcionController::class, 'completeVisit'])->name('seguimientos.visitas.complete');
     Route::post('/seguimientos/{seguimiento}/incidencias', [SeguimientoAdopcionController::class, 'storeIncident'])->middleware('throttle:formularios')->name('seguimientos.incidencias.store');
@@ -181,6 +182,7 @@ Route::middleware(['auth', 'verified', 'role:administrador'])
 
         Route::get('/seguimientos', [AdminSeguimientoAdopcionController::class, 'index'])->name('seguimientos.index');
         Route::get('/seguimientos/{seguimiento}', [AdminSeguimientoAdopcionController::class, 'show'])->name('seguimientos.show');
+        Route::get('/seguimientos/{seguimiento}/visitas/{visita}/foto', [AdminSeguimientoAdopcionController::class, 'visitPhoto'])->name('seguimientos.visitas.foto');
         Route::patch('/seguimientos/{seguimiento}/asignar', [AdminSeguimientoAdopcionController::class, 'assign'])->name('seguimientos.assign');
         Route::patch('/seguimientos/{seguimiento}/cerrar', [AdminSeguimientoAdopcionController::class, 'close'])->name('seguimientos.close');
         Route::patch('/incidencias/{incidencia}/en-proceso', [IncidenciaController::class, 'progress'])->name('incidencias.progress');

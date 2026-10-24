@@ -21,6 +21,26 @@ return [
         'actividad_limite' => 8,
     ],
 
+    // Botones «Escribir por WhatsApp» y «Llamar» (App\Support\ContactoTelefonico): solo para la administración y
+    // para el voluntario asignado al seguimiento. :nombre, :mascota y :voluntario se reemplazan al armar el enlace.
+    'whatsapp' => [
+        // Prefijo internacional de Bolivia, sin «+».
+        'prefijo' => '591',
+        'mensajes' => [
+            'en_espera' => 'Hola :nombre, te escribimos de POL-Bolivia por tu solicitud para adoptar a :mascota. ¿Cuándo podemos conversar unos minutos?',
+            'aprobada' => 'Hola :nombre, ¡tu solicitud para adoptar a :mascota fue aprobada! Coordinemos el día y lugar de la entrega.',
+            'seguimiento' => 'Hola :nombre, soy :voluntario, voluntario/a de POL-Bolivia. Quisiera coordinar la visita de seguimiento de :mascota.',
+        ],
+    ],
+
+    // Fechas sugeridas para el seguimiento, contadas desde la fecha real de entrega.
+    'seguimiento' => [
+        'visitas' => [
+            1 => ['dias_sugeridos' => 15, 'margen_minimo' => 10, 'margen_maximo' => 20],
+            2 => ['dias_sugeridos' => 90, 'margen_minimo' => 75, 'margen_maximo' => 105],
+        ],
+    ],
+
     // Fotos de mascotas (App\Rules\ImagenLegible::reglas()).
     'mascotas' => [
         // Peso máximo de cada foto, en kilobytes. PHP debe admitirlo: upload_max_filesize y post_max_size.

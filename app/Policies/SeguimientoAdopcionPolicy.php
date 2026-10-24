@@ -30,6 +30,12 @@ class SeguimientoAdopcionPolicy
             && $seguimiento->voluntario_id === $user->id;
     }
 
+    /** «Escribir por WhatsApp» al adoptante: solo el voluntario asignado a este seguimiento. */
+    public function contactAdopter(User $user, SeguimientoAdopcion $seguimiento): bool
+    {
+        return $this->work($user, $seguimiento);
+    }
+
     private function isAdmin(User $user): bool
     {
         return $user->estado && $user->hasRole('administrador');

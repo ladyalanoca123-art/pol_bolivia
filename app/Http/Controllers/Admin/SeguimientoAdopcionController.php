@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Seguimientos\AssignVolunteerRequest;
 use App\Models\SeguimientoAdopcion;
 use App\Models\User;
+use App\Models\VisitaSeguimiento;
+use App\Support\FechasSeguimientoAdopcion;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class SeguimientoAdopcionController extends Controller
@@ -21,11 +24,31 @@ class SeguimientoAdopcionController extends Controller
     public function show(SeguimientoAdopcion $seguimiento): View
     {
         $seguimiento->load(['solicitud.mascota', 'solicitud.solicitante', 'voluntario', 'visitas', 'incidencias']);
+        $fechasSugeridas = $seguimiento->solicitud->entregada_at
+            ? FechasSeguimientoAdopcion::sugeridas($seguimiento->solicitud->entregada_at)
+            : [];
         // El adoptante no puede ser el voluntario de su propio seguimiento (conflicto de interés).
         $voluntarios = User::query()->where('rol', 'voluntario')->where('estado', true)
             ->whereKeyNot($seguimiento->solicitud->solicitante_id)
             ->orderBy('nombres')->get();
-        return view('admin.seguimientos.show', compact('seguimiento', 'voluntarios'));
+        return view('admin.seguimientos.show', compact('seguimiento', 'voluntarios', 'fechasSugeridas'));
+    }
+
+    public function visitPhoto(SeguimientoAdopcion $seguimiento, VisitaSeguimiento $visita)
+    {
+        Gate::authorize('view', $seguimiento);
+        abort_unless($visita->seguimiento_id === $seguimiento->id, 404);
+        abort_unless(
+            $visita->foto_url
+            && str_starts_with($visita->foto_url, 'seguimientos/visitas/')
+            && Storage::disk('local')->exists($visita->foto_url),
+            404
+        );
+
+        return Storage::disk('local')->response($visita->foto_url, null, [
+            'Content-Disposition' => 'inline',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     public function assign(AssignVolunteerRequest $request, SeguimientoAdopcion $seguimiento): RedirectResponse
