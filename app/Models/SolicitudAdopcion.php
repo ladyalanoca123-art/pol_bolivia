@@ -16,7 +16,7 @@ class SolicitudAdopcion extends Model
 
     /**
      * Nombres que ven las personas, en el orden del flujo:
-     * Recibida → En evaluación (entrevista y visita previa) → Aprobada (mascota reservada) → Adopción concretada.
+     * Recibida → En evaluación (revisión y contacto externo) → Aprobada (mascota reservada) → Adopción concretada.
      */
     public const ESTADOS_LEGIBLES = [
         'pendiente' => 'Recibida',

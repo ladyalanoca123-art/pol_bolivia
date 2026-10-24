@@ -30,7 +30,7 @@
                         <div><dt class="font-medium text-gray-500">Sexo</dt><dd class="mt-1 text-gray-900">{{ ucfirst($mascota->sexo) }}</dd></div>
                         <div><dt class="font-medium text-gray-500">Tamaño</dt><dd class="mt-1 text-gray-900">{{ match ($mascota->tamano) { 'pequeno' => 'Pequeño', 'mediano' => 'Mediano', 'grande' => 'Grande', default => ucfirst($mascota->tamano) } }}</dd></div>
                         <div><dt class="font-medium text-gray-500">Color</dt><dd class="mt-1 text-gray-900">{{ $mascota->color ?? '—' }}</dd></div>
-                        <div><dt class="font-medium text-gray-500">Estado</dt><dd class="mt-1 text-gray-900">{{ ucfirst($mascota->estado) }}</dd></div>
+                        <div><dt class="font-medium text-gray-500">Estado</dt><dd class="mt-1 text-gray-900"><x-estado-mascota :mascota="$mascota" /></dd></div>
                         <div><dt class="font-medium text-gray-500">Registrada por</dt><dd class="mt-1 text-gray-900">{{ $mascota->registradoPor->nombres }} {{ $mascota->registradoPor->apellidos }}</dd></div>
                         <div><dt class="font-medium text-gray-500">Fecha de registro</dt><dd class="mt-1 text-gray-900">{{ $mascota->created_at->format('d/m/Y H:i') }}</dd></div>
                         <div class="sm:col-span-2"><dt class="font-medium text-gray-500">Descripción</dt><dd class="mt-1 whitespace-pre-line text-gray-900">{{ $mascota->descripcion ?? '—' }}</dd></div>
@@ -42,7 +42,7 @@
                 $maximoFotos = \App\Models\FotoMascota::MAXIMO_POR_MASCOTA;
                 $cantidadFotos = $mascota->fotos->count();
                 $espaciosLibres = max(0, $maximoFotos - $cantidadFotos);
-                $unicaFotoProtegida = $cantidadFotos === 1 && $mascota->estado === 'disponible';
+                $unicaFotoProtegida = $cantidadFotos === 1 && in_array($mascota->estado, ['disponible', 'reservada'], true);
                 // Errores de la subida ("fotos", "fotos.N" o el campo antiguo "foto") y de la eliminación ("fotos").
                 $erroresFotos = [...$errors->get('foto'), ...$errors->get('fotos'), ...\Illuminate\Support\Arr::flatten($errors->get('fotos.*'))];
             @endphp

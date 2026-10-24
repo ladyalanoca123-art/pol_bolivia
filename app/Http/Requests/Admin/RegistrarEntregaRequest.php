@@ -5,8 +5,8 @@ namespace App\Http\Requests\Admin;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Registrar entrega: fecha real (no futura ni anterior a la aprobación) y compromiso de adopción firmado,
- * obligatorio. PostgreSQL exige lo mismo (validar_cambio_estado_solicitud).
+ * Registrar entrega: fecha real (no futura ni anterior a la aprobación) y confirmación de firma obligatoria.
+ * PostgreSQL vuelve a imponer ambos requisitos al cambiar a aceptada.
  */
 class RegistrarEntregaRequest extends FormRequest
 {
@@ -22,7 +22,6 @@ class RegistrarEntregaRequest extends FormRequest
         return [
             'fecha_entrega' => ['required', 'date_format:Y-m-d', 'before_or_equal:today', ...($aprobada ? ["after_or_equal:{$aprobada}"] : [])],
             'compromiso_firmado' => ['accepted'],
-            'permitir_otra_adopcion' => ['nullable', 'boolean'],
             'comentarios_admin' => ['nullable', 'string', 'max:1000'],
         ];
     }

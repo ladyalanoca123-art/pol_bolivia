@@ -57,8 +57,8 @@
                         <x-input-label for="estado" :value="__('Estado')" />
                         <select id="estado" name="estado" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                             <option value="">Todos</option>
-                            @foreach (['disponible', 'adoptada'] as $status)
-                                <option value="{{ $status }}" @selected(($filters['estado'] ?? '') === $status)>{{ ucfirst($status) }}</option>
+                            @foreach (\App\Models\Mascota::ESTADOS_LEGIBLES as $status => $etiquetaEstado)
+                                <option value="{{ $status }}" @selected(($filters['estado'] ?? '') === $status)>{{ $etiquetaEstado }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -104,7 +104,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $mascota->edad_formateada }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ucfirst($mascota->sexo) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ match ($mascota->tamano) { 'pequeno' => 'Pequeño', 'mediano' => 'Mediano', 'grande' => 'Grande', default => ucfirst($mascota->tamano) } }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ucfirst($mascota->estado) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><x-estado-mascota :mascota="$mascota" /></td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $mascota->created_at->format('d/m/Y H:i') }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                                         <a href="{{ route('admin.mascotas.show', $mascota) }}" class="text-indigo-600 hover:text-indigo-900">Ver detalle</a>

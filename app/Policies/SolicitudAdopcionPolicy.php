@@ -9,9 +9,8 @@ use App\Models\User;
  * Flujo de la solicitud de adopción (PostgreSQL lo exige además en validar_cambio_estado_solicitud):
  *
  *   pendiente «Recibida»
- *     → (evaluate) en_espera «En evaluación»: entrevista obligatoria y visita previa opcional
- *     → (approve)  aprobada «Aprobada»: exige entrevista favorable y, si hubo visita, que sea favorable;
- *                  la mascota queda reservada y se asigna el número de acta
+ *     → (evaluate) en_espera «En evaluación»: la administración revisa el formulario y contacta externamente
+ *     → (approve)  aprobada «Aprobada»: la mascota queda reservada y se asigna el número de acta
  *     → (deliver)  aceptada «Adopción concretada»: exige el compromiso firmado y la fecha real de entrega
  *
  *   pendiente o en_espera → (reject) rechazada, con motivo
@@ -35,7 +34,7 @@ class SolicitudAdopcionPolicy
             && $this->hasPendingDecision($solicitud);
     }
 
-    /** Registrar o corregir la entrevista y la visita previa: solo en evaluación. */
+    /** Compatibilidad con registros históricos; ya no forma parte del procedimiento requerido. */
     public function recordInterview(User $user, SolicitudAdopcion $solicitud): bool
     {
         return $this->isActiveAdministrator($user)
@@ -46,8 +45,6 @@ class SolicitudAdopcionPolicy
     {
         return $this->isActiveAdministrator($user)
             && $solicitud->estado === 'en_espera'
-            && $solicitud->tieneEntrevistaFavorable()
-            && $solicitud->visitaPreviaPermiteAprobar()
             && $solicitud->mascota->estado === 'disponible';
     }
 

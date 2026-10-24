@@ -160,7 +160,7 @@ class SolicitudAdopcionController extends Controller
         return $this->guardar($solicitud, [
             'estado' => 'en_espera',
             ...(filled($datos['comentarios_admin'] ?? null) ? ['comentarios_admin' => $datos['comentarios_admin']] : []),
-        ], 'La solicitud pasó a evaluación: registra la entrevista con el solicitante.');
+        ], 'La solicitud pasó a evaluación. Revisa el formulario y contacta al solicitante por llamada o WhatsApp cuando corresponda.');
     }
 
     /** Registra un pedido de información sin cambiar el estado. */
@@ -191,13 +191,8 @@ class SolicitudAdopcionController extends Controller
     {
         Gate::authorize('approve', $solicitud);
 
-        $datos = $request->validated();
-
-        return $this->guardar($solicitud, [
-            'estado' => 'aprobada',
-            'fecha_entrega_acordada' => $datos['fecha_entrega_acordada'] ?? null,
-            ...(filled($datos['comentarios_admin'] ?? null) ? ['comentarios_admin' => $datos['comentarios_admin']] : []),
-        ], fn (SolicitudAdopcion $s) => "La solicitud fue aprobada. {$s->mascota->nombre} quedó reservada. Acta {$s->numero_acta}.");
+        return $this->guardar($solicitud, ['estado' => 'aprobada'],
+            fn (SolicitudAdopcion $s) => "La solicitud fue aprobada. {$s->mascota->nombre} quedó reservada. Acta {$s->numero_acta}.");
     }
 
     public function updateDeliveryDate(FechaEntregaAcordadaRequest $request, SolicitudAdopcion $solicitud): RedirectResponse
@@ -224,7 +219,6 @@ class SolicitudAdopcionController extends Controller
             'compromiso_firmado' => true,
             // Entrega de hoy: la hora real. Entrega de un día anterior: el inicio de ese día.
             'entregada_at' => $fecha->isToday() ? now() : $fecha,
-            'permitir_otra_adopcion' => (bool) ($datos['permitir_otra_adopcion'] ?? false),
             ...(filled($datos['comentarios_admin'] ?? null) ? ['comentarios_admin' => $datos['comentarios_admin']] : []),
         ], fn (SolicitudAdopcion $s) => "¡Adopción concretada! {$s->mascota->nombre} ya tiene familia y se creó su seguimiento.");
     }
