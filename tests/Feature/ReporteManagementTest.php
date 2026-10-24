@@ -9,11 +9,13 @@ use App\Models\SolicitudAdopcion;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\CompletaFlujoAdopcion;
 use Tests\TestCase;
 
 class ReporteManagementTest extends TestCase
 {
     use RefreshDatabase;
+    use CompletaFlujoAdopcion;
 
     public function test_only_active_administrator_can_access_reports(): void
     {
@@ -87,7 +89,7 @@ class ReporteManagementTest extends TestCase
     {
         $pet = $this->makePet($administrator);
         $request = SolicitudAdopcion::create([...$this->requestData(), 'solicitante_id' => User::factory()->create()->id, 'mascota_id' => $pet->id, 'estado' => 'pendiente']);
-        $request->update(['estado' => 'aceptada']);
+        $this->completarAdopcionPorRutas($administrator, $request);
 
         return $request;
     }

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tests\Support\CuestionarioAdopcionDatos;
 use Tests\Support\CuestionarioVoluntariadoDatos;
+use Tests\Support\CompletaFlujoAdopcion;
 use Tests\TestCase;
 
 /**
@@ -20,6 +21,7 @@ use Tests\TestCase;
 class AvisoSolicitudAdopcionTest extends TestCase
 {
     use RefreshDatabase;
+    use CompletaFlujoAdopcion;
 
     private User $admin;
 
@@ -137,11 +139,15 @@ class AvisoSolicitudAdopcionTest extends TestCase
     public function test_la_ruta_solo_acepta_registro_o_inicio_y_mascotas_disponibles(): void
     {
         $disponible = $this->mascota('Canela');
-        // Una mascota solo pasa a "adoptada" al aceptarse una solicitud (regla de PostgreSQL).
+        // Una mascota solo pasa a "adoptada" al concretarse la entrega (regla de PostgreSQL).
         $adoptada = $this->mascota('Max');
-        SolicitudAdopcion::create(['solicitante_id' => User::factory()->create(['rol' => 'ciudadano'])->id, 'mascota_id' => $adoptada->id, ...CuestionarioAdopcionDatos::registro(), 'estado' => 'pendiente'])
-            ->update(['estado' => 'aceptada']);
+        $solicitud = SolicitudAdopcion::create(['solicitante_id' => User::factory()->create(['rol' => 'ciudadano'])->id, 'mascota_id' => $adoptada->id, ...CuestionarioAdopcionDatos::registro(), 'estado' => 'pendiente']);
+        $this->completarAdopcionPorRutas($this->admin, $solicitud);
         $this->assertSame('adoptada', $adoptada->refresh()->estado);
+
+        // El flujo por rutas deja autenticado al administrador; esta comprobación corresponde a un visitante.
+        $this->app['auth']->guard()->logout();
+        $this->assertGuest();
 
         $this->get('/mascotas/'.$disponible->id.'/solicitar/otra')->assertNotFound();
         $this->get('/mascotas/'.$disponible->id.'/solicitar/https:%2F%2Fevil.example')->assertNotFound();

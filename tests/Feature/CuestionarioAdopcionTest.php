@@ -14,7 +14,7 @@ use Tests\TestCase;
 
 /**
  * Cuestionario de adopción A2, alertas para el administrador y flujo
- * pendiente → en evaluación → aceptada / rechazada con motivo obligatorio.
+ * pendiente → en evaluación → aprobada → entrega concretada, o rechazada con motivo obligatorio.
  */
 class CuestionarioAdopcionTest extends TestCase
 {
@@ -244,14 +244,14 @@ class CuestionarioAdopcionTest extends TestCase
 
     // ---------- Flujo de decisión ----------
 
-    public function test_flujo_completo_pendiente_evaluacion_aceptada(): void
+    public function test_flujo_completo_pendiente_evaluacion_aprobacion_y_entrega(): void
     {
         $admin = $this->administrador();
         $solicitud = $this->enviar([]);
         $mascota = $solicitud->mascota;
 
-        // Desde "Pendiente" no se puede aceptar directamente.
-        $this->actingAs($admin)->patch(route('admin.solicitudes-adopcion.accept', $solicitud), self::MOTIVO)->assertForbidden();
+        // Desde "Pendiente" no se puede aprobar directamente.
+        $this->actingAs($admin)->patch(route('admin.solicitudes-adopcion.approve', $solicitud), self::MOTIVO)->assertForbidden();
 
         $this->actingAs($admin)
             ->patch(route('admin.solicitudes-adopcion.evaluate', $solicitud), ['comentarios_admin' => 'Coordinar visita el sábado.'])
@@ -266,7 +266,17 @@ class CuestionarioAdopcionTest extends TestCase
         $this->assertSame('Falta hablar con la familia.', $solicitud->comentarios_admin);
 
         $this->actingAs($admin)
-            ->patch(route('admin.solicitudes-adopcion.accept', $solicitud), ['comentarios_admin' => 'Visita realizada: todo en orden.'])
+            ->patch(route('admin.solicitudes-adopcion.approve', $solicitud), [])
+            ->assertRedirect();
+        $this->assertSame('aprobada', $solicitud->refresh()->estado);
+        $this->assertNull($solicitud->entrevista_fecha, 'Aprobar no debe requerir ni registrar una entrevista.');
+        $this->assertNull($solicitud->visita_previa_fecha, 'Aprobar no debe requerir ni registrar una visita previa.');
+
+        $this->actingAs($admin)
+            ->patch(route('admin.solicitudes-adopcion.deliver', $solicitud), [
+                'fecha_entrega' => now()->toDateString(),
+                'compromiso_firmado' => '1',
+            ])
             ->assertRedirect();
 
         $this->assertSame('aceptada', $solicitud->refresh()->estado);
@@ -277,19 +287,20 @@ class CuestionarioAdopcionTest extends TestCase
         // El historial muestra cada paso con su motivo.
         $this->actingAs($admin)
             ->get(route('admin.solicitudes-adopcion.show', $solicitud))
-            ->assertSee('Pendiente → En evaluación')
+            ->assertSee('Recibida → En evaluación')
             ->assertSee('Coordinar visita el sábado.')
             ->assertSee('Información solicitada (el estado no cambió)')
-            ->assertSee('En evaluación → Aceptada')
-            ->assertSee('Estado final: Aceptada');
+            ->assertSee('En evaluación → Aprobada')
+            ->assertSee('Aprobada → Adopción concretada')
+            ->assertSee('La entrega quedó registrada y la mascota fue marcada como adoptada.');
     }
 
-    public function test_toda_decision_exige_motivo_y_sin_el_no_cambia_el_estado(): void
+    public function test_solicitar_informacion_y_rechazar_exigen_motivo(): void
     {
         $admin = $this->administrador();
         $solicitud = $this->enviar([]);
 
-        foreach (['evaluate', 'request-information', 'reject'] as $accion) {
+        foreach (['request-information', 'reject'] as $accion) {
             $this->actingAs($admin)
                 ->patch(route("admin.solicitudes-adopcion.{$accion}", $solicitud), ['comentarios_admin' => '  '])
                 ->assertSessionHasErrors('comentarios_admin');
@@ -347,7 +358,7 @@ class CuestionarioAdopcionTest extends TestCase
             ->assertSee('En evaluación');
         $this->actingAs($ciudadano)
             ->get(route('solicitudes-adopcion.show', $solicitud))
-            ->assertSee('la fundación te contactará para la entrevista o la visita');
+            ->assertSee('Tu solicitud está en evaluación. La fundación se pondrá en contacto contigo para continuar el proceso.');
     }
 
     // ---------- Ayudantes ----------

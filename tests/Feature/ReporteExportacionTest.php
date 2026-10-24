@@ -112,20 +112,46 @@ class ReporteExportacionTest extends TestCase
 
         $libro = $this->leerExcel($this->actingAs($this->admin)->get(route('admin.reportes.excel', ['periodo' => 'este_mes']))->streamedContent());
 
-        $filas = $libro->getSheetByName('Indicadores')->rangeToArray('A7:C20', null, true, false);
+        $filas = $libro->getSheetByName('Indicadores')->rangeToArray('A7:C21', null, true, false);
         foreach (array_values(ExportadorReporte::INDICADORES) as $n => $etiqueta) {
             $clave = array_keys(ExportadorReporte::INDICADORES)[$n];
             $this->assertEquals([$etiqueta, $pantalla['indicadoresPeriodo'][$clave]['actual'], $pantalla['indicadoresPeriodo'][$clave]['anterior']], $filas[$n], $etiqueta);
         }
         $gestion = $libro->getSheetByName('Gestión');
-        $this->assertSame('Tasa de aprobación', $gestion->getCell('A7')->getValue());
+        $this->assertSame('Adopciones concretadas / (concretadas + rechazadas)', $gestion->getCell('A7')->getValue());
         $this->assertEqualsWithDelta($pantalla['gestion']['tasa_aprobacion']['actual'] / 100, $gestion->getCell('B7')->getValue(), 0.0001);
-        $estado = collect($libro->getSheetByName('Estado actual')->rangeToArray('A7:C29', null, true, false))->filter(fn ($f) => $f[0] !== null);
+        $estado = collect($libro->getSheetByName('Estado actual')->rangeToArray('A7:C34', null, true, false))->filter(fn ($f) => $f[0] !== null);
         $this->assertEquals($pantalla['totalMascotas'], $estado->firstWhere(1, 'Total mascotas')[2]);
-        $this->assertEquals($pantalla['solicitudesPorEstado']['aceptada'], $estado->first(fn ($f) => $f[0] === 'Solicitudes de adopción' && $f[1] === 'Aceptadas')[2]);
+        $this->assertEquals($pantalla['solicitudesPorEstado']['aceptada'], $estado->first(fn ($f) => $f[0] === 'Solicitudes de adopción' && $f[1] === 'Adopciones concretadas')[2]);
+        $this->assertEquals($pantalla['solicitudesPorEstado']['aprobada'], $estado->first(fn ($f) => $f[0] === 'Solicitudes de adopción' && $f[1] === 'Aprobadas (entrega pendiente)')[2]);
+        $this->assertEquals($pantalla['solicitudesPorEstado']['no_concretada'], $estado->first(fn ($f) => $f[0] === 'Solicitudes de adopción' && $f[1] === 'Entregas no concretadas')[2]);
+        $this->assertSame(1, $pantalla['solicitudesPorEstado']['aprobada']);
+        $this->assertSame(1, $pantalla['solicitudesPorEstado']['no_concretada']);
+        $this->assertSame(1, $pantalla['mascotasPorEstado']['reservada']);
+        $this->assertEquals($pantalla['mascotasPorEstado']['reservada'], $estado->first(fn ($f) => $f[0] === 'Mascotas' && $f[1] === 'Mascotas reservadas')[2]);
         $this->assertEquals($pantalla['disponibles']['total'], array_sum(array_column($libro->getSheetByName('Mascotas disponibles')->rangeToArray('B7:B8', null, true, false), 0)));
     }
 
+    public function test_registros_aceptados_sin_fecha_se_informan_en_pantalla_pdf_y_excel_sin_fecha_inventada(): void
+    {
+        $this->escenario();
+        $this->solicitud('aceptada', '2025-03-02 12:00:00-04');
+        $sinFecha = SolicitudAdopcion::query()->where('estado', 'aceptada')->latest('id')->firstOrFail();
+        DB::table('solicitudes_adopcion')->where('id', $sinFecha->id)->update(['resuelta_at' => null]);
+
+        $pantalla = $this->datosDePantalla([]);
+        $this->assertSame(4, $pantalla['totalAdopciones']);
+        $this->assertSame(1, $pantalla['adopcionesSinFechaResolucion']);
+        $this->actingAs($this->admin)->get(route('admin.reportes.index'))
+            ->assertOk()->assertSee('1 adopción aceptada sin fecha de resolución verificable');
+
+        $secciones = app(ExportadorReporte::class)->secciones($pantalla);
+        $pdfHtml = view('admin.reportes.pdf', ['s' => $secciones])->render();
+        $this->assertStringContainsString('1 adopción aceptada carece de fecha de resolución verificable', $pdfHtml);
+
+        $libro = $this->leerExcel($this->actingAs($this->admin)->get(route('admin.reportes.excel'))->streamedContent());
+        $this->assertStringContainsString('1 adopción aceptada carece de fecha de resolución verificable', $libro->getSheetByName('Evolución mensual')->getCell('A15')->getValue());
+    }
     public function test_los_dos_formatos_respetan_el_periodo_solicitado(): void
     {
         $this->escenario();
@@ -182,7 +208,7 @@ class ReporteExportacionTest extends TestCase
 
         $conPeriodo = $this->leerExcel($this->actingAs($this->admin)->get(route('admin.reportes.excel', ['periodo' => 'este_mes']))->streamedContent());
         $this->assertSame('Sin casos', $conPeriodo->getSheetByName('Gestión')->getCell('B7')->getValue());
-        $this->assertSame('No se recibieron solicitudes en este período.', $conPeriodo->getSheetByName('Gestión')->getCell('A16')->getValue());
+        $this->assertContains('No se recibieron solicitudes en este período.', array_merge(...$conPeriodo->getSheetByName('Gestión')->toArray()));
     }
 
     public function test_los_textos_se_exportan_como_texto_y_no_como_formulas(): void
@@ -219,6 +245,8 @@ class ReporteExportacionTest extends TestCase
         $this->solicitud('aceptada', '2026-09-01 10:00:00-04', '2026-09-03 10:00:00-04');
         $this->solicitud('rechazada', '2026-10-04 10:00:00-04', '2026-10-06 10:00:00-04');
         $this->solicitud('pendiente', '2026-10-10 10:00:00-04');
+        $this->solicitud('aprobada', '2026-10-11 10:00:00-04');
+        $this->solicitud('no_concretada', '2026-10-12 10:00:00-04', '2026-10-13 10:00:00-04');
         $this->mascota(['nombre' => 'Bruno', 'tamano' => 'grande'], '2026-05-25 10:00:00-04');
         $this->mascota(['nombre' => 'Nina', 'especie' => 'gato'], '2026-06-18 10:00:00-04');
     }
@@ -231,9 +259,30 @@ class ReporteExportacionTest extends TestCase
             'mascota_id' => $this->mascota()->id,
             'estado' => 'pendiente',
         ]);
+
         if ($estado !== 'pendiente') {
-            DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update(['estado' => $estado]);
+            $solicitud->update(['estado' => 'en_espera']);
+            if ($estado === 'rechazada') {
+                $solicitud->update(['estado' => 'rechazada']);
+            } else {
+                $solicitud->update(['estado' => 'aprobada']);
+                if ($estado === 'aceptada') {
+                    DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update([
+                        'estado' => 'aceptada',
+                        'compromiso_firmado' => true,
+                        'entregada_at' => DB::selectOne('select CURRENT_TIMESTAMP as ahora')->ahora,
+                    ]);
+                } elseif ($estado === 'no_concretada') {
+                    DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update([
+                        'estado' => 'no_concretada',
+                        'motivo_no_concretada' => 'La entrega no pudo coordinarse.',
+                    ]);
+                }
+            }
         }
+
+        // created_at y resuelta_at son fechas de fixture para consultar períodos históricos; el estado siempre
+        // se obtiene recorriendo las transiciones reales. Una solicitud aprobada conserva resuelta_at nula.
         DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update(array_filter(['created_at' => $creada, 'resuelta_at' => $resuelta]));
     }
 

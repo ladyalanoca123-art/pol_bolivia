@@ -17,6 +17,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\CuestionarioAdopcionDatos;
 use Tests\Support\CuestionarioVoluntariadoDatos;
+use Tests\Support\CompletaFlujoAdopcion;
 use Tests\TestCase;
 
 /**
@@ -26,6 +27,7 @@ use Tests\TestCase;
 class PanelPrincipalTest extends TestCase
 {
     use RefreshDatabase;
+    use CompletaFlujoAdopcion;
 
     private CarbonImmutable $ahora;
 
@@ -139,7 +141,7 @@ class PanelPrincipalTest extends TestCase
 
         $avisos = $this->panel()['avisos'];
 
-        $this->assertSame(['mascotas_sin_fotos', 'solicitudes_sin_respuesta', 'seguimientos_sin_asignar', 'visitas_vencidas', 'postulaciones_sin_revisar'], array_keys($avisos));
+        $this->assertSame(['mascotas_sin_fotos', 'solicitudes_sin_respuesta', 'entregas_aprobadas_pendientes', 'seguimientos_sin_asignar', 'visitas_vencidas', 'postulaciones_sin_revisar'], array_keys($avisos));
         $this->assertSame(1, $avisos['solicitudes_sin_respuesta']['total']);
         $this->assertSame('1 solicitud lleva más de 7 días sin respuesta.', $avisos['solicitudes_sin_respuesta']['texto']);
         $this->assertSame(1, $avisos['postulaciones_sin_revisar']['total']);
@@ -148,6 +150,8 @@ class PanelPrincipalTest extends TestCase
         $this->assertSame('1 seguimiento lleva más de 3 días sin voluntario asignado.', $avisos['seguimientos_sin_asignar']['texto']);
         $this->assertSame(1, $avisos['visitas_vencidas']['total']);
         $this->assertSame('1 visita programada ya pasó su fecha sin registrarse.', $avisos['visitas_vencidas']['texto']);
+        $this->assertSame(0, $avisos['entregas_aprobadas_pendientes']['total']);
+        $this->assertSame(['estado' => 'aprobada'], $avisos['entregas_aprobadas_pendientes']['parametros']);
         // Los avisos sin resultados se conservan con total 0.
         $this->assertSame(0, $avisos['mascotas_sin_fotos']['total']);
         $this->assertSame('0 mascotas disponibles no tienen foto y no lucen en el catálogo.', $avisos['mascotas_sin_fotos']['texto']);
@@ -156,6 +160,40 @@ class PanelPrincipalTest extends TestCase
         foreach ($avisos as $aviso) {
             $this->assertNotEmpty(route($aviso['ruta'], $aviso['parametros']));
         }
+    }
+
+    public function test_el_aviso_de_entregas_aprobadas_respeta_el_umbral_y_excluye_estados_finales(): void
+    {
+        $pendiente = $this->solicitudEn($this->ahora);
+        $this->aprobarSolicitud($pendiente);
+        $aprobadaAt = CarbonImmutable::parse(DB::table('solicitudes_adopcion')->where('id', $pendiente->id)->value('aprobada_at'));
+
+        $noConcretada = $this->solicitudEn($this->ahora);
+        $this->aprobarSolicitud($noConcretada);
+        DB::table('solicitudes_adopcion')->where('id', $noConcretada->id)->update([
+            'estado' => 'no_concretada',
+            'motivo_no_concretada' => 'La entrega no pudo coordinarse.',
+        ]);
+
+        $cancelada = $this->solicitudEn($this->ahora);
+        $this->aprobarSolicitud($cancelada);
+        DB::table('solicitudes_adopcion')->where('id', $cancelada->id)->update(['estado' => 'cancelada']);
+
+        $aceptada = $this->solicitudEn($this->ahora);
+        $this->aprobarSolicitud($aceptada);
+        DB::table('solicitudes_adopcion')->where('id', $aceptada->id)->update([
+            'estado' => 'aceptada',
+            'compromiso_firmado' => true,
+            'entregada_at' => DB::selectOne('select CURRENT_TIMESTAMP as ahora')->ahora,
+        ]);
+
+        $dias = (int) config('pol.panel.aprobada_dias_alerta');
+        $antesDelUmbral = $aprobadaAt->addDays($dias)->subSecond();
+        $despuesDelUmbral = $aprobadaAt->addDays($dias)->addSecond();
+        $servicio = app(PanelAdministrador::class);
+
+        $this->assertSame(0, $servicio->avisos($antesDelUmbral)['entregas_aprobadas_pendientes']['total']);
+        $this->assertSame(1, $servicio->avisos($despuesDelUmbral)['entregas_aprobadas_pendientes']['total']);
     }
 
     public function test_los_avisos_usan_plural(): void
@@ -470,6 +508,12 @@ class PanelPrincipalTest extends TestCase
         });
     }
 
+    private function aprobarSolicitud(SolicitudAdopcion $solicitud): void
+    {
+        $solicitud->update(['estado' => 'en_espera']);
+        $solicitud->update(['estado' => 'aprobada']);
+    }
+
     private function solicitudEn(CarbonImmutable $fecha, array $cambios = []): SolicitudAdopcion
     {
         $actual = CarbonImmutable::now();
@@ -503,7 +547,7 @@ class PanelPrincipalTest extends TestCase
     private function seguimientoSinAsignar(): SeguimientoAdopcion
     {
         $solicitud = $this->solicitudEn(CarbonImmutable::now()->subMonth());
-        $solicitud->update(['estado' => 'aceptada']);
+        $this->completarAdopcionConTransicionesDeBase($solicitud);
 
         return $solicitud->seguimiento()->firstOrFail();
     }

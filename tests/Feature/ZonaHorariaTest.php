@@ -12,6 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
 use Tests\Support\CuestionarioAdopcionDatos;
+use Tests\Support\CompletaFlujoAdopcion;
 use Tests\TestCase;
 
 /**
@@ -21,6 +22,7 @@ use Tests\TestCase;
 class ZonaHorariaTest extends TestCase
 {
     use RefreshDatabase;
+    use CompletaFlujoAdopcion;
 
     private const ZONA = 'America/La_Paz';
 
@@ -108,7 +110,7 @@ class ZonaHorariaTest extends TestCase
             return $mascota;
         });
         $solicitud = SolicitudAdopcion::create(['solicitante_id' => User::factory()->create(['rol' => 'ciudadano'])->id, 'mascota_id' => $mascota->id, ...CuestionarioAdopcionDatos::registro(), 'estado' => 'pendiente']);
-        $solicitud->update(['estado' => 'aceptada']);
+        $this->completarAdopcionPorRutas($admin, $solicitud);
         $seguimiento = SeguimientoAdopcion::where('solicitud_id', $solicitud->id)->sole();
 
         // created_at del seguimiento lo pone PostgreSQL; el de la solicitud, Laravel.

@@ -15,6 +15,7 @@ use App\Support\PeriodoReporte;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\CompletaFlujoAdopcion;
 use Tests\Support\CuestionarioAdopcionDatos;
 use Tests\Support\CuestionarioVoluntariadoDatos;
 use Tests\TestCase;
@@ -26,6 +27,7 @@ use Tests\TestCase;
 class ReporteVistaTest extends TestCase
 {
     use RefreshDatabase;
+    use CompletaFlujoAdopcion;
 
     private User $admin;
 
@@ -41,29 +43,39 @@ class ReporteVistaTest extends TestCase
 
     public function test_indicadores_de_gestion_del_periodo_y_del_anterior(): void
     {
-        $this->resuelta('aceptada', '2026-10-01 00:00:00-04', '2026-10-03 00:00:00-04');   // 2 días
-        $this->resuelta('rechazada', '2026-10-02 00:00:00-04', '2026-10-06 00:00:00-04');  // 4 días
-        $this->resuelta('aceptada', '2026-09-09 00:00:00-04', '2026-09-10 00:00:00-04');   // anterior, 1 día
-        $this->resuelta('aceptada', '2026-10-01 00:00:00-04', '2026-10-15 00:00:00-04');   // fuera
+        // La aprobación se fecha en PostgreSQL y es inmutable; el período se alinea con el reloj real.
+        $this->travelBack();
+        $hoy = CarbonImmutable::now(PeriodoReporte::ZONA);
+        $inicioMes = $hoy->startOfMonth();
+        $ahora = CarbonImmutable::parse(DB::selectOne('select CURRENT_TIMESTAMP as ahora')->ahora);
 
-        [$seguimiento, $voluntario] = $this->seguimientoActivo();
+        $aceptada = $this->resuelta('aceptada', $ahora->subDays(2)->toDateTimeString(), $ahora->toDateTimeString());
+        DB::table('solicitudes_adopcion')->where('id', $aceptada->id)->update([
+            'created_at' => CarbonImmutable::parse($aceptada->aprobada_at)->subDays(2)->toDateTimeString(),
+        ]);
+        $this->resuelta('rechazada', $ahora->subDays(6)->toDateTimeString(), $ahora->toDateTimeString());
+
+        $decisionAnterior = $inicioMes->subMonthNoOverflow()->addDays(9);
+        $this->resuelta('rechazada', $decisionAnterior->subDay()->toDateTimeString(), $decisionAnterior->toDateTimeString());
+
+        [$seguimiento, $voluntario] = $this->seguimientoActivo($ahora);
         $incidencia = Incidencia::create(['seguimiento_id' => $seguimiento->id, 'reportado_por' => $voluntario->id, 'tipo' => 'salud', 'descripcion' => 'x', 'estado' => 'pendiente']);
         $incidencia->update(['estado' => 'atendida', 'comentarios_resolucion' => 'Resuelta', 'atendida_por' => $this->admin->id, 'atendida_at' => now()]);
-        DB::table('incidencias')->where('id', $incidencia->id)->update(['created_at' => '2026-10-01 00:00:00-04', 'atendida_at' => '2026-10-02 12:00:00-04']);
-        $this->visita($seguimiento, $voluntario, '2026-10-05', 'realizada');
-        $this->visita($seguimiento, $voluntario, '2026-10-06', 'no_asistio');
-        [$otro, $otroVoluntario] = $this->seguimientoActivo();
-        $this->visita($otro, $otroVoluntario, '2026-10-07', 'programada');   // sin resultado: no cuenta
-        $this->visita($otro, $otroVoluntario, '2026-10-15', 'realizada');    // fuera del período
+        DB::table('incidencias')->where('id', $incidencia->id)->update(['created_at' => $ahora->startOfMonth()->addDay()->toDateTimeString(), 'atendida_at' => $ahora->startOfMonth()->addDays(2)->addHours(12)->toDateTimeString()]);
+        $this->visita($seguimiento, $voluntario, $ahora->startOfMonth()->addDays(4)->toDateString(), 'realizada');
+        $this->visita($seguimiento, $voluntario, $ahora->startOfMonth()->addDays(5)->toDateString(), 'no_asistio');
+        [$otro, $otroVoluntario] = $this->seguimientoActivo($ahora);
+        $this->visita($otro, $otroVoluntario, $ahora->startOfMonth()->addDays(6)->toDateString(), 'programada');
+        $this->visita($otro, $otroVoluntario, $ahora->addDay()->toDateString(), 'realizada');
 
         $postulacion = PostulacionVoluntariado::create(['usuario_id' => User::factory()->create(['rol' => 'ciudadano'])->id, 'estado' => 'pendiente', ...CuestionarioVoluntariadoDatos::registro()]);
-        DB::table('postulaciones_voluntariado')->where('id', $postulacion->id)->update(['created_at' => '2026-10-01 00:00:00-04', 'estado' => 'rechazada', 'revisado_por' => $this->admin->id, 'revisado_at' => '2026-10-10 00:00:00-04']);
+        DB::table('postulaciones_voluntariado')->where('id', $postulacion->id)->update(['created_at' => $ahora->startOfMonth()->addDay()->toDateTimeString(), 'estado' => 'rechazada', 'revisado_por' => $this->admin->id, 'revisado_at' => $ahora->startOfMonth()->addDays(10)->toDateTimeString()]);
 
         $g = app(ReporteAdministrador::class)->gestion(PeriodoReporte::crear('este_mes'));
 
-        $this->assertSame(['actual' => 50.0, 'anterior' => 100.0, 'aceptadas' => 1, 'resueltas' => 2], $g['tasa_aprobacion']);
+        $this->assertSame(['actual' => 75.0, 'anterior' => 0.0, 'aceptadas' => 3, 'resueltas' => 4], $g['tasa_aprobacion']);
         $this->assertSame(['actual' => 3.0, 'anterior' => 1.0, 'diferencia' => 2.0], $g['tiempo_respuesta']);
-        $this->assertSame(['actual' => 2.0, 'anterior' => 1.0, 'diferencia' => 1.0], $g['dias_hasta_adopcion']);
+        $this->assertSame(['actual' => 2.0, 'anterior' => null, 'diferencia' => null], $g['dias_hasta_adopcion']);
         $this->assertSame(1.5, $g['atencion_incidencias']['actual']);
         $this->assertNull($g['atencion_incidencias']['anterior']);
         $this->assertSame(9.0, $g['revision_postulaciones']['actual']);
@@ -137,13 +149,17 @@ class ReporteVistaTest extends TestCase
     {
         $this->resuelta('aceptada', '2026-10-02 10:00:00-04', '2026-10-03 10:00:00-04');
         $this->resuelta('aceptada', '2026-09-02 10:00:00-04', '2026-09-03 10:00:00-04');
+        // Rechazos en ambos períodos mantienen representativa la comparación de decisiones,
+        // aunque aprobada_at de las adopciones nuevas sea inmutable y posterior al reloj congelado.
+        $this->resuelta('rechazada', '2026-10-02 10:00:00-04', '2026-10-03 10:00:00-04');
+        $this->resuelta('rechazada', '2026-09-02 10:00:00-04', '2026-09-03 10:00:00-04');
 
         $this->vista(['periodo' => 'este_mes'])
             ->assertSee('1 al 14 de octubre de 2026 · comparado con el período anterior (1 al 14 de septiembre de 2026)')
             ->assertSeeInOrder(['aria-current="true"', 'Este mes'], false)
             ->assertSee('Igual que el período anterior (1)')
             ->assertSee('Adopciones en el período: 1')
-            ->assertSee('1 aceptada de 1 resuelta')
+            ->assertSee('1 adopción concretada de 2 solicitudes aceptadas o rechazadas. Excluye entregas no concretadas y cancelaciones.')
             ->assertSee('Quitar período');
     }
 
@@ -210,7 +226,9 @@ class ReporteVistaTest extends TestCase
             'mascota_id' => $this->mascota()->id,
             'estado' => 'pendiente',
         ]);
-        if ($estado !== 'pendiente') {
+        if ($estado === 'aceptada') {
+            $this->completarAdopcionConTransicionesDeBase($solicitud);
+        } elseif ($estado !== 'pendiente') {
             DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update(['estado' => $estado]);
         }
         DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update(array_filter(['created_at' => $creada, 'resuelta_at' => $resuelta]));
@@ -219,9 +237,10 @@ class ReporteVistaTest extends TestCase
     }
 
     /** @return array{0: SeguimientoAdopcion, 1: User} */
-    private function seguimientoActivo(): array
+    private function seguimientoActivo(?CarbonImmutable $ahora = null): array
     {
-        $seguimiento = $this->resuelta('aceptada', '2026-08-01 10:00:00-04', '2026-08-02 10:00:00-04')->seguimiento()->firstOrFail();
+        $ahora ??= CarbonImmutable::parse(DB::selectOne('select CURRENT_TIMESTAMP as ahora')->ahora);
+        $seguimiento = $this->resuelta('aceptada', $ahora->subDays(2)->toDateTimeString(), $ahora->toDateTimeString())->seguimiento()->firstOrFail();
         $voluntario = User::factory()->create(['rol' => 'voluntario']);
         $seguimiento->update(['voluntario_id' => $voluntario->id, 'estado' => 'activo', 'fecha_inicio' => now()]);
 

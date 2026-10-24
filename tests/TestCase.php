@@ -25,6 +25,20 @@ abstract class TestCase extends BaseTestCase
     {
         $this->protegerBaseDePruebas();
 
+        // PostgreSQL RefreshDatabase elimina tablas, pero deja secuencias independientes.
+        // Limpiar la secuencia de actas huérfana solo después de verificar base y marcador,
+        // y únicamente antes de la primera migración de una suite que usa RefreshDatabase.
+        if (
+            !\Illuminate\Foundation\Testing\RefreshDatabaseState::$migrated
+            && in_array(
+                \Illuminate\Foundation\Testing\RefreshDatabase::class,
+                class_uses_recursive(static::class),
+                true
+            )
+        ) {
+            DB::statement('DROP SEQUENCE IF EXISTS seq_numero_acta_adopcion');
+        }
+
         return parent::setUpTraits();
     }
 
@@ -34,20 +48,52 @@ abstract class TestCase extends BaseTestCase
      */
     protected function protegerBaseDePruebas(): void
     {
-        $cacheada = $this->app->configurationIsCached();
-        $conexion = $cacheada ? null : DB::connection();
-        $identidad = $conexion?->selectOne(
+        if ($this->app->configurationIsCached()) {
+            $this->detenerPruebas('hay una configuración cacheada; no se puede garantizar el destino de la conexión.');
+        }
+
+        $conexionPredeterminada = config('database.default');
+        if ($conexionPredeterminada !== 'pgsql') {
+            $this->detenerPruebas("la conexión predeterminada efectiva es '{$conexionPredeterminada}', no pgsql.");
+        }
+
+        $configuracionPgsql = config('database.connections.pgsql');
+        if (!is_array($configuracionPgsql)) {
+            $this->detenerPruebas('no se puede verificar la configuración efectiva de la conexión pgsql.');
+        }
+
+        if (($configuracionPgsql['driver'] ?? null) !== 'pgsql') {
+            $this->detenerPruebas('el driver efectivo de la conexión pgsql no es pgsql.');
+        }
+
+        if (($configuracionPgsql['database'] ?? null) !== self::BASE_DE_PRUEBAS) {
+            $baseConfigurada = $configuracionPgsql['database'] ?? '<no definida>';
+            $this->detenerPruebas("la base efectiva configurada es '{$baseConfigurada}', no ".self::BASE_DE_PRUEBAS.'.');
+        }
+
+        if (!array_key_exists('url', $configuracionPgsql) || !in_array($configuracionPgsql['url'], [null, ''], true)) {
+            $this->detenerPruebas('DB_URL no está vacío o no se puede verificar; se detienen las pruebas antes de conectar.');
+        }
+
+        // Solo se permite abrir la conexión después de validar su destino efectivo.
+        $conexion = DB::connection();
+        $identidad = $conexion->selectOne(
             "select current_database() as base, shobj_description(d.oid, 'pg_database') as marca
              from pg_database d where d.datname = current_database()"
         );
 
-        $motivo = static::motivoParaDetenerPruebas($cacheada, $conexion?->getDriverName(), $identidad?->base, $identidad?->marca);
+        $motivo = static::motivoParaDetenerPruebas(false, $conexion->getDriverName(), $identidad?->base, $identidad?->marca);
 
         if ($motivo !== null) {
-            fwrite(STDERR, PHP_EOL."PRUEBAS DETENIDAS: {$motivo}".PHP_EOL);
-
-            throw new RuntimeException("PRUEBAS DETENIDAS: {$motivo}");
+            $this->detenerPruebas($motivo);
         }
+    }
+
+    private function detenerPruebas(string $motivo): never
+    {
+        fwrite(STDERR, PHP_EOL."PRUEBAS DETENIDAS: {$motivo}".PHP_EOL);
+
+        throw new RuntimeException("PRUEBAS DETENIDAS: {$motivo}");
     }
 
     /** Devuelve el motivo para detener las pruebas, o null si la base es la de pruebas. */

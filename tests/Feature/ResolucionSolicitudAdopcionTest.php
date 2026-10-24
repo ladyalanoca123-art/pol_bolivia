@@ -43,7 +43,7 @@ class ResolucionSolicitudAdopcionTest extends TestCase
         $this->decidir('evaluate', $solicitud);
         $this->assertNull($this->resueltaAt($solicitud), 'en evaluación sigue abierta');
 
-        $this->decidir('accept', $solicitud);
+        $this->completarDesdeEvaluacion($solicitud);
 
         $this->assertNotNull($this->resueltaAt($solicitud));
         // Misma fuente que updated_at: CURRENT_TIMESTAMP de la transacción de la transición.
@@ -134,14 +134,16 @@ class ResolucionSolicitudAdopcionTest extends TestCase
         $this->travelTo(CarbonImmutable::parse('2026-10-01 09:15:00', 'America/La_Paz'));
         $this->decidir('evaluate', $solicitud);
         $this->travelTo(CarbonImmutable::parse('2026-10-03 16:40:00', 'America/La_Paz'));
-        $this->decidir('accept', $solicitud);
+        $this->aceptarSinAuditoriaConTransicionesValidas($solicitud);
+        $fechaAuditoria = DB::selectOne("select to_char(date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'UTC'), 'YYYY-MM-DD HH24:MI:SS.US') as fecha")->fecha;
+        $this->auditoria($solicitud->id, 'aprobada', 'aceptada', $fechaAuditoria.'+00');
         $this->travelBack();
         $this->olvidarResolucion($solicitud);
 
         $resultado = $this->migracion()->recuperarFechasDeResolucion();
 
-        // La auditoría de la aceptación (16:40 en La Paz, 20:40 UTC), no la de la evaluación.
-        $this->assertSame('2026-10-03 20:40:00.000000', $this->textoUtc($solicitud, 'resuelta_at'));
+        // La auditoría de la transición que concretó la adopción, no la de la evaluación.
+        $this->assertSame($fechaAuditoria, $this->textoUtc($solicitud, 'resuelta_at'));
         $this->assertSame(['auditoria' => 1, 'cierre_por_aceptacion' => 0, 'updated_at' => 0, 'sin_fecha' => 0], $resultado);
     }
 
@@ -226,7 +228,7 @@ class ResolucionSolicitudAdopcionTest extends TestCase
         $otraMascota = $this->solicitud();
 
         $this->decidir('evaluate', $aceptada);
-        $this->decidir('accept', $aceptada);
+        $this->completarDesdeEvaluacion($aceptada);
 
         foreach ([$pendiente, $enEvaluacion] as $cerrada) {
             $this->assertSame('cerrada', $cerrada->fresh()->estado);
@@ -243,7 +245,7 @@ class ResolucionSolicitudAdopcionTest extends TestCase
         $this->solicitud($mascota);
         $this->solicitud($mascota);
         $this->decidir('evaluate', $aceptada);
-        $this->decidir('accept', $aceptada);
+        $this->completarDesdeEvaluacion($aceptada);
 
         // Con fecha de resolución hay tres solicitudes, pero adopción realizada solo una (estado = aceptada).
         $this->assertSame(3, SolicitudAdopcion::query()->whereNotNull('resuelta_at')->count());
@@ -259,7 +261,9 @@ class ResolucionSolicitudAdopcionTest extends TestCase
         $cerrada = $this->solicitud($mascota);
         $this->decidir('evaluate', $aceptada);
         $this->travelTo(CarbonImmutable::parse('2026-10-02 11:30:00', 'America/La_Paz'));
-        $this->decidir('accept', $aceptada);
+        $this->aceptarSinAuditoriaConTransicionesValidas($aceptada);
+        $fechaAuditoria = DB::selectOne("select to_char(date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'UTC'), 'YYYY-MM-DD HH24:MI:SS.US') as fecha")->fecha;
+        $this->auditoria($aceptada->id, 'aprobada', 'aceptada', $fechaAuditoria.'+00');
         $this->travelBack();
         $this->olvidarResolucion($aceptada);
         $this->olvidarResolucion($cerrada);
@@ -267,8 +271,8 @@ class ResolucionSolicitudAdopcionTest extends TestCase
         $resultado = $this->migracion()->recuperarFechasDeResolucion();
 
         // La aceptada desde su auditoría; la cerrada (sin auditoría propia) desde esa aceptación.
-        $this->assertSame('2026-10-02 15:30:00.000000', $this->textoUtc($aceptada, 'resuelta_at'));
-        $this->assertSame('2026-10-02 15:30:00.000000', $this->textoUtc($cerrada, 'resuelta_at'));
+        $this->assertSame($fechaAuditoria, $this->textoUtc($aceptada, 'resuelta_at'));
+        $this->assertSame($fechaAuditoria, $this->textoUtc($cerrada, 'resuelta_at'));
         $this->assertSame(['auditoria' => 1, 'cierre_por_aceptacion' => 1, 'updated_at' => 0, 'sin_fecha' => 0], $resultado);
     }
 
@@ -279,12 +283,16 @@ class ResolucionSolicitudAdopcionTest extends TestCase
         $aceptada = $this->solicitud($mascota);
         $cerrada = $this->solicitud($mascota);
         $this->decidir('evaluate', $aceptada);
-        $this->decidir('accept', $aceptada);
+        $this->aceptarSinAuditoriaConTransicionesValidas($aceptada);
+        $fechaAuditoria = DB::selectOne("select to_char(date_trunc('second', CURRENT_TIMESTAMP AT TIME ZONE 'UTC'), 'YYYY-MM-DD HH24:MI:SS.US') as fecha")->fecha;
+        $this->auditoria($aceptada->id, 'aprobada', 'aceptada', $fechaAuditoria.'+00');
         $this->travelBack();
         $this->olvidarResolucion($aceptada);
         $this->olvidarResolucion($cerrada);
-        // created_at posterior a la aceptación (y a updated_at): ninguna fecha es coherente.
-        DB::table('solicitudes_adopcion')->where('id', $cerrada->id)->update(['created_at' => now()->addDay()]);
+        // created_at posterior a la aceptación: ninguna fecha es coherente.
+        DB::table('solicitudes_adopcion')->where('id', $cerrada->id)->update([
+            'created_at' => DB::selectOne("select CURRENT_TIMESTAMP + interval '1 day' as futuro")->futuro,
+        ]);
 
         $resultado = $this->migracion()->recuperarFechasDeResolucion();
 
@@ -300,8 +308,8 @@ class ResolucionSolicitudAdopcionTest extends TestCase
         $mascota = $this->mascota();
         $aceptada = $this->solicitud($mascota);
         $cerrada = $this->solicitud($mascota);
-        // Aceptación sin auditoría (UPDATE directo): PostgreSQL cierra igualmente la otra solicitud.
-        DB::table('solicitudes_adopcion')->where('id', $aceptada->id)->update(['estado' => 'aceptada']);
+        // Sin auditoría de aplicación, pero con transiciones válidas: PostgreSQL cierra igualmente la otra solicitud.
+        $this->aceptarSinAuditoriaConTransicionesValidas($aceptada);
         $this->assertSame('cerrada', $cerrada->fresh()->estado);
         $this->olvidarResolucion($aceptada);
         $this->olvidarResolucion($cerrada);
@@ -342,6 +350,32 @@ class ResolucionSolicitudAdopcionTest extends TestCase
         $this->actingAs($this->admin)
             ->patch(route("admin.solicitudes-adopcion.{$accion}", $solicitud), self::MOTIVO)
             ->assertRedirect(route('admin.solicitudes-adopcion.show', $solicitud));
+    }
+
+    private function completarDesdeEvaluacion(SolicitudAdopcion $solicitud): void
+    {
+        $this->actingAs($this->admin)
+            ->patch(route('admin.solicitudes-adopcion.approve', $solicitud), [])
+            ->assertRedirect(route('admin.solicitudes-adopcion.show', $solicitud));
+
+        $this->actingAs($this->admin)
+            ->patch(route('admin.solicitudes-adopcion.deliver', $solicitud), [
+                'fecha_entrega' => now()->toDateString(),
+                'compromiso_firmado' => '1',
+            ])
+            ->assertRedirect(route('admin.solicitudes-adopcion.show', $solicitud));
+    }
+
+    /** Recorrido válido por PostgreSQL sin capa HTTP ni auditoría de aplicación. */
+    private function aceptarSinAuditoriaConTransicionesValidas(SolicitudAdopcion $solicitud): void
+    {
+        DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update(['estado' => 'en_espera']);
+        DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update(['estado' => 'aprobada']);
+        DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update([
+            'estado' => 'aceptada',
+            'compromiso_firmado' => true,
+            'entregada_at' => DB::selectOne('select CURRENT_TIMESTAMP as ahora')->ahora,
+        ]);
     }
 
     private function solicitud(?Mascota $mascota = null): SolicitudAdopcion

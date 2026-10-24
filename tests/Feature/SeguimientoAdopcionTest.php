@@ -12,11 +12,13 @@ use App\Models\VisitaSeguimiento;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\CompletaFlujoAdopcion;
 use Tests\TestCase;
 
 class SeguimientoAdopcionTest extends TestCase
 {
     use RefreshDatabase;
+    use CompletaFlujoAdopcion;
 
     public function test_only_administrator_can_assign_activate_and_close_a_tracking_case(): void
     {
@@ -50,10 +52,47 @@ class SeguimientoAdopcionTest extends TestCase
 
         $this->actingAs($other)->post(route('seguimientos.visitas.store', $seguimiento), $this->visitData())->assertForbidden();
         $this->actingAs($volunteer)->post(route('seguimientos.visitas.store', $seguimiento), $this->visitData())->assertRedirect();
-        $this->actingAs($volunteer)->post(route('seguimientos.visitas.store', $seguimiento), $this->visitData(['fecha_programada' => now()->addDay()->toDateString()]))->assertRedirect();
+        $this->actingAs($volunteer)
+            ->post(route('seguimientos.visitas.store', $seguimiento), $this->visitData(['fecha_programada' => now()->addDay()->toDateString()]))
+            ->assertSessionHasErrors('fecha_programada');
+
+        $primeraVisita = $seguimiento->visitas()->firstOrFail();
+        $this->actingAs($volunteer)->patch(route('seguimientos.visitas.complete', [$seguimiento, $primeraVisita]), [
+            'fecha_realizada' => now()->toDateString(),
+            'respuestas' => [
+                'apetito' => 'normal',
+                'animo' => 'bien',
+                'adaptacion' => 'buena',
+                'convivencia' => 'buena',
+                'sintomas' => ['ninguno'],
+            ],
+        ])->assertRedirect();
+
+        $this->actingAs($volunteer)
+            ->post(route('seguimientos.visitas.store', $seguimiento), $this->visitData(['fecha_programada' => now()->addDays(15)->toDateString()]))
+            ->assertRedirect();
 
         $this->expectException(QueryException::class);
         VisitaSeguimiento::create(['seguimiento_id' => $seguimiento->id, 'voluntario_id' => $volunteer->id, 'fecha_programada' => now()->addDays(2)->toDateString(), 'estado' => 'programada']);
+    }
+
+    public function test_visit_outside_recommended_window_is_allowed_but_shows_a_warning(): void
+    {
+        [$administrator, $seguimiento] = $this->acceptedTracking();
+        $volunteer = $this->activate($administrator, $seguimiento);
+        $fechaFueraDelMargen = now()->addDays(30)->toDateString();
+
+        $this->actingAs($volunteer)
+            ->post(route('seguimientos.visitas.store', $seguimiento), $this->visitData(['fecha_programada' => $fechaFueraDelMargen]))
+            ->assertRedirect()
+            ->assertSessionHas('warning');
+
+        $this->assertDatabaseHas('visitas_seguimiento', [
+            'seguimiento_id' => $seguimiento->id,
+            'voluntario_id' => $volunteer->id,
+            'fecha_programada' => $fechaFueraDelMargen,
+            'estado' => 'programada',
+        ]);
     }
 
     public function test_visit_cannot_be_completed_before_its_scheduled_date(): void
@@ -130,7 +169,7 @@ class SeguimientoAdopcionTest extends TestCase
             return $mascota;
         });
         $solicitud = SolicitudAdopcion::create(['solicitante_id' => $citizen->id, 'mascota_id' => $mascota->id, 'estado' => 'pendiente', ...\Tests\Support\CuestionarioAdopcionDatos::registro()]);
-        $solicitud->update(['estado' => 'aceptada']);
+        $this->completarAdopcionPorRutas($administrator, $solicitud);
         return [$administrator, $solicitud->seguimiento()->firstOrFail()];
     }
 

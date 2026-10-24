@@ -11,11 +11,13 @@ use App\Models\User;
 use App\Models\Voluntario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\CompletaFlujoAdopcion;
 use Tests\TestCase;
 
 class VoluntariadoManagementTest extends TestCase
 {
     use RefreshDatabase;
+    use CompletaFlujoAdopcion;
 
     public function test_active_citizen_can_submit_a_pending_application_and_sensitive_input_is_ignored(): void
     {
@@ -169,7 +171,7 @@ class VoluntariadoManagementTest extends TestCase
             return $pet;
         });
         $request = SolicitudAdopcion::create(['solicitante_id' => $citizen->id, 'mascota_id' => $pet->id, ...\Tests\Support\CuestionarioAdopcionDatos::registro(), 'estado' => 'pendiente']);
-        $request->update(['estado' => 'aceptada']);
+        $this->completarAdopcionPorRutas($administrator, $request);
 
         return SeguimientoAdopcion::query()->where('solicitud_id', $request->id)->sole();
     }

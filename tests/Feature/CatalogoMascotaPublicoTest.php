@@ -8,11 +8,13 @@ use App\Models\SolicitudAdopcion;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\CompletaFlujoAdopcion;
 use Tests\TestCase;
 
 class CatalogoMascotaPublicoTest extends TestCase
 {
     use RefreshDatabase;
+    use CompletaFlujoAdopcion;
 
     public function test_home_only_shows_available_pets_and_existing_module_links(): void
     {
@@ -25,8 +27,7 @@ class CatalogoMascotaPublicoTest extends TestCase
             ...\Tests\Support\CuestionarioAdopcionDatos::registro(),
             'estado' => 'pendiente',
         ]);
-        $solicitud->update(['estado' => 'en_espera']);
-        $this->actingAs($administrator)->patch(route('admin.solicitudes-adopcion.accept', $solicitud), ['comentarios_admin' => 'Visita realizada.']);
+        $this->completarAdopcionPorRutas($administrator, $solicitud);
 
         $this->get(route('home'))
             ->assertOk()

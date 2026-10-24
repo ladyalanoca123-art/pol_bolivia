@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\CuestionarioAdopcionDatos;
+use Tests\Support\CompletaFlujoAdopcion;
 use Tests\Support\CuestionarioVoluntariadoDatos;
 use Tests\TestCase;
 
@@ -21,6 +22,7 @@ use Tests\TestCase;
 class VoluntarioSolicitudesAdopcionTest extends TestCase
 {
     use RefreshDatabase;
+    use CompletaFlujoAdopcion;
 
     private User $admin;
 
@@ -55,13 +57,13 @@ class VoluntarioSolicitudesAdopcionTest extends TestCase
         $this->actingAs($this->admin)->patch(route('admin.solicitudes-adopcion.evaluate', $solicitud), ['comentarios_admin' => 'Coordinar visita.'])->assertRedirect();
         $this->actingAs($voluntario)->get(route('solicitudes-adopcion.show', $solicitud))
             ->assertOk()
-            ->assertSee('Tu solicitud está en evaluación: la fundación te contactará para la entrevista o la visita.')
+            ->assertSee('Tu solicitud está en evaluación. La fundación se pondrá en contacto contigo para continuar el proceso.')
             ->assertDontSee('Coordinar visita.'); // los comentarios internos siguen sin mostrarse
 
-        $this->actingAs($this->admin)->patch(route('admin.solicitudes-adopcion.accept', $solicitud), ['comentarios_admin' => 'Visita realizada.'])->assertRedirect();
+        $this->completarAdopcionPorRutas($this->admin, $solicitud);
         $this->actingAs($voluntario)->get(route('solicitudes-adopcion.show', $solicitud))
             ->assertOk()
-            ->assertSee('¡Felicidades! Tu solicitud fue aceptada.', false);
+            ->assertSee('La adopción fue concretada y la entrega quedó registrada.', false);
     }
 
     public function test_el_voluntario_no_puede_ver_solicitudes_ajenas(): void
@@ -111,7 +113,7 @@ class VoluntarioSolicitudesAdopcionTest extends TestCase
         $this->aprobarComoVoluntario($ciudadano);
 
         $this->actingAs($this->admin)->patch(route('admin.solicitudes-adopcion.evaluate', $solicitud), ['comentarios_admin' => 'Coordinar visita.'])->assertRedirect();
-        $this->actingAs($this->admin)->patch(route('admin.solicitudes-adopcion.accept', $solicitud), ['comentarios_admin' => 'Visita realizada.'])->assertRedirect();
+        $this->completarAdopcionPorRutas($this->admin, $solicitud);
 
         $this->assertSame('aceptada', $solicitud->refresh()->estado);
         $this->assertSame('adoptada', $solicitud->mascota->refresh()->estado);
@@ -126,7 +128,7 @@ class VoluntarioSolicitudesAdopcionTest extends TestCase
         $otroVoluntario = $this->aprobarComoVoluntario($this->ciudadano());
 
         $this->actingAs($this->admin)->patch(route('admin.solicitudes-adopcion.evaluate', $solicitud), ['comentarios_admin' => 'Coordinar visita.']);
-        $this->actingAs($this->admin)->patch(route('admin.solicitudes-adopcion.accept', $solicitud), ['comentarios_admin' => 'Visita realizada.']);
+        $this->completarAdopcionPorRutas($this->admin, $solicitud);
         $seguimiento = SeguimientoAdopcion::where('solicitud_id', $solicitud->id)->sole();
 
         // El adoptante no aparece entre las opciones; el otro voluntario sí.

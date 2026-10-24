@@ -76,6 +76,8 @@ class ReporteIndicadoresPeriodoTest extends TestCase
         $this->fechas($sinFecha, ['resuelta_at' => null]);           // fecha no recuperable
         $this->fechas($this->resuelta('rechazada'), ['resuelta_at' => self::ULTIMO_INSTANTE]);
         $this->fechas($this->resuelta('cancelada'), ['resuelta_at' => self::ANTERIOR]);
+        $noConcretada = $this->noConcretada();
+        $this->fechas($noConcretada, ['resuelta_at' => self::PRIMER_INSTANTE]);
 
         $i = $this->indicadores();
 
@@ -84,6 +86,9 @@ class ReporteIndicadoresPeriodoTest extends TestCase
         $this->assertSame([1, 0], [$i['solicitudes_cerradas']['actual'], $i['solicitudes_cerradas']['anterior']], 'el cierre automático no es una adopción');
         $this->assertSame([1, 0], [$i['solicitudes_rechazadas']['actual'], $i['solicitudes_rechazadas']['anterior']]);
         $this->assertSame([0, 1], [$i['solicitudes_canceladas']['actual'], $i['solicitudes_canceladas']['anterior']]);
+        $this->assertSame([1, 0], [$i['solicitudes_no_concretadas']['actual'], $i['solicitudes_no_concretadas']['anterior']], 'se cuenta por la fecha de cierre no concretado');
+        $gestion = app(ReporteAdministrador::class)->gestion(PeriodoReporte::crear('este_mes'));
+        $this->assertSame(50.0, $gestion['tasa_aprobacion']['actual'], 'no_concretada se excluye del numerador y denominador');
 
         // Integración: la vista recibe las adopciones del período por resuelta_at.
         $respuesta = $this->reportes(['periodo' => 'este_mes']);
@@ -92,6 +97,29 @@ class ReporteIndicadoresPeriodoTest extends TestCase
         $this->assertSame($i, $respuesta->viewData('indicadoresPeriodo'));
         // Sin filtro siguen contándose todas las aceptadas, también la que no tiene resuelta_at.
         $this->assertSame(5, $this->reportes()->viewData('totalAdopciones'));
+    }
+
+    public function test_el_tiempo_de_respuesta_de_una_adopcion_usa_la_fecha_de_aprobacion_y_no_la_entrega(): void
+    {
+        $solicitud = $this->solicitud();
+        $this->estado($solicitud, 'en_espera');
+        $this->estado($solicitud, 'aprobada');
+
+        $aprobadaAt = CarbonImmutable::parse(DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->value('aprobada_at'));
+        $this->fechas($solicitud, ['created_at' => $aprobadaAt->subDays(5)]);
+        DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update([
+            'estado' => 'aceptada',
+            'compromiso_firmado' => true,
+            'entregada_at' => DB::selectOne('select CURRENT_TIMESTAMP as ahora')->ahora,
+        ]);
+        // La fixture representa una entrega posterior; la fecha de aprobación generada por el trigger no se altera.
+        $entregaPosterior = $aprobadaAt->addDays(12);
+        $this->fechas($solicitud, ['resuelta_at' => $entregaPosterior]);
+
+        $periodo = PeriodoReporte::crear('personalizado', $aprobadaAt->toDateString(), $aprobadaAt->toDateString(), $aprobadaAt->addDay());
+        $gestion = app(ReporteAdministrador::class)->gestion($periodo);
+
+        $this->assertSame(5.0, $gestion['tiempo_respuesta']['actual']);
     }
 
     public function test_las_adopciones_por_dia_usan_la_fecha_de_la_paz(): void
@@ -173,15 +201,16 @@ class ReporteIndicadoresPeriodoTest extends TestCase
     {
         $antigua = $this->resuelta('aceptada');
         $this->fechas($antigua, ['created_at' => '2025-03-02 12:00:00-04', 'resuelta_at' => null]);
-        $this->fechas($this->resuelta('aceptada'), ['created_at' => self::PRIMER_INSTANTE]);
+        $adopcion = $this->resuelta('aceptada');
+        $this->fechas($adopcion, ['created_at' => self::PRIMER_INSTANTE, 'resuelta_at' => self::ULTIMO_INSTANTE]);
 
         $respuesta = $this->reportes();
 
         $this->assertNull($respuesta->viewData('indicadoresPeriodo'));
         $this->assertNull($respuesta->viewData('periodoReporte'));
         $this->assertSame(2, $respuesta->viewData('totalAdopciones'));
-        // Agrupadas por fecha de creación, como antes.
-        $this->assertSame(['2025-03-02', '2026-10-01'], array_keys($respuesta->viewData('adopcionesPorFecha')->all()));
+        // El total conserva aceptadas sin fecha; el gráfico no inventa una fecha y agrupa por resolución.
+        $this->assertSame(['2026-10-14' => 1], $respuesta->viewData('adopcionesPorFecha')->all());
         // Los recuentos por estado describen el estado actual y no dependen del período.
         $this->assertSame($respuesta->viewData('solicitudesPorEstado'), $this->reportes(['periodo' => 'este_mes'])->viewData('solicitudesPorEstado'));
     }
@@ -262,13 +291,43 @@ class ReporteIndicadoresPeriodoTest extends TestCase
     /** Transición real de estado (los triggers de PostgreSQL aplican sus reglas y registran resuelta_at). */
     private function estado(SolicitudAdopcion $solicitud, string $estado): void
     {
-        DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update(['estado' => $estado]);
+        $actual = DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->value('estado');
+        if ($estado === 'aceptada') {
+            if ($actual === 'pendiente') {
+                DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update(['estado' => 'en_espera']);
+                DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update(['estado' => 'aprobada']);
+            }
+            DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update([
+                'estado' => 'aceptada',
+                'compromiso_firmado' => true,
+                'entregada_at' => DB::selectOne('select CURRENT_TIMESTAMP as ahora')->ahora,
+            ]);
+        } else {
+            if ($estado === 'rechazada' && $actual === 'pendiente') {
+                DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update(['estado' => 'en_espera']);
+            }
+            DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update(['estado' => $estado]);
+        }
     }
 
     private function resuelta(string $estado): SolicitudAdopcion
     {
         $solicitud = $this->solicitud();
         $this->estado($solicitud, $estado);
+
+        return $solicitud;
+    }
+
+    /** Crea una entrega no concretada recorriendo las transiciones permitidas por el trigger. */
+    private function noConcretada(): SolicitudAdopcion
+    {
+        $solicitud = $this->solicitud();
+        $this->estado($solicitud, 'en_espera');
+        $this->estado($solicitud, 'aprobada');
+        DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update([
+            'estado' => 'no_concretada',
+            'motivo_no_concretada' => 'La entrega no pudo coordinarse.',
+        ]);
 
         return $solicitud;
     }

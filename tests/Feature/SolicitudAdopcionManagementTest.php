@@ -10,12 +10,14 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\CompletaFlujoAdopcion;
 use Tests\Support\CuestionarioAdopcionDatos;
 use Tests\TestCase;
 
 class SolicitudAdopcionManagementTest extends TestCase
 {
     use RefreshDatabase;
+    use CompletaFlujoAdopcion;
 
     private const MOTIVO = ['comentarios_admin' => 'Visita realizada y hogar adecuado.'];
 
@@ -172,11 +174,7 @@ class SolicitudAdopcionManagementTest extends TestCase
             $mascota,
         );
 
-        $solicitud->update(['estado' => 'en_espera']);
-
-        $this->actingAs($administrator)
-            ->patch(route('admin.solicitudes-adopcion.accept', $solicitud), self::MOTIVO)
-            ->assertRedirect(route('admin.solicitudes-adopcion.show', $solicitud));
+        $this->completarAdopcionPorRutas($administrator, $solicitud);
 
         $this->assertDatabaseHas('solicitudes_adopcion', [
             'id' => $solicitud->id,
@@ -205,11 +203,7 @@ class SolicitudAdopcionManagementTest extends TestCase
         $pending = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano']), $mascota);
         $waiting = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano']), $mascota);
         $waiting->update(['estado' => 'en_espera']);
-        $accepted->update(['estado' => 'en_espera']);
-
-        $this->actingAs($administrator)
-            ->patch(route('admin.solicitudes-adopcion.accept', $accepted), self::MOTIVO)
-            ->assertRedirect();
+        $this->completarAdopcionPorRutas($administrator, $accepted);
 
         $this->assertDatabaseHas('solicitudes_adopcion', ['id' => $accepted->id, 'estado' => 'aceptada']);
         $this->assertDatabaseHas('solicitudes_adopcion', ['id' => $pending->id, 'estado' => 'cerrada']);
@@ -257,7 +251,7 @@ class SolicitudAdopcionManagementTest extends TestCase
             $actor = User::factory()->create(['rol' => $rol]);
 
             $this->actingAs($actor)
-                ->patch(route('admin.solicitudes-adopcion.accept', $solicitud))
+                ->patch(route('admin.solicitudes-adopcion.approve', $solicitud))
                 ->assertForbidden();
 
             $this->actingAs($actor)
@@ -279,7 +273,7 @@ class SolicitudAdopcionManagementTest extends TestCase
         $this->acceptAfterEvaluation($administrator, $accepted);
 
         $this->actingAs($administrator)
-            ->patch(route('admin.solicitudes-adopcion.accept', $accepted), self::MOTIVO)
+            ->patch(route('admin.solicitudes-adopcion.approve', $accepted), self::MOTIVO)
             ->assertForbidden();
 
         $rejected = $this->createSolicitud(
@@ -305,9 +299,8 @@ class SolicitudAdopcionManagementTest extends TestCase
         );
 
         $solicitud->update(['estado' => 'en_espera']);
-
         $this->actingAs($administrator)
-            ->patch(route('admin.solicitudes-adopcion.accept', $solicitud), [
+            ->patch(route('admin.solicitudes-adopcion.approve', $solicitud), [
                 ...self::MOTIVO,
                 'estado' => 'rechazada',
                 'solicitante_id' => User::factory()->create(['rol' => 'ciudadano'])->id,
@@ -317,7 +310,9 @@ class SolicitudAdopcionManagementTest extends TestCase
 
         $this->assertDatabaseHas('solicitudes_adopcion', [
             'id' => $solicitud->id,
-            'estado' => 'aceptada',
+            'estado' => 'aprobada',
+            'entrevista_fecha' => null,
+            'visita_previa_fecha' => null,
         ]);
     }
 
@@ -330,7 +325,7 @@ class SolicitudAdopcionManagementTest extends TestCase
         $this->acceptAfterEvaluation($administrator, $accepted);
 
         $this->actingAs($administrator)
-            ->patch(route('admin.solicitudes-adopcion.accept', $solicitud), self::MOTIVO)
+            ->patch(route('admin.solicitudes-adopcion.approve', $solicitud), self::MOTIVO)
             ->assertForbidden();
 
         $this->assertDatabaseHas('solicitudes_adopcion', [
@@ -349,17 +344,19 @@ class SolicitudAdopcionManagementTest extends TestCase
 
         $this->actingAs($administrator)
             ->get(route('admin.solicitudes-adopcion.show', $solicitud))
-            ->assertSee('Continuar a entrevista o visita')
+            ->assertSee('Pasar a evaluación')
             ->assertSee('Rechazar')
-            ->assertDontSee('Aceptar adopción');
+            ->assertDontSee('action="'.route('admin.solicitudes-adopcion.approve', $solicitud).'"', false);
 
         $solicitud->update(['estado' => 'en_espera']);
 
         $this->actingAs($administrator)
             ->get(route('admin.solicitudes-adopcion.show', $solicitud))
-            ->assertSee('Aceptar adopción')
+            ->assertSee('Aprobar solicitud')
             ->assertSee('Rechazar')
-            ->assertDontSee('Continuar a entrevista o visita');
+            ->assertDontSee('Pasar a evaluación')
+            ->assertDontSee('Registrar entrevista')
+            ->assertDontSee('Visita previa al hogar');
 
         $solicitud->update(['estado' => 'rechazada']);
 
@@ -415,12 +412,7 @@ class SolicitudAdopcionManagementTest extends TestCase
 
     private function acceptAfterEvaluation(User $administrator, SolicitudAdopcion $solicitud): void
     {
-        $this->actingAs($administrator)
-            ->patch(route('admin.solicitudes-adopcion.evaluate', $solicitud), self::MOTIVO)
-            ->assertRedirect();
-        $this->actingAs($administrator)
-            ->patch(route('admin.solicitudes-adopcion.accept', $solicitud), self::MOTIVO)
-            ->assertRedirect();
+        $this->completarAdopcionPorRutas($administrator, $solicitud);
     }
 
     private function questionnaireData(): array
