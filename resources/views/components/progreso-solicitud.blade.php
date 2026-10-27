@@ -1,10 +1,10 @@
 @props(['solicitud'])
 {{--
-    Línea de progreso de una solicitud: Recibida → En evaluación → Aprobada → Adopción concretada.
+    Línea de progreso de una solicitud: Recibida → En evaluación → Reservada → Adopción concretada.
     Las etapas completadas en verde, la actual resaltada y, si terminó sin adopción, la etapa donde se detuvo en rojo.
 --}}
 @php
-    $etiquetas = [1 => 'Recibida', 2 => 'En evaluación', 3 => 'Aprobada', 4 => 'Adopción concretada'];
+    $etiquetas = [1 => 'Recibida', 2 => 'En evaluación', 3 => 'Reservada', 4 => 'Adopción concretada'];
     $alcanzada = $solicitud->etapaAlcanzada();
     $detenida = $solicitud->terminoSinAdopcion();
 @endphp

@@ -7,7 +7,7 @@
         $mensajes = [
             'pendiente' => 'La fundación recibió tu solicitud y está revisando la información.',
             'en_espera' => 'Tu solicitud está en evaluación. La fundación se pondrá en contacto contigo para continuar el proceso.',
-            'aprobada' => 'Tu solicitud fue aprobada y la mascota quedó reservada mientras se coordina la entrega.',
+            'aprobada' => '¡Tu solicitud fue aprobada! La mascota quedó reservada para ti. La fundación te contactará por WhatsApp para coordinar la entrega.',
             'aceptada' => 'La adopción fue concretada y la entrega quedó registrada. ¡Gracias por darle un hogar!',
             'rechazada' => 'Esta solicitud no fue aprobada. Si necesitas orientación, puedes comunicarte con la fundación.',
             'cancelada' => 'Esta solicitud fue cancelada.',
@@ -48,10 +48,9 @@
         </div>
 
         @if ($solicitud->estado === 'aprobada')
-            @if ($solicitud->numero_acta || $solicitud->fecha_entrega_acordada)
+            @if ($solicitud->numero_acta)
                 <dl class="mt-5 grid grid-cols-1 gap-4 rounded-lg border border-indigo-100 bg-indigo-50 p-4 text-sm sm:grid-cols-2">
                     @if ($solicitud->numero_acta)<div><dt class="font-medium text-gray-600">Número de acta</dt><dd class="mt-1 font-semibold text-indigo-950">{{ $solicitud->numero_acta }}</dd></div>@endif
-                    @if ($solicitud->fecha_entrega_acordada)<div><dt class="font-medium text-gray-600">Fecha de entrega acordada</dt><dd class="mt-1 text-gray-900">{{ $solicitud->fecha_entrega_acordada->format('d/m/Y') }}</dd></div>@endif
                 </dl>
             @endif
         @endif

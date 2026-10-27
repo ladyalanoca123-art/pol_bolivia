@@ -10,7 +10,7 @@ use App\Models\User;
  *
  *   pendiente «Recibida»
  *     → (evaluate) en_espera «En evaluación»: la administración revisa el formulario y contacta externamente
- *     → (approve)  aprobada «Aprobada»: la mascota queda reservada y se asigna el número de acta
+ *     → (approve)  aprobada «Reservada»: la mascota queda reservada y se asigna el número de acta
  *     → (deliver)  aceptada «Adopción concretada»: exige el compromiso firmado y la fecha real de entrega
  *
  *   pendiente o en_espera → (reject) rechazada, con motivo
@@ -32,13 +32,6 @@ class SolicitudAdopcionPolicy
     {
         return $this->isActiveAdministrator($user)
             && $this->hasPendingDecision($solicitud);
-    }
-
-    /** Compatibilidad con registros históricos; ya no forma parte del procedimiento requerido. */
-    public function recordInterview(User $user, SolicitudAdopcion $solicitud): bool
-    {
-        return $this->isActiveAdministrator($user)
-            && $solicitud->estado === 'en_espera';
     }
 
     public function approve(User $user, SolicitudAdopcion $solicitud): bool
@@ -64,12 +57,6 @@ class SolicitudAdopcionPolicy
 
     /** La evidencia solo se registra mientras la entrega está pendiente; adjuntarla no confirma la firma. */
     public function uploadCommitmentEvidence(User $user, SolicitudAdopcion $solicitud): bool
-    {
-        return $this->isActiveAdministrator($user)
-            && $solicitud->estado === 'aprobada';
-    }
-
-    public function updateDeliveryDate(User $user, SolicitudAdopcion $solicitud): bool
     {
         return $this->isActiveAdministrator($user)
             && $solicitud->estado === 'aprobada';

@@ -123,7 +123,7 @@ class ReporteExportacionTest extends TestCase
         $estado = collect($libro->getSheetByName('Estado actual')->rangeToArray('A7:C34', null, true, false))->filter(fn ($f) => $f[0] !== null);
         $this->assertEquals($pantalla['totalMascotas'], $estado->firstWhere(1, 'Total mascotas')[2]);
         $this->assertEquals($pantalla['solicitudesPorEstado']['aceptada'], $estado->first(fn ($f) => $f[0] === 'Solicitudes de adopción' && $f[1] === 'Adopciones concretadas')[2]);
-        $this->assertEquals($pantalla['solicitudesPorEstado']['aprobada'], $estado->first(fn ($f) => $f[0] === 'Solicitudes de adopción' && $f[1] === 'Aprobadas (entrega pendiente)')[2]);
+        $this->assertEquals($pantalla['solicitudesPorEstado']['aprobada'], $estado->first(fn ($f) => $f[0] === 'Solicitudes de adopción' && $f[1] === 'Reservadas (entrega pendiente)')[2]);
         $this->assertEquals($pantalla['solicitudesPorEstado']['no_concretada'], $estado->first(fn ($f) => $f[0] === 'Solicitudes de adopción' && $f[1] === 'Entregas no concretadas')[2]);
         $this->assertSame(1, $pantalla['solicitudesPorEstado']['aprobada']);
         $this->assertSame(1, $pantalla['solicitudesPorEstado']['no_concretada']);

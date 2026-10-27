@@ -6,11 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AprobarSolicitudAdopcionRequest;
 use App\Http\Requests\Admin\DecideSolicitudAdopcionRequest;
 use App\Http\Requests\Admin\EntregaNoConcretadaRequest;
-use App\Http\Requests\Admin\FechaEntregaAcordadaRequest;
 use App\Http\Requests\Admin\FilterSolicitudesAdopcionRequest;
 use App\Http\Requests\Admin\RegistrarEntregaRequest;
-use App\Http\Requests\Admin\RegistrarEntrevistaRequest;
-use App\Http\Requests\Admin\RegistrarVisitaPreviaRequest;
 use App\Http\Requests\Admin\UploadCommitmentEvidenceRequest;
 use App\Models\Auditoria;
 use App\Models\SolicitudAdopcion;
@@ -29,7 +26,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\View\View;
 
 /**
- * Flujo de la solicitud: Recibida → En evaluación → Aprobada → Adopción concretada (ver SolicitudAdopcionPolicy).
+ * Flujo de la solicitud: Recibida → En evaluación → Reservada (estado aprobada) → Adopción concretada (ver SolicitudAdopcionPolicy).
  * Cada acción se autoriza con la política y PostgreSQL vuelve a comprobar las reglas (validar_cambio_estado_solicitud):
  * si las rechaza (p. ej., otra aprobación simultánea de la misma mascota), se muestra su mensaje sin cambiar nada.
  */
@@ -51,7 +48,7 @@ class SolicitudAdopcionController extends Controller
                         ->orWhereHas('mascota', fn ($query) => $query->where('nombre', 'ilike', "%{$buscar}%"));
                 });
             })
-            // Primero las que están en trámite (recibidas, en evaluación y aprobadas); dentro de ellas, rojas,
+            // Primero las que están en trámite (recibidas, en evaluación y reservadas); dentro de ellas, rojas,
             // amarillas y verdes. Expresiones fijas, sin datos del usuario.
             ->orderByRaw("CASE WHEN estado IN ('pendiente', 'en_espera', 'aprobada') THEN 0 ELSE 1 END")
             ->orderByRaw("CASE nivel_alerta WHEN 'rojo' THEN 0 WHEN 'amarillo' THEN 1 WHEN 'verde' THEN 2 ELSE 3 END")
@@ -76,9 +73,7 @@ class SolicitudAdopcionController extends Controller
             ->get()
             ->filter(fn (Auditoria $a) => $a->accion === 'creado'
                 || array_key_exists('estado', $a->valores_nuevos ?? [])
-                || array_key_exists('comentarios_admin', $a->valores_nuevos ?? [])
-                || array_key_exists('entrevista_resultado', $a->valores_nuevos ?? [])
-                || array_key_exists('visita_previa_resultado', $a->valores_nuevos ?? []));
+                || array_key_exists('comentarios_admin', $a->valores_nuevos ?? []));
 
         return view('admin.solicitudes-adopcion.show', compact('solicitud', 'historial'));
     }
@@ -172,34 +167,17 @@ class SolicitudAdopcionController extends Controller
             'Se registró la solicitud de información. El estado no cambió.');
     }
 
-    public function recordInterview(RegistrarEntrevistaRequest $request, SolicitudAdopcion $solicitud): RedirectResponse
-    {
-        Gate::authorize('recordInterview', $solicitud);
-
-        return $this->guardar($solicitud, $request->validated(), 'La entrevista fue registrada.');
-    }
-
-    public function recordHomeVisit(RegistrarVisitaPreviaRequest $request, SolicitudAdopcion $solicitud): RedirectResponse
-    {
-        Gate::authorize('recordInterview', $solicitud);
-
-        return $this->guardar($solicitud, $request->validated(), 'La visita previa al hogar fue registrada.');
-    }
-
     /** En evaluación → Aprobada. PostgreSQL reserva la mascota y asigna el número de acta. */
     public function approve(AprobarSolicitudAdopcionRequest $request, SolicitudAdopcion $solicitud): RedirectResponse
     {
         Gate::authorize('approve', $solicitud);
 
-        return $this->guardar($solicitud, ['estado' => 'aprobada'],
-            fn (SolicitudAdopcion $s) => "La solicitud fue aprobada. {$s->mascota->nombre} quedó reservada. Acta {$s->numero_acta}.");
-    }
+        $comentario = trim((string) $request->validated('comentarios_admin'));
 
-    public function updateDeliveryDate(FechaEntregaAcordadaRequest $request, SolicitudAdopcion $solicitud): RedirectResponse
-    {
-        Gate::authorize('updateDeliveryDate', $solicitud);
-
-        return $this->guardar($solicitud, $request->validated(), 'La fecha de entrega acordada fue actualizada.');
+        return $this->guardar($solicitud, [
+            'estado' => 'aprobada',
+            ...($comentario !== '' ? ['comentarios_admin' => $comentario] : []),
+        ], fn (SolicitudAdopcion $s) => "La solicitud fue aprobada. {$s->mascota->nombre} quedó reservada. Acta {$s->numero_acta}.");
     }
 
     /**

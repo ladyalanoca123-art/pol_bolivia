@@ -16,12 +16,13 @@ class SolicitudAdopcion extends Model
 
     /**
      * Nombres que ven las personas, en el orden del flujo:
-     * Recibida → En evaluación (revisión y contacto externo) → Aprobada (mascota reservada) → Adopción concretada.
+     * Recibida → En evaluación (revisión y contacto externo) → Reservada (aprobada, esperando la entrega) → Adopción concretada.
      */
     public const ESTADOS_LEGIBLES = [
         'pendiente' => 'Recibida',
         'en_espera' => 'En evaluación',
-        'aprobada' => 'Aprobada',
+        // Internamente sigue siendo aprobada: la mascota queda reservada hasta registrar la entrega.
+        'aprobada' => 'Reservada',
         'aceptada' => 'Adopción concretada',
         'rechazada' => 'Rechazada',
         'no_concretada' => 'Entrega no concretada',
@@ -39,17 +40,6 @@ class SolicitudAdopcion extends Model
 
     /** Etapas de la línea de progreso, en orden. */
     public const ETAPAS = [1 => 'pendiente', 2 => 'en_espera', 3 => 'aprobada', 4 => 'aceptada'];
-
-    public const MEDIOS_ENTREVISTA = [
-        'llamada' => 'Llamada',
-        'whatsapp' => 'WhatsApp',
-        'presencial' => 'Presencial',
-    ];
-
-    public const RESULTADOS = [
-        'favorable' => 'Favorable',
-        'no_favorable' => 'No favorable',
-    ];
 
     public const NIVELES_ALERTA = [
         'rojo' => 'Condición incompatible',
@@ -78,14 +68,10 @@ class SolicitudAdopcion extends Model
             'alertas' => 'array',
             // La registra PostgreSQL (trigger_registrar_resolucion_solicitud) al pasar a un estado resuelto.
             'resuelta_at' => 'datetime',
-            'entrevista_fecha' => 'date',
-            'visita_previa_fecha' => 'date',
-            'fecha_entrega_acordada' => 'date',
             // aprobada_at y numero_acta los asigna PostgreSQL al aprobar y no cambian después.
             'aprobada_at' => 'datetime',
             'entregada_at' => 'datetime',
             'compromiso_firmado' => 'boolean',
-            'permitir_otra_adopcion' => 'boolean',
         ];
     }
 
@@ -99,17 +85,6 @@ class SolicitudAdopcion extends Model
         return in_array($this->estado, self::ESTADOS_ACTIVOS, true);
     }
 
-    public function tieneEntrevistaFavorable(): bool
-    {
-        return $this->entrevista_resultado === 'favorable';
-    }
-
-    /** Sin visita previa registrada, o registrada y favorable. */
-    public function visitaPreviaPermiteAprobar(): bool
-    {
-        return $this->visita_previa_resultado !== 'no_favorable';
-    }
-
     /** Si terminó sin concretarse la adopción. */
     public function terminoSinAdopcion(): bool
     {
@@ -118,15 +93,15 @@ class SolicitudAdopcion extends Model
 
     /**
      * Última etapa alcanzada (1 a 4) para la línea de progreso. En un estado final sin adopción es la etapa en
-     * la que se detuvo: «Aprobada» si tiene fecha de aprobación; «En evaluación» si tiene entrevista o visita,
-     * o si la auditoría registra que terminó desde «En evaluación».
+     * la que se detuvo: «Reservada» si tiene fecha de aprobación; «En evaluación» si la auditoría registra que
+     * terminó desde esa etapa.
      */
     public function etapaAlcanzada(): int
     {
         return match (true) {
             $this->estado === 'aceptada' => 4,
             $this->estado === 'aprobada' || $this->aprobada_at !== null => 3,
-            $this->estado === 'en_espera' || $this->entrevista_fecha !== null || $this->visita_previa_fecha !== null => 2,
+            $this->estado === 'en_espera' => 2,
             $this->estado === 'pendiente' => 1,
             default => $this->estadoAnteriorAlFinal() === 'en_espera' ? 2 : 1,
         };

@@ -152,7 +152,7 @@ class PanelAdministrador
             ],
             'entregas_aprobadas_pendientes' => [
                 'total' => $entregasPendientes,
-                'texto' => self::cantidad($entregasPendientes, 'solicitud aprobada lleva', 'solicitudes aprobadas llevan').' más de '.self::dias($diasAprobada).' sin registrar la entrega. No son adopciones concretadas.',
+                'texto' => self::cantidad($entregasPendientes, 'adopción reservada lleva', 'adopciones reservadas llevan').' más de '.self::dias($diasAprobada).' sin registrar la entrega. No son adopciones concretadas.',
                 'accion' => 'Revisar entregas',
                 'ruta' => 'admin.solicitudes-adopcion.index',
                 'parametros' => ['estado' => 'aprobada'],

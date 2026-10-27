@@ -290,8 +290,8 @@ class CuestionarioAdopcionTest extends TestCase
             ->assertSee('Recibida → En evaluación')
             ->assertSee('Coordinar visita el sábado.')
             ->assertSee('Información solicitada (el estado no cambió)')
-            ->assertSee('En evaluación → Aprobada')
-            ->assertSee('Aprobada → Adopción concretada')
+            ->assertSee('En evaluación → Reservada')
+            ->assertSee('Reservada → Adopción concretada')
             ->assertSee('La entrega quedó registrada y la mascota fue marcada como adoptada.');
     }
 

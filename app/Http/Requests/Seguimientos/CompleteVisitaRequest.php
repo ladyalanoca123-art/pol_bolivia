@@ -23,7 +23,11 @@ class CompleteVisitaRequest extends FormRequest
         $visita = $this->route('visita');
 
         $reglas = CuestionarioVisitaSeguimiento::reglas(CuestionarioVisitaSeguimiento::numero($visita));
-        $reglas['fecha_realizada'][] = 'after_or_equal:'.$visita->fecha_programada->toDateString();
+        // Puede haberse adelantado respecto de la fecha programada, pero no ser anterior a la entrega.
+        $entrega = $visita->seguimiento?->solicitud?->entregada_at?->timezone(config('app.timezone'))->toDateString();
+        if ($entrega) {
+            $reglas['fecha_realizada'][] = 'after_or_equal:'.$entrega;
+        }
 
         return $reglas;
     }
@@ -43,7 +47,8 @@ class CompleteVisitaRequest extends FormRequest
         return [
             'fecha_realizada.required' => 'Indica la fecha en que se realizó la visita.',
             'fecha_realizada.before_or_equal' => 'La fecha de la visita no puede ser futura.',
-            'fecha_realizada.after_or_equal' => 'La fecha realizada no puede ser anterior a la fecha programada.',
+            'fecha_realizada.date_format' => 'Indica una fecha válida.',
+            'fecha_realizada.after_or_equal' => 'La fecha de la visita no puede ser anterior a la entrega de la mascota.',
             'respuestas.*.required' => 'Responde esta pregunta para registrar la visita.',
             'respuestas.*.in' => 'Selecciona una opción válida.',
             'respuestas.sintomas.max' => 'Selecciona como máximo :max opciones.',

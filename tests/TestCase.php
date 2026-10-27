@@ -25,20 +25,6 @@ abstract class TestCase extends BaseTestCase
     {
         $this->protegerBaseDePruebas();
 
-        // PostgreSQL RefreshDatabase elimina tablas, pero deja secuencias independientes.
-        // Limpiar la secuencia de actas huérfana solo después de verificar base y marcador,
-        // y únicamente antes de la primera migración de una suite que usa RefreshDatabase.
-        if (
-            !\Illuminate\Foundation\Testing\RefreshDatabaseState::$migrated
-            && in_array(
-                \Illuminate\Foundation\Testing\RefreshDatabase::class,
-                class_uses_recursive(static::class),
-                true
-            )
-        ) {
-            DB::statement('DROP SEQUENCE IF EXISTS seq_numero_acta_adopcion');
-        }
-
         return parent::setUpTraits();
     }
 

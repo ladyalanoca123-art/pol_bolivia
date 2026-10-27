@@ -84,6 +84,8 @@ Route::middleware(['auth', 'verified', 'role:voluntario'])->group(function () {
     Route::get('/seguimientos/{seguimiento}/visitas/{visita}/foto', [SeguimientoAdopcionController::class, 'visitPhoto'])->name('seguimientos.visitas.foto');
     Route::post('/seguimientos/{seguimiento}/visitas', [SeguimientoAdopcionController::class, 'storeVisit'])->middleware('throttle:formularios')->name('seguimientos.visitas.store');
     Route::patch('/seguimientos/{seguimiento}/visitas/{visita}/realizar', [SeguimientoAdopcionController::class, 'completeVisit'])->name('seguimientos.visitas.complete');
+    Route::patch('/seguimientos/{seguimiento}/visitas/{visita}/reprogramar', [SeguimientoAdopcionController::class, 'rescheduleVisit'])->name('seguimientos.visitas.reschedule');
+    Route::patch('/seguimientos/{seguimiento}/visitas/{visita}/no-asistio', [SeguimientoAdopcionController::class, 'markNoShow'])->name('seguimientos.visitas.no-show');
     Route::post('/seguimientos/{seguimiento}/incidencias', [SeguimientoAdopcionController::class, 'storeIncident'])->middleware('throttle:formularios')->name('seguimientos.incidencias.store');
     Route::patch('/seguimientos/{seguimiento}/incidencias/{incidencia}/atender', [SeguimientoAdopcionController::class, 'attendIncident'])->name('seguimientos.incidencias.attend');
 });
@@ -159,17 +161,8 @@ Route::middleware(['auth', 'verified', 'role:administrador'])
         Route::patch('/solicitudes-adopcion/{solicitud}/solicitar-informacion', [AdminSolicitudAdopcionController::class, 'requestInformation'])
             ->name('solicitudes-adopcion.request-information');
 
-        Route::patch('/solicitudes-adopcion/{solicitud}/entrevista', [AdminSolicitudAdopcionController::class, 'recordInterview'])
-            ->name('solicitudes-adopcion.interview');
-
-        Route::patch('/solicitudes-adopcion/{solicitud}/visita-previa', [AdminSolicitudAdopcionController::class, 'recordHomeVisit'])
-            ->name('solicitudes-adopcion.home-visit');
-
         Route::patch('/solicitudes-adopcion/{solicitud}/aprobar', [AdminSolicitudAdopcionController::class, 'approve'])
             ->name('solicitudes-adopcion.approve');
-
-        Route::patch('/solicitudes-adopcion/{solicitud}/fecha-entrega', [AdminSolicitudAdopcionController::class, 'updateDeliveryDate'])
-            ->name('solicitudes-adopcion.delivery-date');
 
         Route::patch('/solicitudes-adopcion/{solicitud}/registrar-entrega', [AdminSolicitudAdopcionController::class, 'deliver'])
             ->name('solicitudes-adopcion.deliver');

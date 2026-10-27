@@ -39,7 +39,7 @@ final class CuestionarioVisitaSeguimiento
     public static function reglas(int $numeroVisita): array
     {
         $reglas = [
-            'fecha_realizada' => ['required', 'date', 'before_or_equal:today'],
+            'fecha_realizada' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
             'respuestas' => ['required', 'array'],
             'observaciones' => ['nullable', 'string', 'max:2000'],
             'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],

@@ -8,7 +8,7 @@
         $etapas = [
             1 => ['Recibida', 'Revisión inicial'],
             2 => ['En evaluación', 'Revisión y contacto externo'],
-            3 => ['Aprobada', 'Mascota reservada'],
+            3 => ['Reservada', 'Esperando la entrega'],
             4 => ['Adopción concretada', 'Entrega registrada'],
         ];
         $paso = $solicitud->etapaAlcanzada();
@@ -125,22 +125,10 @@
                 @endforeach
             </ol>
 
-            @if ($solicitud->entrevista_fecha || $solicitud->visita_previa_fecha)
-                <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <p class="sm:col-span-2 text-xs text-gray-500">Registros históricos de entrevista o visita previa; ya no son requisitos para aprobar.</p>
-                    @if ($solicitud->entrevista_fecha)
-                        <dl class="rounded-lg border border-blue-100 p-4 text-sm"><dt class="font-semibold text-blue-950">Entrevista</dt><dd class="mt-2 text-gray-700">{{ $solicitud->entrevista_fecha->format('d/m/Y') }} · {{ \App\Models\SolicitudAdopcion::MEDIOS_ENTREVISTA[$solicitud->entrevista_medio] ?? $solicitud->entrevista_medio }} · {{ \App\Models\SolicitudAdopcion::RESULTADOS[$solicitud->entrevista_resultado] ?? $solicitud->entrevista_resultado }}</dd>@if ($solicitud->entrevista_notas)<dd class="mt-2 whitespace-pre-line text-gray-600">{{ $solicitud->entrevista_notas }}</dd>@endif</dl>
-                    @endif
-                    @if ($solicitud->visita_previa_fecha)
-                        <dl class="rounded-lg border border-amber-100 p-4 text-sm"><dt class="font-semibold text-amber-950">Visita previa al hogar</dt><dd class="mt-2 text-gray-700">{{ $solicitud->visita_previa_fecha->format('d/m/Y') }} · {{ \App\Models\SolicitudAdopcion::RESULTADOS[$solicitud->visita_previa_resultado] ?? $solicitud->visita_previa_resultado }}</dd>@if ($solicitud->visita_previa_notas)<dd class="mt-2 whitespace-pre-line text-gray-600">{{ $solicitud->visita_previa_notas }}</dd>@endif</dl>
-                    @endif
-                </div>
-            @endif
             @if (in_array($solicitud->estado, ['aprobada', 'aceptada'], true))
                 <dl class="mt-5 grid grid-cols-1 gap-4 rounded-lg bg-blue-50 p-4 text-sm sm:grid-cols-2">
                     @if ($solicitud->numero_acta)<div><dt class="font-medium text-gray-500">Número de acta</dt><dd class="mt-1 font-semibold text-blue-950">{{ $solicitud->numero_acta }}</dd></div>@endif
-                    @if ($solicitud->aprobada_at)<div><dt class="font-medium text-gray-500">Aprobada el</dt><dd class="mt-1 text-gray-900">{{ $solicitud->aprobada_at->timezone('America/La_Paz')->format('d/m/Y H:i') }}</dd></div>@endif
-                    @if ($solicitud->fecha_entrega_acordada)<div><dt class="font-medium text-gray-500">Entrega acordada</dt><dd class="mt-1 text-gray-900">{{ $solicitud->fecha_entrega_acordada->format('d/m/Y') }}</dd></div>@endif
+                    @if ($solicitud->aprobada_at)<div><dt class="font-medium text-gray-500">Reservada el</dt><dd class="mt-1 text-gray-900">{{ $solicitud->aprobada_at->timezone('America/La_Paz')->format('d/m/Y H:i') }}</dd></div>@endif
                     @if ($solicitud->entregada_at)<div><dt class="font-medium text-gray-500">Entrega registrada</dt><dd class="mt-1 text-gray-900">{{ $solicitud->entregada_at->timezone('America/La_Paz')->format('d/m/Y H:i') }}</dd></div>@endif
                     @if ($solicitud->compromiso_firmado)<div><dt class="font-medium text-gray-500">Compromiso</dt><dd class="mt-1 text-gray-900">Firma confirmada al registrar la entrega</dd></div>@endif
                 </dl>
@@ -227,7 +215,10 @@
                           x-data x-on:submit="if (! confirm({{ Js::from('¿Aprobar la solicitud y reservar ' . $solicitud->mascota->nombre . '? La adopción se concretará después de registrar la entrega y confirmar la firma del compromiso.') }})) $event.preventDefault()">
                         @csrf @method('PATCH')
                         <h4 class="text-sm font-semibold text-green-950">Aprobar y reservar</h4>
-                        <p class="mt-1 text-xs text-gray-600">Contacta al solicitante por teléfono o WhatsApp fuera del sistema. No se registran entrevistas ni visitas previas.</p>
+                        <p class="mt-1 text-xs text-gray-600">Cuando ya hablaste con el solicitante por teléfono o WhatsApp, aprueba para reservar la mascota. La fecha se registra recién en la entrega.</p>
+                        <label for="comentarios-aprobar" class="mt-3 block text-xs font-medium text-gray-700">Comentario para el equipo (opcional)</label>
+                        <textarea id="comentarios-aprobar" name="comentarios_admin" rows="2" maxlength="1000" class="{{ $textarea }}" placeholder="Ej. Hablé por WhatsApp: vive en casa con patio y toda la familia está de acuerdo."></textarea>
+                        <p class="mt-1 text-xs text-gray-500">Queda en el historial con tu nombre y la fecha, para que los demás administradores sepan por qué se aprobó.</p>
                         <button type="submit" class="{{ $boton }} mt-3 bg-green-700 text-white hover:bg-green-800">Aprobar solicitud</button>
                     </form>
                 @endcan
@@ -293,7 +284,7 @@
                         </p>
                         <p class="text-gray-600">
                             {{ $registro->usuario ? $registro->usuario->nombres . ' ' . $registro->usuario->apellidos : 'Sistema' }}
-                            @if (filled($nuevos['comentarios_admin'] ?? null)) · Motivo: {{ $nuevos['comentarios_admin'] }}@endif
+                            @if (filled($nuevos['comentarios_admin'] ?? null)) · {{ in_array($nuevos['estado'] ?? null, ['rechazada'], true) ? 'Motivo' : 'Comentario' }}: {{ $nuevos['comentarios_admin'] }}@endif
                         </p>
                     </li>
                 @empty

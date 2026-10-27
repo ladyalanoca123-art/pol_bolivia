@@ -36,7 +36,9 @@ return new class extends Migration
 
         // 2. Columnas nuevas (todas opcionales: las solicitudes existentes no cambian).
         DB::unprepared(<<<'SQL'
-            CREATE SEQUENCE seq_numero_acta_adopcion START 1;
+            -- IF NOT EXISTS: tolera una secuencia que haya quedado de una instalación anterior sin dueño.
+            -- 2026_10_22_000000 la liga a la columna para que se elimine junto con la tabla.
+            CREATE SEQUENCE IF NOT EXISTS seq_numero_acta_adopcion START 1;
 
             ALTER TABLE solicitudes_adopcion
                 ADD COLUMN entrevista_fecha DATE NULL,

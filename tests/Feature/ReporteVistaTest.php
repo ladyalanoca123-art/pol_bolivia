@@ -140,7 +140,10 @@ class ReporteVistaTest extends TestCase
             ->assertDontSee('Adopciones en el período')->assertDontSee('aria-current="true"', false)->getContent();
 
         // Solo el contenido de la vista: el menú de usuario del layout (x-dropdown) es ajeno a Reportes.
-        $contenido = substr($html, strpos($html, '<main>'));
+        // <main> puede llevar atributos (layout con el menú de administración).
+        $inicio = strpos($html, '<main');
+        $this->assertNotFalse($inicio, 'la página debe tener <main>');
+        $contenido = substr($html, $inicio);
         $this->assertStringNotContainsString(' style="', $contenido, 'la vista no debe usar atributos style');
         $this->assertStringNotContainsString('<script', $contenido, 'la vista no necesita scripts');
     }
