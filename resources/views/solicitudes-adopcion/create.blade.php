@@ -32,7 +32,7 @@
                 @endif
                 <div class="min-w-0">
                 <h3 class="text-2xl font-bold">Solicitud para {{ $mascota->nombre }}</h3>
-                <p class="mt-1 text-sm text-sky-100">Este cuestionario es una primera evaluación. Ninguna respuesta aprueba o rechaza tu solicitud por sí sola: la fundación revisará tu información y te contactará para una entrevista o visita.</p>
+                <p class="mt-1 text-sm text-sky-100">Este cuestionario es una primera evaluación. Ninguna respuesta aprueba o rechaza tu solicitud por sí sola: la fundación revisará tu información y te contactará por WhatsApp o llamada.</p>
                 </div>
             </div>
 
@@ -213,6 +213,11 @@
                     <p class="text-xs font-bold uppercase tracking-wider text-blue-800">Sección 6 de 6</p>
                     <h4 class="text-lg font-semibold text-gray-900">Visita y consentimientos</h4>
                     <p class="text-sm text-gray-600">Datos para coordinar la visita y compromisos obligatorios para enviar la solicitud.</p>
+
+                    {{-- Dato de contacto sin número: no cuenta en el progreso ni en las alertas del cuestionario. --}}
+                    <x-cuestionario.pregunta tema="pol" label="Teléfono de contacto (WhatsApp)" campo="telefono_contacto" ayuda="Obligatorio. La fundación te escribirá o llamará a este número para coordinar. Si lo cambias, también se actualiza en «Mi perfil».">
+                        <input type="tel" name="telefono_contacto" id="telefono_contacto" maxlength="20" required value="{{ old('telefono_contacto', auth()->user()->telefono) }}" class="{{ $input }}" placeholder="Ej. 71234567" autocomplete="tel" inputmode="tel">
+                    </x-cuestionario.pregunta>
 
                     <x-cuestionario.pregunta tema="pol" num="21" label="¿En qué zona vive aproximadamente?" campo="zona_aproximada" ayuda="No se solicita la dirección exacta.">
                         <input type="text" name="zona_aproximada" id="zona_aproximada" maxlength="100" value="{{ old('zona_aproximada') }}" class="{{ $input }}" placeholder="Ej. Queru Queru, Cochabamba" autocomplete="off">

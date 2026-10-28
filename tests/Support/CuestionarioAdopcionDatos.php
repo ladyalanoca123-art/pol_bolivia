@@ -15,7 +15,7 @@ final class CuestionarioAdopcionDatos
     public static function registro(array $cambios = []): array
     {
         $respuestas = collect(self::valido())
-            ->except(['zona_aproximada', 'acepta_visita_previa', 'acepta_seguimiento', 'no_ceder', 'declara_informacion_veraz'])
+            ->except(['zona_aproximada', 'telefono_contacto', 'acepta_visita_previa', 'acepta_seguimiento', 'no_ceder', 'declara_informacion_veraz'])
             ->all();
         $respuestas['consentimientos'] = array_fill_keys(['acepta_visita_previa', 'acepta_seguimiento', 'no_ceder', 'declara_informacion_veraz'], true);
 
@@ -50,6 +50,7 @@ final class CuestionarioAdopcionDatos
             'motivo' => 'compania',
             'compromiso_vacunas' => 'si',
             'si_no_puede' => 'fundacion',
+            'telefono_contacto' => '71234567',
             'zona_aproximada' => 'Queru Queru, Cochabamba',
             'horarios_visita' => ['tarde', 'fin_semana'],
             'acepta_visita_previa' => '1',

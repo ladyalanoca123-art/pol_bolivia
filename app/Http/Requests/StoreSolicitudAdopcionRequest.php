@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Mascota;
 use App\Models\SolicitudAdopcion;
+use App\Rules\TelefonoBoliviano;
 use App\Support\CuestionarioAdopcion as C;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -18,6 +19,12 @@ class StoreSolicitudAdopcionRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    /** Mismo formato que el registro y «Mi perfil»: acepta +591, espacios y guiones. */
+    protected function prepareForValidation(): void
+    {
+        $this->merge(['telefono_contacto' => TelefonoBoliviano::normalizar($this->input('telefono_contacto'))]);
     }
 
     public function rules(): array
@@ -68,6 +75,8 @@ class StoreSolicitudAdopcionRequest extends FormRequest
             'si_no_puede_otro' => ['exclude_unless:si_no_puede,otro', 'nullable', 'string', 'max:150'],
 
             // Sección 6 · Visita y consentimientos
+            // Obligatorio para solicitar: la administración y el voluntario del seguimiento contactan por WhatsApp.
+            'telefono_contacto' => ['bail', 'required', 'string', 'max:20', new TelefonoBoliviano],
             'zona_aproximada' => ['required', ...$texto, 'max:100'],
             'horarios_visita' => ['required', 'array', 'min:1'],
             'horarios_visita.*' => ['distinct', Rule::in(C::claves('horarios_visita'))],
@@ -105,6 +114,9 @@ class StoreSolicitudAdopcionRequest extends FormRequest
             'motivo.required' => 'Selecciona el motivo principal de la adopción.',
             'compromiso_vacunas.required' => 'Responde si te comprometes con las vacunas y la desparasitación.',
             'si_no_puede.required' => 'Selecciona qué harías si ya no pudieras cuidarla.',
+            'telefono_contacto.required' => 'Escribe un teléfono con WhatsApp para que la fundación pueda coordinar contigo.',
+            'telefono_contacto.string' => TelefonoBoliviano::MENSAJE,
+            'telefono_contacto.max' => TelefonoBoliviano::MENSAJE,
             'zona_aproximada.required' => 'Escribe tu zona aproximada.',
             'horarios_visita.required' => 'Marca al menos un horario para la visita.',
             'acepta_visita_previa.accepted' => 'Debes aceptar la visita previa al hogar.',

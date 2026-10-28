@@ -33,27 +33,36 @@ class SolicitudAdopcionController extends Controller
         $r = $request->validated();
         $evaluacion = $evaluador->evaluar($r);
 
-        $respuestas = collect($r)->except(['zona_aproximada', ...array_keys(C::CONSENTIMIENTOS)])->all();
+        // El teléfono se guarda en el perfil, no entre las respuestas del cuestionario.
+        $respuestas = collect($r)->except(['zona_aproximada', 'telefono_contacto', ...array_keys(C::CONSENTIMIENTOS)])->all();
         $respuestas['consentimientos'] = array_fill_keys(array_keys(C::CONSENTIMIENTOS), true);
 
         try {
-            DB::transaction(fn () => SolicitudAdopcion::create([
-                'solicitante_id' => auth()->id(),
-                'mascota_id' => $mascota->id,
-                'estado' => 'pendiente',
-                // Columnas que ya usaba el sistema: el seguimiento copia zona y horario al concretarse la adopción.
-                'zona_aproximada' => $r['zona_aproximada'],
-                'horario_preferido' => collect($r['horarios_visita'])->map(fn ($h) => C::etiqueta('horarios_visita', $h))->join(', '),
-                'tiene_otras_mascotas' => $r['otras_mascotas'] === 'si',
-                'viven_otras_personas' => (int) $r['adultos'] > 1 || (int) $r['ninos'] > 0,
-                'declara_informacion_veraz' => true,
-                // Cuestionario A2 y su evaluación (ver app/Services/EvaluadorSolicitudAdopcion.php).
-                'respuestas' => $respuestas,
-                'version_cuestionario' => C::VERSION,
-                'nivel_alerta' => $evaluacion['nivel'],
-                'alertas' => $evaluacion['alertas'],
-                'version_reglas' => EvaluadorSolicitudAdopcion::VERSION_REGLAS,
-            ]));
+            DB::transaction(function () use ($r, $mascota, $respuestas, $evaluacion): void {
+                // Teléfono obligatorio para solicitar: se guarda en «Mi perfil» para la administración y el seguimiento.
+                $usuario = auth()->user();
+                if ($usuario->telefono !== $r['telefono_contacto']) {
+                    $usuario->forceFill(['telefono' => $r['telefono_contacto']])->save();
+                }
+
+                SolicitudAdopcion::create([
+                    'solicitante_id' => auth()->id(),
+                    'mascota_id' => $mascota->id,
+                    'estado' => 'pendiente',
+                    // Columnas que ya usaba el sistema: el seguimiento copia zona y horario al concretarse la adopción.
+                    'zona_aproximada' => $r['zona_aproximada'],
+                    'horario_preferido' => collect($r['horarios_visita'])->map(fn ($h) => C::etiqueta('horarios_visita', $h))->join(', '),
+                    'tiene_otras_mascotas' => $r['otras_mascotas'] === 'si',
+                    'viven_otras_personas' => (int) $r['adultos'] > 1 || (int) $r['ninos'] > 0,
+                    'declara_informacion_veraz' => true,
+                    // Cuestionario A2 y su evaluación (ver app/Services/EvaluadorSolicitudAdopcion.php).
+                    'respuestas' => $respuestas,
+                    'version_cuestionario' => C::VERSION,
+                    'nivel_alerta' => $evaluacion['nivel'],
+                    'alertas' => $evaluacion['alertas'],
+                    'version_reglas' => EvaluadorSolicitudAdopcion::VERSION_REGLAS,
+                ]);
+            });
         } catch (QueryException $exception) {
             // Reglas de PostgreSQL ante envíos simultáneos: límite de solicitudes activas o mascota ya reservada.
             $error = ErrorBaseDatos::mensaje($exception) ?? throw $exception;
