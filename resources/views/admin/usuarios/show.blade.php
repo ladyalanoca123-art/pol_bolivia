@@ -1,18 +1,29 @@
-<x-app-layout>
-    <x-slot name="header"><h2 class="font-semibold text-xl text-gray-800 leading-tight">Detalle de usuario</h2></x-slot>
+<x-admin.pagina :titulo="$user->nombres.' '.$user->apellidos" seccion="Detalle de usuario" ancho="max-w-4xl" :volver="route('admin.usuarios.index')" volver-texto="Volver al listado">
+    <x-slot name="subtitulo">
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+            <x-admin.insignia :tono="['administrador' => 'indigo', 'voluntario' => 'ambar'][$user->rol] ?? 'gris'" :punto="false">{{ ucfirst($user->rol) }}</x-admin.insignia>
+            @if ($user->es_principal)<x-admin.insignia tono="ambar" :punto="false">Administrador principal</x-admin.insignia>@endif
+            <x-admin.estado de="usuario" :valor="(bool) $user->estado" />
+        </div>
+    </x-slot>
+    @can('update', $user)
+        <x-slot name="acciones">
+            <x-admin.boton variante="secundario" :href="route('admin.usuarios.edit', $user)">Editar usuario</x-admin.boton>
+        </x-slot>
+    @endcan
 
-    <div class="py-12"><div class="max-w-3xl mx-auto sm:px-6 lg:px-8"><div class="p-6 space-y-3 bg-white shadow-sm sm:rounded-lg">
-        @if (session('status'))<div class="p-4 text-green-700 bg-green-50">{{ session('status') }}</div>@endif
-        <p><span class="font-medium">Nombres:</span> {{ $user->nombres }}</p>
-        <p><span class="font-medium">Apellidos:</span> {{ $user->apellidos }}</p>
-        <p><span class="font-medium">Correo:</span> {{ $user->email }}</p>
-        <p><span class="font-medium">Teléfono:</span> {{ $user->telefono ?? 'No registrado' }}</p>
-        <p><span class="font-medium">Rol:</span> {{ ucfirst($user->rol) }}@if ($user->es_principal) <span class="ml-1 inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 ring-1 ring-inset ring-amber-300">Administrador principal</span>@endif</p>
-        <p><span class="font-medium">Estado:</span> {{ $user->estado ? 'Activo' : 'Inactivo' }}</p>
-        <p><span class="font-medium">Fecha de registro:</span> {{ $user->created_at->format('d/m/Y H:i') }}</p>
+    <x-admin.tarjeta titulo="Datos de la cuenta">
+        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <x-admin.dato etiqueta="Nombres">{{ $user->nombres }}</x-admin.dato>
+            <x-admin.dato etiqueta="Apellidos">{{ $user->apellidos }}</x-admin.dato>
+            <x-admin.dato etiqueta="Correo">{{ $user->email }}</x-admin.dato>
+            <x-admin.dato etiqueta="Teléfono">{{ $user->telefono ?? 'No registrado' }}</x-admin.dato>
+            <x-admin.dato etiqueta="Rol">{{ ucfirst($user->rol) }}</x-admin.dato>
+            <x-admin.dato etiqueta="Estado">{{ $user->estado ? 'Activo' : 'Inactivo' }}</x-admin.dato>
+            <x-admin.dato etiqueta="Fecha de registro">{{ $user->created_at->format('d/m/Y H:i') }}</x-admin.dato>
+        </dl>
         @cannot('update', $user)
-            <p class="rounded-md bg-amber-50 p-3 text-sm text-amber-800">Al administrador principal solo lo edita él mismo.</p>
+            <p class="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Al administrador principal solo lo edita él mismo.</p>
         @endcannot
-        <div class="pt-4 border-t">@can('update', $user)<a class="mr-4 text-indigo-600 hover:text-indigo-900" href="{{ route('admin.usuarios.edit', $user) }}">Editar usuario</a>@endcan<a class="text-gray-600 hover:text-gray-900" href="{{ route('admin.usuarios.index') }}">Volver al listado</a></div>
-    </div></div></div>
-</x-app-layout>
+    </x-admin.tarjeta>
+</x-admin.pagina>

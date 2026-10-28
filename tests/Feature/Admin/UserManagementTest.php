@@ -343,12 +343,16 @@ class UserManagementTest extends TestCase
             ->assertOk()
             ->assertSee('buscar=Laura')
             ->assertSee('rol=ciudadano')
-            ->assertSee('estado=activo');
+            ->assertSee('estado=activo')
+            // Con filtros activos se ofrece «Limpiar», que vuelve al listado sin filtros.
+            ->assertSee('Limpiar')
+            ->assertSee('href="'.route('admin.usuarios.index').'"', false);
 
+        // Sin filtros no hay nada que limpiar.
         $this->actingAs($administrator)
             ->get(route('admin.usuarios.index'))
             ->assertOk()
-            ->assertSee('LIMPIAR');
+            ->assertDontSee('>Limpiar<', false);
     }
 
     public function test_only_administrator_sees_users_navigation_link(): void

@@ -1,1 +1,31 @@
-<x-app-layout><x-slot name="header"><h2 class="font-semibold text-xl text-gray-800">Voluntarios</h2></x-slot><div class="py-12"><div class="max-w-7xl mx-auto sm:px-6 lg:px-8"><div class="overflow-hidden bg-white shadow-sm sm:rounded-lg"><table class="min-w-full"><thead class="bg-gray-50"><tr class="text-left"><th class="p-4">Nombre</th><th>Disponibilidad</th><th>Zona</th><th>Estado</th><th></th></tr></thead><tbody>@forelse($voluntarios as $voluntario)<tr class="border-t"><td class="p-4">{{ $voluntario->usuario->nombres }} {{ $voluntario->usuario->apellidos }}</td><td>{{ $voluntario->disponibilidad }}</td><td>{{ $voluntario->zona_preferencia }}</td><td>{{ ucfirst($voluntario->estado) }}</td><td><a class="text-indigo-600" href="{{ route('admin.voluntarios.show',$voluntario) }}">Ver detalle</a></td></tr>@empty<tr><td class="p-4" colspan="5">No hay voluntarios.</td></tr>@endforelse</tbody></table><div class="p-4">{{ $voluntarios->links() }}</div></div></div></div></x-app-layout>
+<x-admin.pagina titulo="Voluntarios" seccion="Voluntariado" descripcion="Personas aprobadas como voluntarias. Se asignan a los seguimientos desde el detalle de cada seguimiento.">
+    <x-admin.tarjeta :relleno="false">
+        <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-6">
+            <h2 class="text-sm font-semibold text-blue-950">Voluntarios</h2>
+            <span class="text-sm text-slate-500">{{ $voluntarios->total() }} {{ $voluntarios->total() === 1 ? 'registro' : 'registros' }}</span>
+        </div>
+        @if ($voluntarios->isEmpty())
+            <x-admin.vacio titulo="No hay voluntarios." texto="Aparecen aquí cuando se aprueba una postulación de voluntariado.">
+                <x-admin.boton variante="secundario" tamano="chico" :href="route('admin.postulaciones-voluntariado.index')">Ver postulaciones</x-admin.boton>
+            </x-admin.vacio>
+        @else
+            <ul class="divide-y divide-slate-100">
+                @foreach ($voluntarios as $voluntario)
+                    @php($nombre = trim($voluntario->usuario->nombres.' '.$voluntario->usuario->apellidos))
+                    <li class="flex items-center gap-4 px-4 py-4 sm:px-6">
+                        <span aria-hidden="true" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-950 text-sm font-bold text-amber-300">{{ mb_strtoupper(mb_substr($voluntario->usuario->nombres, 0, 1).mb_substr($voluntario->usuario->apellidos ?? '', 0, 1)) }}</span>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <a href="{{ route('admin.voluntarios.show', $voluntario) }}" class="font-semibold text-blue-950 hover:underline">{{ $nombre }}</a>
+                                <x-admin.estado de="voluntario" :valor="$voluntario->estado" />
+                            </div>
+                            <p class="mt-0.5 truncate text-sm text-slate-600">{{ $voluntario->disponibilidad ?: 'Disponibilidad sin indicar' }} · {{ $voluntario->zona_preferencia ?: 'Zona sin indicar' }}</p>
+                        </div>
+                        <x-admin.boton variante="secundario" tamano="chico" :href="route('admin.voluntarios.show', $voluntario)" class="shrink-0">Ver detalle</x-admin.boton>
+                    </li>
+                @endforeach
+            </ul>
+            @if ($voluntarios->hasPages())<div class="border-t border-slate-100 px-4 py-3 sm:px-6">{{ $voluntarios->links() }}</div>@endif
+        @endif
+    </x-admin.tarjeta>
+</x-admin.pagina>
