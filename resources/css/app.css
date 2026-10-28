@@ -4,3 +4,12 @@
 
 /* Oculta elementos de Alpine.js hasta que se inicializan (preguntas condicionales). */
 [x-cloak] { display: none !important; }
+
+/* Formularios del panel de administración (resources/views/admin): mismo aspecto en todas las pantallas. */
+@layer components {
+    .admin-etiqueta { @apply block text-xs font-semibold uppercase tracking-wide text-slate-500; }
+    .admin-campo { @apply mt-1 block w-full rounded-lg border-slate-300 text-sm text-slate-900 shadow-sm focus:border-blue-800 focus:ring-blue-800; }
+    .admin-archivo { @apply mt-1 block w-full text-sm text-slate-700 file:me-3 file:rounded-full file:border-0 file:bg-blue-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-900; }
+    .admin-error { @apply mt-1 text-sm text-red-600; }
+    .admin-ayuda { @apply mt-1 text-xs text-slate-500; }
+}
