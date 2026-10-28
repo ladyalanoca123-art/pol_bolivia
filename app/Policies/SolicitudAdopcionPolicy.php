@@ -28,12 +28,6 @@ class SolicitudAdopcionPolicy
             && $solicitud->estado === 'pendiente';
     }
 
-    public function requestInformation(User $user, SolicitudAdopcion $solicitud): bool
-    {
-        return $this->isActiveAdministrator($user)
-            && $this->hasPendingDecision($solicitud);
-    }
-
     public function approve(User $user, SolicitudAdopcion $solicitud): bool
     {
         return $this->isActiveAdministrator($user)

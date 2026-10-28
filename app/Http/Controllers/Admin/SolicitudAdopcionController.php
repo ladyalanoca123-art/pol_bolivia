@@ -161,15 +161,6 @@ class SolicitudAdopcionController extends Controller
         ], 'La solicitud pasó a evaluación. Revisa el formulario y contacta al solicitante por llamada o WhatsApp cuando corresponda.');
     }
 
-    /** Registra un pedido de información sin cambiar el estado. */
-    public function requestInformation(DecideSolicitudAdopcionRequest $request, SolicitudAdopcion $solicitud): RedirectResponse
-    {
-        Gate::authorize('requestInformation', $solicitud);
-
-        return $this->guardar($solicitud, ['comentarios_admin' => $request->validated('comentarios_admin')],
-            'Se registró la solicitud de información. El estado no cambió.');
-    }
-
     /** En evaluación → Aprobada. PostgreSQL reserva la mascota y asigna el número de acta. */
     public function approve(AprobarSolicitudAdopcionRequest $request, SolicitudAdopcion $solicitud): RedirectResponse
     {

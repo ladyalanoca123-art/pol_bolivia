@@ -259,11 +259,8 @@ class CuestionarioAdopcionTest extends TestCase
         $this->assertSame('en_espera', $solicitud->refresh()->estado);
         $this->assertSame('disponible', $mascota->refresh()->estado);
 
-        $this->actingAs($admin)
-            ->patch(route('admin.solicitudes-adopcion.request-information', $solicitud), ['comentarios_admin' => 'Falta hablar con la familia.'])
-            ->assertRedirect();
-        $this->assertSame('en_espera', $solicitud->refresh()->estado);
-        $this->assertSame('Falta hablar con la familia.', $solicitud->comentarios_admin);
+        // «Solicitar información» ya no existe: solo guardaba una nota interna que el ciudadano nunca veía.
+        $this->assertFalse(\Illuminate\Support\Facades\Route::has('admin.solicitudes-adopcion.request-information'));
 
         $this->actingAs($admin)
             ->patch(route('admin.solicitudes-adopcion.approve', $solicitud), [])
@@ -289,22 +286,19 @@ class CuestionarioAdopcionTest extends TestCase
             ->get(route('admin.solicitudes-adopcion.show', $solicitud))
             ->assertSee('Recibida → En evaluación')
             ->assertSee('Coordinar visita el sábado.')
-            ->assertSee('Información solicitada (el estado no cambió)')
             ->assertSee('En evaluación → Reservada')
             ->assertSee('Reservada → Adopción concretada')
             ->assertSee('La entrega quedó registrada y la mascota fue marcada como adoptada.');
     }
 
-    public function test_solicitar_informacion_y_rechazar_exigen_motivo(): void
+    public function test_rechazar_exige_motivo(): void
     {
         $admin = $this->administrador();
         $solicitud = $this->enviar([]);
 
-        foreach (['request-information', 'reject'] as $accion) {
-            $this->actingAs($admin)
-                ->patch(route("admin.solicitudes-adopcion.{$accion}", $solicitud), ['comentarios_admin' => '  '])
-                ->assertSessionHasErrors('comentarios_admin');
-        }
+        $this->actingAs($admin)
+            ->patch(route('admin.solicitudes-adopcion.reject', $solicitud), ['comentarios_admin' => '  '])
+            ->assertSessionHasErrors('comentarios_admin');
 
         $this->assertSame('pendiente', $solicitud->refresh()->estado);
         $this->assertNull($solicitud->comentarios_admin);
@@ -333,14 +327,14 @@ class CuestionarioAdopcionTest extends TestCase
         $this->actingAs($admin)->patch(route('admin.solicitudes-adopcion.evaluate', $solicitud), self::MOTIVO)->assertForbidden();
     }
 
-    public function test_ciudadano_y_voluntario_no_pueden_evaluar_ni_pedir_informacion(): void
+    public function test_ciudadano_y_voluntario_no_pueden_evaluar_ni_rechazar(): void
     {
         $solicitud = $this->enviar([]);
 
         foreach (['ciudadano', 'voluntario'] as $rol) {
             $actor = User::factory()->create(['rol' => $rol]);
             $this->actingAs($actor)->patch(route('admin.solicitudes-adopcion.evaluate', $solicitud), self::MOTIVO)->assertForbidden();
-            $this->actingAs($actor)->patch(route('admin.solicitudes-adopcion.request-information', $solicitud), self::MOTIVO)->assertForbidden();
+            $this->actingAs($actor)->patch(route('admin.solicitudes-adopcion.reject', $solicitud), self::MOTIVO)->assertForbidden();
         }
 
         $this->assertSame('pendiente', $solicitud->refresh()->estado);

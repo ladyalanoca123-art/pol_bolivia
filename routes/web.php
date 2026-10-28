@@ -158,9 +158,6 @@ Route::middleware(['auth', 'verified', 'role:administrador'])
         Route::patch('/solicitudes-adopcion/{solicitud}/evaluar', [AdminSolicitudAdopcionController::class, 'evaluate'])
             ->name('solicitudes-adopcion.evaluate');
 
-        Route::patch('/solicitudes-adopcion/{solicitud}/solicitar-informacion', [AdminSolicitudAdopcionController::class, 'requestInformation'])
-            ->name('solicitudes-adopcion.request-information');
-
         Route::patch('/solicitudes-adopcion/{solicitud}/aprobar', [AdminSolicitudAdopcionController::class, 'approve'])
             ->name('solicitudes-adopcion.approve');
 

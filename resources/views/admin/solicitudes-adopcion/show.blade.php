@@ -195,15 +195,6 @@
                         <button type="submit" class="{{ $boton }} mt-3 bg-red-700 text-white hover:bg-red-800">Rechazar</button>
                     </form>
                 @endcan
-                @can('requestInformation', $solicitud)
-                    <form method="POST" action="{{ route('admin.solicitudes-adopcion.request-information', $solicitud) }}" class="mt-4 rounded-lg border border-gray-200 p-4">
-                        @csrf @method('PATCH')
-                        <label for="comentarios-info" class="text-sm font-semibold text-gray-900">Solicitar información</label>
-                        <textarea id="comentarios-info" name="comentarios_admin" rows="2" minlength="5" maxlength="1000" required class="{{ $textarea }}" placeholder="Indica qué falta confirmar (al menos 5 caracteres).">{{ old('comentarios_admin') }}</textarea>
-                        <x-input-error class="mt-1" :messages="$errors->get('comentarios_admin')" />
-                        <button type="submit" class="{{ $boton }} mt-3 border border-gray-300 bg-white text-gray-700 hover:bg-gray-50">Solicitar información</button>
-                    </form>
-                @endcan
             @endif
 
             @if ($solicitud->estado === 'en_espera')
@@ -279,7 +270,7 @@
                             @elseif (array_key_exists('estado', $nuevos))
                                 {{ $legible($anteriores['estado'] ?? '') }} → {{ $legible($nuevos['estado']) }}
                             @else
-                                Información solicitada (el estado no cambió)
+                                Nota interna (el estado no cambió)
                             @endif
                         </p>
                         <p class="text-gray-600">
