@@ -14,9 +14,13 @@ class IncidenciaPolicy
             && $incidencia->estado === 'pendiente';
     }
 
+    /**
+     * Se puede atender directamente desde «Pendiente»: marcar «En proceso» es opcional (solo avisa al equipo que
+     * alguien ya se ocupa). PostgreSQL exige igual el comentario, el responsable y la fecha de atención.
+     */
     public function attend(User $user, Incidencia $incidencia): bool
     {
-        if (! $user->estado || $incidencia->estado !== 'en_proceso') {
+        if (! $user->estado || ! in_array($incidencia->estado, ['pendiente', 'en_proceso'], true)) {
             return false;
         }
 

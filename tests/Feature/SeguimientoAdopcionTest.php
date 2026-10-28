@@ -125,10 +125,11 @@ class SeguimientoAdopcionTest extends TestCase
         $volunteer = $this->activate($administrator, $seguimiento);
         $incidencia = Incidencia::create([...$this->incidentData(), 'seguimiento_id' => $seguimiento->id, 'reportado_por' => $volunteer->id, 'estado' => 'pendiente']);
 
-        $this->actingAs($administrator)->patch(route('admin.seguimientos.incidencias.attend', [$seguimiento, $incidencia]), ['comentarios_resolucion' => 'Caso resuelto'])->assertForbidden();
+        // Sin resolución no se atiende.
+        $this->actingAs($administrator)->patch(route('admin.seguimientos.incidencias.attend', [$seguimiento, $incidencia]), ['comentarios_resolucion' => ''])->assertSessionHasErrors('comentarios_resolucion');
         $this->assertDatabaseHas('incidencias', ['id' => $incidencia->id, 'estado' => 'pendiente']);
 
-        $this->actingAs($administrator)->patch(route('admin.incidencias.progress', $incidencia))->assertRedirect();
+        // Se atiende directamente desde «Pendiente», sin pulsar antes «En proceso».
         $this->actingAs($administrator)->patch(route('admin.seguimientos.incidencias.attend', [$seguimiento, $incidencia]), ['comentarios_resolucion' => 'Caso resuelto'])->assertRedirect();
         $this->assertDatabaseHas('incidencias', ['id' => $incidencia->id, 'estado' => 'atendida', 'atendida_por' => $administrator->id]);
 
