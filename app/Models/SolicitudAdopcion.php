@@ -122,6 +122,21 @@ class SolicitudAdopcion extends Model
         return $this->hasOne(SeguimientoAdopcion::class, 'solicitud_id');
     }
 
+    /**
+     * Quién llevó la solicitud a ese estado (p. ej. 'aprobada': quién la aprobó; 'aceptada': quién registró la
+     * entrega y cerró el caso), según la auditoría. Null si no hay registro o el usuario ya no existe.
+     */
+    public function responsableDe(string $estado): ?User
+    {
+        return Auditoria::query()
+            ->with('usuario:id,nombres,apellidos')
+            ->where('modelo', 'SolicitudAdopcion')
+            ->where('modelo_id', $this->id)
+            ->whereRaw("valores_nuevos ->> 'estado' = ?", [$estado])
+            ->orderByDesc('created_at')->orderByDesc('id')
+            ->first()?->usuario;
+    }
+
     /** Estado desde el que pasó a su estado final, según la auditoría (cerrada y las cancelaciones automáticas no tienen). */
     private function estadoAnteriorAlFinal(): ?string
     {

@@ -78,15 +78,18 @@ class SolicitudAdopcionController extends Controller
         return view('admin.solicitudes-adopcion.show', compact('solicitud', 'historial'));
     }
 
-    /** Descarga el formato de compromiso para firma; nunca afirma que el documento esté firmado. */
+    /** Acta de adopción para imprimir, firmar y sellar el día de la entrega. Es válida solo con firmas y sello originales. */
     public function commitmentPdf(SolicitudAdopcion $solicitud)
     {
         Gate::authorize('viewCommitment', $solicitud);
         $solicitud->load(['solicitante', 'mascota']);
+        // Responsables en el acta: a quién acudir ante cualquier observación posterior.
+        $aprobadaPor = $solicitud->responsableDe('aprobada');
+        $entregadaPor = $solicitud->estado === 'aceptada' ? $solicitud->responsableDe('aceptada') : null;
 
-        return Pdf::loadView('admin.solicitudes-adopcion.compromiso-pdf', compact('solicitud'))
+        return Pdf::loadView('admin.solicitudes-adopcion.compromiso-pdf', compact('solicitud', 'aprobadaPor', 'entregadaPor'))
             ->setPaper('letter')
-            ->download('compromiso-adopcion-'.$solicitud->id.'.pdf');
+            ->download('acta-adopcion-'.($solicitud->numero_acta ?? $solicitud->id).'.pdf');
     }
 
     /** Guarda evidencia en el disco privado; no marca el compromiso como firmado. */

@@ -136,7 +136,7 @@
 
                 @can('viewCommitment', $solicitud)
                     <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
-                        <a href="{{ route('admin.solicitudes-adopcion.commitment-pdf', $solicitud) }}" class="font-semibold text-blue-900 underline">Descargar constancia de aprobación y compromiso (PDF para firma)</a>
+                        <a href="{{ route('admin.solicitudes-adopcion.commitment-pdf', $solicitud) }}" class="font-semibold text-blue-900 underline">Descargar acta de adopción para firmar y sellar (PDF)</a>
                         @if ($solicitud->compromiso_foto_path && \Illuminate\Support\Facades\Storage::disk('local')->exists($solicitud->compromiso_foto_path))
                             @can('viewCommitmentEvidence', $solicitud)<a href="{{ route('admin.solicitudes-adopcion.commitment-evidence.download', $solicitud) }}" class="font-semibold text-blue-900 underline">Descargar evidencia privada</a>@endcan
                         @endif
