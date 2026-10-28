@@ -1,126 +1,94 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Gestión de mascotas</h2>
+@php
+    $tamanos = ['pequeno' => 'Pequeño', 'mediano' => 'Mediano', 'grande' => 'Grande'];
+    $hayFiltros = collect($filters)->filter(fn ($v) => filled($v))->isNotEmpty();
+@endphp
+<x-admin.pagina titulo="Gestión de mascotas" seccion="Mascotas" descripcion="Registra mascotas, actualiza sus datos y fotos, y revisa cuáles están disponibles, reservadas o adoptadas.">
+    <x-slot name="acciones">
+        <x-admin.boton variante="destacado" :href="route('admin.mascotas.create')"><span aria-hidden="true">+</span> Registrar mascota</x-admin.boton>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            @if (session('status'))
-                <div class="rounded-md bg-green-50 p-4 text-sm text-green-700">{{ session('status') }}</div>
-            @endif
-
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <div class="mb-6 flex justify-end">
-                    <a href="{{ route('admin.mascotas.create') }}"
-                         style="background-color: #4f46e5; color: white; padding: 10px 16px; border-radius: 6px; display: inline-block; font-weight: 600;">
-                        + Registrar mascota
-                    </a>
-                </div>
-
-                <form method="GET" action="{{ route('admin.mascotas.index') }}" class="grid grid-cols-1 gap-4 md:grid-cols-6">
-                    <div class="md:col-span-2">
-                        <x-input-label for="buscar" :value="__('Buscar')" />
-                        <x-text-input id="buscar" name="buscar" type="search" class="mt-1 block w-full" :value="$filters['buscar'] ?? ''" placeholder="Nombre de la mascota" />
-                    </div>
-
-                    <div>
-                        <x-input-label for="especie" :value="__('Especie')" />
-                        <select id="especie" name="especie" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                            <option value="">Todas</option>
-                            @foreach (['perro', 'gato'] as $species)
-                                <option value="{{ $species }}" @selected(($filters['especie'] ?? '') === $species)>{{ ucfirst($species) }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <x-input-label for="sexo" :value="__('Sexo')" />
-                        <select id="sexo" name="sexo" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                            <option value="">Todos</option>
-                            @foreach (['macho', 'hembra'] as $sex)
-                                <option value="{{ $sex }}" @selected(($filters['sexo'] ?? '') === $sex)>{{ ucfirst($sex) }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <x-input-label for="tamano" :value="__('Tamaño')" />
-                        <select id="tamano" name="tamano" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                            <option value="">Todos</option>
-                            @foreach (['pequeno', 'mediano', 'grande'] as $size)
-                                <option value="{{ $size }}" @selected(($filters['tamano'] ?? '') === $size)>{{ match ($size) { 'pequeno' => 'Pequeño', 'mediano' => 'Mediano', 'grande' => 'Grande', default => ucfirst($size) } }}</option>
-                               @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <x-input-label for="estado" :value="__('Estado')" />
-                        <select id="estado" name="estado" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                            <option value="">Todos</option>
-                            @foreach (\App\Models\Mascota::ESTADOS_LEGIBLES as $status => $etiquetaEstado)
-                                <option value="{{ $status }}" @selected(($filters['estado'] ?? '') === $status)>{{ $etiquetaEstado }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="md:col-span-6 flex items-center gap-3">
-                        <x-primary-button>BUSCAR</x-primary-button>
-                        <a href="{{ route('admin.mascotas.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Limpiar</a>
-                    </div>
-                </form>
+    <x-admin.tarjeta>
+        <form method="GET" action="{{ route('admin.mascotas.index') }}" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
+            <div class="sm:col-span-2">
+                <label for="buscar" class="admin-etiqueta">Buscar</label>
+                <input id="buscar" name="buscar" type="search" class="admin-campo" value="{{ $filters['buscar'] ?? '' }}" placeholder="Nombre de la mascota">
             </div>
-
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Foto</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Especie</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Raza</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Edad</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sexo</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tamaño</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registro</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Detalle</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse ($mascotas as $mascota)
-                                @php($fotoPrincipal = $mascota->fotos->first())
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        @if ($fotoPrincipal)
-                                            <img src="{{ $fotoPrincipal->url_miniatura }}" alt="{{ $mascota->nombre }}" class="h-12 w-12 rounded-md object-cover">
-                                        @else
-                                            <span class="text-sm text-gray-400">Sin foto</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $mascota->nombre }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ucfirst($mascota->especie) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $mascota->raza ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $mascota->edad_formateada }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ucfirst($mascota->sexo) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ match ($mascota->tamano) { 'pequeno' => 'Pequeño', 'mediano' => 'Mediano', 'grande' => 'Grande', default => ucfirst($mascota->tamano) } }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><x-estado-mascota :mascota="$mascota" /></td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $mascota->created_at->format('d/m/Y H:i') }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                        <a href="{{ route('admin.mascotas.show', $mascota) }}" class="text-indigo-600 hover:text-indigo-900">Ver detalle</a>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="10" class="px-6 py-8 text-center text-sm text-gray-500">No se encontraron mascotas.</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                @if ($mascotas->hasPages())
-                    <div class="p-6">{{ $mascotas->links() }}</div>
-                @endif
+            <div>
+                <label for="especie" class="admin-etiqueta">Especie</label>
+                <select id="especie" name="especie" class="admin-campo">
+                    <option value="">Todas</option>
+                    @foreach (['perro' => 'Perro', 'gato' => 'Gato'] as $valor => $texto)
+                        <option value="{{ $valor }}" @selected(($filters['especie'] ?? '') === $valor)>{{ $texto }}</option>
+                    @endforeach
+                </select>
             </div>
-        </div>
-    </div>
-</x-app-layout>
+            <div>
+                <label for="sexo" class="admin-etiqueta">Sexo</label>
+                <select id="sexo" name="sexo" class="admin-campo">
+                    <option value="">Todos</option>
+                    @foreach (['macho' => 'Macho', 'hembra' => 'Hembra'] as $valor => $texto)
+                        <option value="{{ $valor }}" @selected(($filters['sexo'] ?? '') === $valor)>{{ $texto }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label for="tamano" class="admin-etiqueta">Tamaño</label>
+                <select id="tamano" name="tamano" class="admin-campo">
+                    <option value="">Todos</option>
+                    @foreach ($tamanos as $valor => $texto)
+                        <option value="{{ $valor }}" @selected(($filters['tamano'] ?? '') === $valor)>{{ $texto }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label for="estado" class="admin-etiqueta">Estado</label>
+                <select id="estado" name="estado" class="admin-campo">
+                    <option value="">Todos</option>
+                    @foreach (\App\Models\Mascota::ESTADOS_LEGIBLES as $valor => $texto)
+                        <option value="{{ $valor }}" @selected(($filters['estado'] ?? '') === $valor)>{{ $texto }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 sm:col-span-2 lg:col-span-6">
+                <x-admin.boton>Buscar</x-admin.boton>
+                @if ($hayFiltros)<a href="{{ route('admin.mascotas.index') }}" class="text-sm font-semibold text-slate-600 hover:text-blue-950 hover:underline">Limpiar</a>@endif
+                <p class="text-sm text-slate-500 sm:ms-auto">{{ $mascotas->total() }} {{ $mascotas->total() === 1 ? 'mascota' : 'mascotas' }}</p>
+            </div>
+        </form>
+    </x-admin.tarjeta>
+
+    <x-admin.tarjeta :relleno="false">
+        @if ($mascotas->isEmpty())
+            <x-admin.vacio titulo="No se encontraron mascotas." :texto="$hayFiltros ? 'Prueba con otros filtros.' : 'Registra la primera mascota para que aparezca en el catálogo.'" />
+        @else
+            <ul class="divide-y divide-slate-100">
+                @foreach ($mascotas as $mascota)
+                    @php($fotoPrincipal = $mascota->fotos->first())
+                    <li class="flex items-center gap-4 px-4 py-3 sm:px-6">
+                        @if ($fotoPrincipal)
+                            <img src="{{ $fotoPrincipal->url_miniatura }}" alt="{{ $mascota->nombre }}" class="h-14 w-14 shrink-0 rounded-xl object-cover">
+                        @else
+                            <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs text-slate-500">Sin foto</span>
+                        @endif
+                        <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <a href="{{ route('admin.mascotas.show', $mascota) }}" class="truncate font-semibold text-blue-950 hover:underline">{{ $mascota->nombre }}</a>
+                                @if ($mascota->estado === 'reservada')
+                                    <x-estado-mascota :mascota="$mascota" />
+                                @else
+                                    <x-admin.estado de="mascota" :valor="$mascota->estado" />
+                                @endif
+                            </div>
+                            <p class="mt-0.5 truncate text-sm text-slate-600">
+                                {{ ucfirst($mascota->especie) }} · {{ $mascota->raza ?? 'Raza sin indicar' }} · {{ $mascota->edad_formateada }} · {{ ucfirst($mascota->sexo) }} · {{ $tamanos[$mascota->tamano] ?? ucfirst($mascota->tamano) }}
+                            </p>
+                            <p class="mt-0.5 text-xs text-slate-500">Registrada el {{ $mascota->created_at->format('d/m/Y H:i') }}</p>
+                        </div>
+                        <x-admin.boton variante="secundario" tamano="chico" :href="route('admin.mascotas.show', $mascota)" class="shrink-0">Ver detalle</x-admin.boton>
+                    </li>
+                @endforeach
+            </ul>
+            @if ($mascotas->hasPages())<div class="border-t border-slate-100 px-4 py-3 sm:px-6">{{ $mascotas->links() }}</div>@endif
+        @endif
+    </x-admin.tarjeta>
+</x-admin.pagina>

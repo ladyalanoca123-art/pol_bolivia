@@ -1,114 +1,40 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Registrar mascota</h2>
-    </x-slot>
+@php($maximoAdicionales = \App\Models\FotoMascota::MAXIMO_POR_MASCOTA - 1)
+<x-admin.pagina titulo="Registrar mascota" seccion="Mascotas" descripcion="Completa los datos y sube al menos la foto principal. La mascota aparecerá en el catálogo como disponible." ancho="max-w-4xl" :volver="route('admin.mascotas.index')" volver-texto="Volver a mascotas">
+    <form method="POST" action="{{ route('admin.mascotas.store') }}" enctype="multipart/form-data" class="space-y-6"
+          x-data="optimizadorFotos({ maximoBytes: {{ config('pol.mascotas.foto_max_kb') * 1024 }}, textoEnviando: 'Registrando mascota…' })" x-on:submit="enviar($event)" x-on:pageshow.window="enviando = false">
+        @csrf
 
-    <div class="py-12">
-        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <form method="POST" action="{{ route('admin.mascotas.store') }}" enctype="multipart/form-data" class="space-y-6"
-                      x-data="optimizadorFotos({ maximoBytes: {{ config('pol.mascotas.foto_max_kb') * 1024 }}, textoEnviando: 'Registrando mascota…' })" x-on:submit="enviar($event)" x-on:pageshow.window="enviando = false">
-                    @csrf
+        <x-admin.tarjeta titulo="Datos de la mascota">
+            @include('admin.mascotas.partials.campos')
+        </x-admin.tarjeta>
 
-                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                        <div>
-                            <x-input-label for="nombre" :value="__('Nombre')" />
-                            <x-text-input id="nombre" name="nombre" type="text" class="mt-1 block w-full" :value="old('nombre')" required autofocus />
-                            <x-input-error :messages="$errors->get('nombre')" class="mt-2" />
-                        </div>
-
-                        <div>
-                            <x-input-label for="especie" :value="__('Especie')" />
-                            <select id="especie" name="especie" required class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                <option value="">Selecciona una especie</option>
-                                <option value="perro" @selected(old('especie') === 'perro')>Perro</option>
-                                <option value="gato" @selected(old('especie') === 'gato')>Gato</option>
-                            </select>
-                            <x-input-error :messages="$errors->get('especie')" class="mt-2" />
-                        </div>
-
-                        <div>
-                            <x-input-label for="raza" :value="__('Raza')" />
-                            <x-text-input id="raza" name="raza" type="text" class="mt-1 block w-full" :value="old('raza')" />
-                            <x-input-error :messages="$errors->get('raza')" class="mt-2" />
-                        </div>
-
-                        <div>
-                            <x-input-label for="edad" :value="__('Edad')" />
-                            <div class="mt-1 flex gap-2">
-                                <x-text-input id="edad" name="edad" type="number" min="1" step="1" class="block w-full" :value="old('edad')" required />
-                                <select id="edad_en" name="edad_en" aria-label="Unidad de edad" required class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                    <option value="">Selecciona meses o años</option>
-                                    <option value="meses" @selected(old('edad_en') === 'meses')>Meses</option>
-                                    <option value="años" @selected(old('edad_en') === 'años')>Años</option>
-                                </select>
-                            </div>
-                            <x-input-error :messages="$errors->get('edad')" class="mt-2" />
-                            <x-input-error :messages="$errors->get('edad_en')" class="mt-2" />
-                        </div>
-
-                        <div>
-                            <x-input-label for="sexo" :value="__('Sexo')" />
-                            <select id="sexo" name="sexo" required class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                <option value="">Selecciona un sexo</option>
-                                <option value="macho" @selected(old('sexo') === 'macho')>Macho</option>
-                                <option value="hembra" @selected(old('sexo') === 'hembra')>Hembra</option>
-                            </select>
-                            <x-input-error :messages="$errors->get('sexo')" class="mt-2" />
-                        </div>
-
-                        <div>
-                            <x-input-label for="tamano" :value="__('Tamaño')" />
-                            <select id="tamano" name="tamano" required class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                <option value="">Selecciona un tamaño</option>
-                                <option value="pequeno" @selected(old('tamano') === 'pequeno')>Pequeño</option>
-                                <option value="mediano" @selected(old('tamano') === 'mediano')>Mediano</option>
-                                <option value="grande" @selected(old('tamano') === 'grande')>Grande</option>
-                            </select>
-                            <x-input-error :messages="$errors->get('tamano')" class="mt-2" />
-                        </div>
-
-                        <div>
-                            <x-input-label for="color" :value="__('Color')" />
-                            <x-text-input id="color" name="color" type="text" class="mt-1 block w-full" :value="old('color')" />
-                            <x-input-error :messages="$errors->get('color')" class="mt-2" />
-                        </div>
-                    </div>
-
-                    <div>
-                        <x-input-label for="descripcion" :value="__('Descripción')" />
-                        <textarea id="descripcion" name="descripcion" rows="4" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ old('descripcion') }}</textarea>
-                        <x-input-error :messages="$errors->get('descripcion')" class="mt-2" />
-                    </div>
-
-                    <div class="space-y-1">
-                        <x-input-label for="foto_principal" :value="__('Foto principal')" />
-                        <input id="foto_principal" name="foto_principal" type="file" accept="image/jpeg,image/png,image/webp" required data-maximo="1"
-                               x-on:change="optimizar($event.target)" class="mt-1 block w-full text-sm text-gray-700">
-                        <p class="text-sm text-gray-500">Esta imagen se mostrará como foto principal de la mascota.</p>
-                        @include('admin.mascotas.partials.ayuda-fotos', ['campo' => 'foto_principal'])
-                        <x-input-error :messages="$errors->get('foto_principal')" class="mt-2" />
-                    </div>
-
-                    @php($maximoAdicionales = \App\Models\FotoMascota::MAXIMO_POR_MASCOTA - 1)
-                    <div class="space-y-1">
-                        <x-input-label for="fotos_adicionales" :value="__('Fotos adicionales (opcional)')" />
-                        <input id="fotos_adicionales" name="fotos_adicionales[]" type="file" accept="image/jpeg,image/png,image/webp" multiple
-                               data-maximo="{{ $maximoAdicionales }}" data-aviso="Puedes subir como máximo {{ $maximoAdicionales }} fotos adicionales (4 en total con la principal)."
-                               x-on:change="optimizar($event.target)" class="mt-1 block w-full text-sm text-gray-700">
-                        <p class="text-sm text-gray-500">Hasta {{ $maximoAdicionales }} fotos más; se mostrarán después de la principal.</p>
-                        @include('admin.mascotas.partials.ayuda-fotos', ['campo' => 'fotos_adicionales[]', 'ayuda' => false])
-                        <x-input-error :messages="[...$errors->get('fotos_adicionales'), ...\Illuminate\Support\Arr::flatten($errors->get('fotos_adicionales.*'))]" class="mt-2" />
-                    </div>
-
-                    <div class="flex items-center gap-4">
-                        <x-primary-button x-bind:disabled="bloqueado || enviando" class="disabled:cursor-not-allowed disabled:opacity-60">
-                            <span x-text="enviando ? textoEnviando : (procesando ? 'Optimizando fotos…' : 'Registrar mascota')">Registrar mascota</span>
-                        </x-primary-button>
-                        <a href="{{ route('admin.mascotas.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Cancelar</a>
-                    </div>
-                </form>
+        <x-admin.tarjeta titulo="Fotos" descripcion="La foto principal es la que se ve primero en el catálogo.">
+            <div class="space-y-6">
+                <div>
+                    <label for="foto_principal" class="admin-etiqueta">Foto principal</label>
+                    <input id="foto_principal" name="foto_principal" type="file" accept="image/jpeg,image/png,image/webp" required data-maximo="1"
+                           x-on:change="optimizar($event.target)" class="admin-archivo">
+                    <p class="admin-ayuda">Esta imagen se mostrará como foto principal de la mascota.</p>
+                    @include('admin.mascotas.partials.ayuda-fotos', ['campo' => 'foto_principal'])
+                    <x-input-error :messages="$errors->get('foto_principal')" class="mt-2" />
+                </div>
+                <div>
+                    <label for="fotos_adicionales" class="admin-etiqueta">Fotos adicionales (opcional)</label>
+                    <input id="fotos_adicionales" name="fotos_adicionales[]" type="file" accept="image/jpeg,image/png,image/webp" multiple
+                           data-maximo="{{ $maximoAdicionales }}" data-aviso="Puedes subir como máximo {{ $maximoAdicionales }} fotos adicionales (4 en total con la principal)."
+                           x-on:change="optimizar($event.target)" class="admin-archivo">
+                    <p class="admin-ayuda">Hasta {{ $maximoAdicionales }} fotos más; se mostrarán después de la principal.</p>
+                    @include('admin.mascotas.partials.ayuda-fotos', ['campo' => 'fotos_adicionales[]', 'ayuda' => false])
+                    <x-input-error :messages="[...$errors->get('fotos_adicionales'), ...\Illuminate\Support\Arr::flatten($errors->get('fotos_adicionales.*'))]" class="mt-2" />
+                </div>
             </div>
+        </x-admin.tarjeta>
+
+        <div class="flex flex-wrap items-center gap-3">
+            <x-admin.boton variante="destacado" x-bind:disabled="bloqueado || enviando">
+                <span x-text="enviando ? textoEnviando : (procesando ? 'Optimizando fotos…' : 'Registrar mascota')">Registrar mascota</span>
+            </x-admin.boton>
+            <x-admin.boton variante="secundario" :href="route('admin.mascotas.index')">Cancelar</x-admin.boton>
         </div>
-    </div>
-</x-app-layout>
+    </form>
+</x-admin.pagina>
