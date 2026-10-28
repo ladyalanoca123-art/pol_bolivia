@@ -105,7 +105,7 @@
                         @endforeach
                         @if ($seccion === 'Visita')
                             <div class="grid grid-cols-1 gap-1 py-2 sm:grid-cols-2"><dt class="text-gray-500"><span class="font-semibold text-indigo-700">21.</span> Zona aproximada</dt><dd class="font-medium text-gray-900">{{ $solicitud->zona_aproximada }}</dd></div>
-                            <div class="grid grid-cols-1 gap-1 py-2 sm:grid-cols-2"><dt class="text-gray-500"><span class="font-semibold text-indigo-700">23–26.</span> Consentimientos obligatorios</dt><dd class="font-medium text-gray-900">Aceptados (visita previa, seguimiento, no ceder y declaración de veracidad)</dd></div>
+                            <div class="grid grid-cols-1 gap-1 py-2 sm:grid-cols-2"><dt class="text-gray-500"><span class="font-semibold text-indigo-700">23–26.</span> Consentimientos obligatorios</dt><dd class="font-medium text-gray-900">Aceptados ({{ in_array($solicitud->version_cuestionario, [null, 'a2-v2'], true) ? 'visita previa' : 'contacto por WhatsApp o llamada' }}, seguimiento, no ceder y declaración de veracidad)</dd></div>
                         @endif
                     </dl>
                 @endforeach

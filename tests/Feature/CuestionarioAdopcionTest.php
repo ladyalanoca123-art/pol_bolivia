@@ -53,7 +53,7 @@ class CuestionarioAdopcionTest extends TestCase
         $this->assertSame('pendiente', $solicitud->estado);
         $this->assertSame('verde', $solicitud->nivel_alerta);
         $this->assertSame([], $solicitud->alertas);
-        $this->assertSame('a2-v2', $solicitud->version_cuestionario);
+        $this->assertSame('a2-v3', $solicitud->version_cuestionario);
         $this->assertSame('casa', $solicitud->respuestas['tipo_vivienda']);
         $this->assertTrue($solicitud->respuestas['consentimientos']['no_ceder']);
         // Columnas que ya usaba el sistema

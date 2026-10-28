@@ -119,7 +119,7 @@ class StoreSolicitudAdopcionRequest extends FormRequest
             'telefono_contacto.max' => TelefonoBoliviano::MENSAJE,
             'zona_aproximada.required' => 'Escribe tu zona aproximada.',
             'horarios_visita.required' => 'Marca al menos un horario para la visita.',
-            'acepta_visita_previa.accepted' => 'Debes aceptar la visita previa al hogar.',
+            'acepta_visita_previa.accepted' => 'Debes aceptar que la fundación te contacte para evaluar tu solicitud y coordinar la entrega.',
             'acepta_seguimiento.accepted' => 'Debes aceptar el seguimiento posterior a la adopción.',
             'no_ceder.accepted' => 'Debes aceptar el compromiso de no vender ni ceder la mascota.',
             'declara_informacion_veraz.accepted' => 'Debes aceptar la declaración de veracidad.',

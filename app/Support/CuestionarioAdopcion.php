@@ -11,7 +11,8 @@ namespace App\Support;
  */
 final class CuestionarioAdopcion
 {
-    public const VERSION = 'a2-v2';
+    // a2-v3: teléfono de contacto obligatorio y consentimiento de contacto en lugar de la visita previa al hogar.
+    public const VERSION = 'a2-v3';
 
     public const OPCIONES = [
         'tipo_vivienda' => ['casa' => 'Casa', 'departamento' => 'Departamento', 'cuarto' => 'Cuarto', 'compartida' => 'Vivienda compartida', 'otro' => 'Otro'],
@@ -53,8 +54,10 @@ final class CuestionarioAdopcion
     /** Respuestas de la pregunta 4 que muestran la 5. */
     public const PERMANENCIA_CON_EXTERIOR = ['exterior', 'dentro_fuera'];
 
+    // La clave acepta_visita_previa se conserva para las solicitudes anteriores (a2-v2 y previas, cuyo texto era
+    // «Acepto una visita previa al hogar…»); desde a2-v3 es el consentimiento de contacto por WhatsApp o llamada.
     public const CONSENTIMIENTOS = [
-        'acepta_visita_previa' => 'Acepto una visita previa al hogar como parte del proceso de evaluación de adopción.',
+        'acepta_visita_previa' => 'Acepto que POL-Bolivia me contacte por WhatsApp o llamada para evaluar mi solicitud y coordinar la entrega de la mascota.',
         'acepta_seguimiento' => 'Acepto las visitas o contactos de seguimiento posteriores a la adopción.',
         'no_ceder' => 'Me comprometo a no vender, regalar ni ceder la mascota a terceros sin comunicarme previamente con la fundación.',
         'declara_informacion_veraz' => 'Declaro que la información proporcionada es verdadera y acepto que pueda ser verificada durante el proceso de adopción.',
@@ -96,7 +99,7 @@ final class CuestionarioAdopcion
             [20, 'si_no_puede', 'Si ya no pudiera cuidarla, ¿qué haría?', 'si_no_puede'],
         ],
         'Visita' => [
-            [22, 'horarios_visita', 'Horarios disponibles para la visita', 'horarios_visita'],
+            [22, 'horarios_visita', 'Horarios disponibles para las visitas de seguimiento', 'horarios_visita'],
         ],
     ];
 

@@ -207,12 +207,12 @@
                     </x-cuestionario.pregunta>
                 </fieldset>
 
-                {{-- Sección 6 · Visita y consentimientos --}}
+                {{-- Sección 6 · Contacto y consentimientos --}}
                 <fieldset class="{{ $sec }}">
-                    <legend class="sr-only">Visita y consentimientos</legend>
+                    <legend class="sr-only">Contacto y consentimientos</legend>
                     <p class="text-xs font-bold uppercase tracking-wider text-blue-800">Sección 6 de 6</p>
-                    <h4 class="text-lg font-semibold text-gray-900">Visita y consentimientos</h4>
-                    <p class="text-sm text-gray-600">Datos para coordinar la visita y compromisos obligatorios para enviar la solicitud.</p>
+                    <h4 class="text-lg font-semibold text-gray-900">Contacto y consentimientos</h4>
+                    <p class="text-sm text-gray-600">Datos para contactarte y coordinar las visitas de seguimiento, y compromisos obligatorios para enviar la solicitud.</p>
 
                     {{-- Dato de contacto sin número: no cuenta en el progreso ni en las alertas del cuestionario. --}}
                     <x-cuestionario.pregunta tema="pol" label="Teléfono de contacto (WhatsApp)" campo="telefono_contacto" ayuda="Obligatorio. La fundación te escribirá o llamará a este número para coordinar. Si lo cambias, también se actualiza en «Mi perfil».">
@@ -223,7 +223,7 @@
                         <input type="text" name="zona_aproximada" id="zona_aproximada" maxlength="100" value="{{ old('zona_aproximada') }}" class="{{ $input }}" placeholder="Ej. Queru Queru, Cochabamba" autocomplete="off">
                     </x-cuestionario.pregunta>
 
-                    <x-cuestionario.pregunta tema="pol" num="22" label="¿En qué horarios tendría disponibilidad para una visita domiciliaria? (puede marcar varios)" campo="horarios_visita">
+                    <x-cuestionario.pregunta tema="pol" num="22" label="¿En qué horarios tendría disponibilidad para las visitas de seguimiento después de la adopción? (puede marcar varios)" campo="horarios_visita">
                         <x-cuestionario.opciones tema="pol" name="horarios_visita" catalogo="horarios_visita" multiple />
                     </x-cuestionario.pregunta>
 
