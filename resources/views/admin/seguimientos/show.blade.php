@@ -114,10 +114,22 @@
                     </form>
                 @endcan
                 @can('close', $seguimiento)
-                    <form method="POST" action="{{ route('admin.seguimientos.close', $seguimiento) }}" class="mt-4 border-t border-slate-100 pt-4">@csrf @method('PATCH')
-                        <x-admin.boton variante="peligro-suave" class="w-full" x-data x-on:click="if (! confirm('¿Cerrar seguimiento?')) $event.preventDefault()">Cerrar seguimiento</x-admin.boton>
-                        <p class="admin-ayuda">Solo se puede cerrar sin visitas programadas pendientes ni incidencias sin atender.</p>
-                    </form>
+                    @php($pendientesCierre = $seguimiento->pendientesParaCerrar())
+                    <div class="mt-4 border-t border-slate-100 pt-4">
+                        @error('cierre')<p class="mb-3 rounded-xl bg-red-50 p-3 text-sm text-red-800" role="alert">{{ $message }}</p>@enderror
+                        @if ($pendientesCierre)
+                            {{-- Sin botón: PostgreSQL rechazaría el cierre. Se dice qué falta. --}}
+                            <div class="rounded-xl bg-amber-50 p-3 text-sm text-amber-950">
+                                <p class="font-semibold">Para cerrar el seguimiento:</p>
+                                <ul class="mt-1 list-inside list-disc space-y-0.5">@foreach ($pendientesCierre as $pendiente)<li>{{ $pendiente }}</li>@endforeach</ul>
+                            </div>
+                        @else
+                            <form method="POST" action="{{ route('admin.seguimientos.close', $seguimiento) }}">@csrf @method('PATCH')
+                                <x-admin.boton variante="peligro-suave" class="w-full" x-data x-on:click="if (! confirm('¿Cerrar seguimiento?')) $event.preventDefault()">Cerrar seguimiento</x-admin.boton>
+                                <p class="admin-ayuda">Al cerrarlo termina el acompañamiento de esta adopción.</p>
+                            </form>
+                        @endif
+                    </div>
                 @endcan
             </x-admin.tarjeta>
         </div>

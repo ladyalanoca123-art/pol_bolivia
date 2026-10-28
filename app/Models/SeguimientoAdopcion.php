@@ -47,4 +47,28 @@ class SeguimientoAdopcion extends Model
     {
         return $this->hasMany(Incidencia::class, 'seguimiento_id');
     }
+
+    /**
+     * Lo que falta para poder cerrarlo, en frases para el administrador. Vacío si se puede cerrar.
+     * Mismas condiciones que exige PostgreSQL (validar_cierre_seguimiento): ninguna visita programada pendiente
+     * y ninguna incidencia sin atender.
+     *
+     * @return list<string>
+     */
+    public function pendientesParaCerrar(): array
+    {
+        $visitas = $this->visitas()->where('estado', 'programada')->orderBy('fecha_programada')->pluck('fecha_programada');
+        $incidencias = $this->incidencias()->where('estado', '<>', 'atendida')->count();
+        $pendientes = [];
+
+        if ($incidencias > 0) {
+            $pendientes[] = $incidencias === 1 ? 'Atiende 1 incidencia pendiente.' : "Atiende {$incidencias} incidencias pendientes.";
+        }
+
+        foreach ($visitas as $fecha) {
+            $pendientes[] = 'Registra la visita programada del '.$fecha->format('d/m/Y').' (realizada o «No asistió»).';
+        }
+
+        return $pendientes;
+    }
 }

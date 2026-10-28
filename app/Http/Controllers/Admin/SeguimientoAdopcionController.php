@@ -7,7 +7,9 @@ use App\Http\Requests\Seguimientos\AssignVolunteerRequest;
 use App\Models\SeguimientoAdopcion;
 use App\Models\User;
 use App\Models\VisitaSeguimiento;
+use App\Support\ErrorBaseDatos;
 use App\Support\FechasSeguimientoAdopcion;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -65,7 +67,21 @@ class SeguimientoAdopcionController extends Controller
     public function close(SeguimientoAdopcion $seguimiento): RedirectResponse
     {
         Gate::authorize('close', $seguimiento);
-        $seguimiento->forceFill(['estado' => 'cerrado', 'fecha_cierre' => now()])->save();
+
+        if ($pendientes = $seguimiento->pendientesParaCerrar()) {
+            return back()->withErrors(['cierre' => 'Todavía no se puede cerrar: '.implode(' ', $pendientes)]);
+        }
+
+        try {
+            $seguimiento->forceFill(['estado' => 'cerrado', 'fecha_cierre' => now()])->save();
+        } catch (QueryException $exception) {
+            // Algo cambió entre la revisión y el cierre (p. ej. el voluntario reportó una incidencia): PostgreSQL lo
+            // impide y se muestra su motivo en lugar de la página de error.
+            $error = ErrorBaseDatos::mensaje($exception) ?? throw $exception;
+
+            return back()->withErrors(['cierre' => $error]);
+        }
+
         return back()->with('status', 'El seguimiento fue cerrado.');
     }
 }
