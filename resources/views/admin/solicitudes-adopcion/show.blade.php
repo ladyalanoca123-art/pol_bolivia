@@ -141,16 +141,16 @@
                             @can('viewCommitmentEvidence', $solicitud)<a href="{{ route('admin.solicitudes-adopcion.commitment-evidence.download', $solicitud) }}" class="font-semibold text-blue-900 underline">Descargar evidencia privada</a>@endcan
                         @endif
                     </div>
-                    @if ($solicitud->estado === 'aprobada')
+                    @can('uploadCommitmentEvidence', $solicitud)
                         <form method="POST" enctype="multipart/form-data" action="{{ route('admin.solicitudes-adopcion.commitment-evidence.store', $solicitud) }}" class="mt-4 rounded-lg border border-blue-100 p-4">
                             @csrf
-                            <label for="evidencia-compromiso" class="block text-sm font-semibold text-blue-950">Adjuntar evidencia del compromiso firmado (JPG, PNG o PDF; máximo 10 MB)</label>
+                            <label for="evidencia-compromiso" class="block text-sm font-semibold text-blue-950">{{ $solicitud->compromiso_foto_path ? 'Reemplazar la foto del acta firmada' : 'Subir la foto del acta firmada' }} (JPG, PNG o PDF; máximo 10 MB)</label>
                             <input id="evidencia-compromiso" name="evidencia_compromiso" type="file" accept="image/jpeg,image/png,application/pdf" required class="mt-2 block w-full text-sm text-gray-700">
                             <x-input-error class="mt-1" :messages="$errors->get('evidencia_compromiso')" />
-                            <p class="mt-2 text-xs text-gray-600">El archivo se almacena de forma privada. Adjuntarlo no confirma la firma; el formulario de entrega conserva su confirmación explícita.</p>
-                            <button type="submit" class="{{ $boton }} mt-3 border border-blue-900 bg-white text-blue-950 hover:bg-blue-50">Guardar evidencia privada</button>
+                            <p class="mt-2 text-xs text-gray-600">Se guarda de forma privada. Puedes subirla antes o después de registrar la entrega. Subirla no reemplaza la casilla «El adoptante firmó el compromiso».</p>
+                            <button type="submit" class="{{ $boton }} mt-3 border border-blue-900 bg-white text-blue-950 hover:bg-blue-50">Guardar foto del acta</button>
                         </form>
-                    @endif
+                    @endcan
                 @endcan
 
             @if (! in_array($solicitud->estado, ['aprobada', 'aceptada'], true) && $solicitud->compromiso_foto_path)

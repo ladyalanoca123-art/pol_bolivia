@@ -49,11 +49,14 @@ class SolicitudAdopcionPolicy
             && filled($solicitud->compromiso_foto_path);
     }
 
-    /** La evidencia solo se registra mientras la entrega está pendiente; adjuntarla no confirma la firma. */
+    /**
+     * La foto del acta firmada se sube (o reemplaza) mientras está reservada o después de registrar la entrega.
+     * Subirla no confirma la firma: eso se marca aparte al registrar la entrega. PostgreSQL exige lo mismo.
+     */
     public function uploadCommitmentEvidence(User $user, SolicitudAdopcion $solicitud): bool
     {
         return $this->isActiveAdministrator($user)
-            && $solicitud->estado === 'aprobada';
+            && in_array($solicitud->estado, ['aprobada', 'aceptada'], true);
     }
 
     /** Registrar entrega: aprobada → Adopción concretada. */

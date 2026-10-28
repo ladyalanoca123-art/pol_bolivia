@@ -136,7 +136,7 @@ class CompromisoYSeguimientoAdopcionTest extends TestCase
                 ]));
             $this->fail('La evidencia solo debe añadirse en el estado aprobado.');
         } catch (QueryException $exception) {
-            $this->assertStringContainsString('La evidencia del compromiso solo se registra mientras la entrega está pendiente', $exception->getMessage());
+            $this->assertStringContainsString('La evidencia del compromiso solo se registra en una solicitud reservada o con la adopción concretada', $exception->getMessage());
         }
 
         try {

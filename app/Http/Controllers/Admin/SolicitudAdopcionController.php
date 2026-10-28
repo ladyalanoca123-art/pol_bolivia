@@ -130,7 +130,9 @@ class SolicitudAdopcionController extends Controller
         }
 
         return to_route('admin.solicitudes-adopcion.show', $solicitud)
-            ->with('status', 'La evidencia del compromiso se guardó de forma privada. Confirma la firma por separado al registrar la entrega.');
+            ->with('status', $solicitud->estado === 'aceptada'
+                ? 'La foto del acta firmada se guardó de forma privada.'
+                : 'La foto del acta firmada se guardó de forma privada. Al registrar la entrega, marca también la casilla de firma.');
     }
 
     /** Descarga protegida; nunca se expone una URL o ruta pública. */
