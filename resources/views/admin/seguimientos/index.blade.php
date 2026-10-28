@@ -1,39 +1,38 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Seguimientos de adopción</h2>
-    </x-slot>
-
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr class="text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
-                                <th class="px-4 py-3">Mascota</th>
-                                <th class="px-4 py-3">Ciudadano</th>
-                                <th class="px-4 py-3">Voluntario</th>
-                                <th class="px-4 py-3">Estado</th>
-                                <th class="px-4 py-3"><span class="sr-only">Acciones</span></th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            @forelse ($seguimientos as $seguimiento)
-                                <tr>
-                                    <td class="px-4 py-3">{{ $seguimiento->solicitud->mascota->nombre }}</td>
-                                    <td class="px-4 py-3">{{ $seguimiento->solicitud->solicitante->nombres }} {{ $seguimiento->solicitud->solicitante->apellidos }}</td>
-                                    <td class="px-4 py-3">{{ $seguimiento->voluntario?->nombres ?? 'Sin asignar' }}</td>
-                                    <td class="px-4 py-3">{{ ucfirst(str_replace('_', ' ', $seguimiento->estado)) }}</td>
-                                    <td class="px-4 py-3"><a class="text-indigo-600 hover:text-indigo-900" href="{{ route('admin.seguimientos.show', $seguimiento) }}">Ver detalle</a></td>
-                                </tr>
-                            @empty
-                                <tr><td class="px-4 py-6 text-gray-500" colspan="5">No hay seguimientos.</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-                <div class="p-4">{{ $seguimientos->links() }}</div>
-            </div>
+<x-admin.pagina titulo="Seguimientos de adopción" seccion="Seguimientos" descripcion="Cada adopción concretada tiene su seguimiento: asigna un voluntario, revisa sus visitas e incidencias y ciérralo al terminar.">
+    <x-admin.tarjeta :relleno="false">
+        <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-6">
+            <h2 class="text-sm font-semibold text-blue-950">Seguimientos</h2>
+            <span class="text-sm text-slate-500">{{ $seguimientos->total() }} {{ $seguimientos->total() === 1 ? 'registro' : 'registros' }}</span>
         </div>
-    </div>
-</x-app-layout>
+        @if ($seguimientos->isEmpty())
+            <x-admin.vacio titulo="No hay seguimientos." texto="Se crean automáticamente al registrar la entrega de una adopción." />
+        @else
+            <ul class="divide-y divide-slate-100">
+                @foreach ($seguimientos as $seguimiento)
+                    <li class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:px-6">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <a href="{{ route('admin.seguimientos.show', $seguimiento) }}" class="font-semibold text-blue-950 hover:underline">{{ $seguimiento->solicitud->mascota->nombre }}</a>
+                                <x-admin.estado de="seguimiento" :valor="$seguimiento->estado" />
+                            </div>
+                            <p class="mt-1 text-sm text-slate-600">
+                                Familia: {{ $seguimiento->solicitud->solicitante->nombres }} {{ $seguimiento->solicitud->solicitante->apellidos }}
+                                <span class="text-slate-400" aria-hidden="true">·</span>
+                                Voluntario:
+                                @if ($seguimiento->voluntario)
+                                    {{ $seguimiento->voluntario->nombres }} {{ $seguimiento->voluntario->apellidos }}
+                                @else
+                                    <span class="font-semibold text-amber-700">Sin asignar</span>
+                                @endif
+                            </p>
+                        </div>
+                        <x-admin.boton :variante="$seguimiento->estado === 'sin_asignar' ? 'primario' : 'secundario'" tamano="chico" :href="route('admin.seguimientos.show', $seguimiento)" class="self-start sm:self-center">
+                            {{ $seguimiento->estado === 'sin_asignar' ? 'Asignar voluntario' : 'Ver detalle' }}
+                        </x-admin.boton>
+                    </li>
+                @endforeach
+            </ul>
+            @if ($seguimientos->hasPages())<div class="border-t border-slate-100 px-4 py-3 sm:px-6">{{ $seguimientos->links() }}</div>@endif
+        @endif
+    </x-admin.tarjeta>
+</x-admin.pagina>
