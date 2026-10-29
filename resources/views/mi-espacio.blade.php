@@ -16,9 +16,15 @@
 
         {{-- Bienvenida --}}
         <section class="relative overflow-hidden rounded-3xl bg-[#0d2138] text-white">
-            <img src="{{ asset($esVoluntario ? 'images/pol-bolivia/grupo-voluntarios.jpg' : 'images/pol-bolivia/hero-animales.jpg') }}" alt=""
-                 class="absolute inset-0 h-full w-full object-cover {{ $esVoluntario ? 'object-[center_35%]' : 'object-[70%_55%]' }}">
-            <div class="absolute inset-0 bg-gradient-to-r from-[#0d2138] via-[#0d2138]/90 to-[#0d2138]/30" aria-hidden="true"></div>
+            <img src="{{ asset($esVoluntario ? 'images/pol-bolivia/grupo-voluntarios.jpg' : 'images/pol-bolivia/mi-espacio-ciudadano.jpg') }}" alt=""
+                 class="absolute inset-y-0 right-0 h-full w-full object-cover {{ $esVoluntario ? 'object-[center_35%]' : 'object-[center_25%] sm:w-[58%]' }}">
+            @if ($esVoluntario)
+                <div class="absolute inset-0 bg-gradient-to-r from-[#0d2138] via-[#0d2138]/90 to-[#0d2138]/30" aria-hidden="true"></div>
+            @else
+                {{-- Ciudadano: en celular la foto ocupa todo el fondo; desde tablet ocupa la derecha y su borde se funde con el azul. --}}
+                <div class="absolute inset-0 bg-gradient-to-r from-[#0d2138] from-30% via-[#0d2138]/70 via-50% to-transparent to-80% sm:hidden" aria-hidden="true"></div>
+                <div class="absolute inset-y-0 left-[42%] hidden w-[32%] bg-gradient-to-r from-[#0d2138] to-transparent sm:block" aria-hidden="true"></div>
+            @endif
             <div class="relative max-w-2xl px-6 py-7 sm:px-10 sm:py-12">
                 <p class="text-xs font-medium text-amber-300 sm:text-sm">{{ \Illuminate\Support\Str::ucfirst($ahora->translatedFormat('l j \d\e F')) }}</p>
                 <h1 class="mt-2 text-2xl font-bold sm:text-4xl">{{ $saludo }}@if ($nombre->isNotEmpty()), {{ $nombre }}@endif</h1>
