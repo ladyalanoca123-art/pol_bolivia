@@ -25,7 +25,10 @@ class RespaldarBaseDatos extends Command
         $carpeta = storage_path('app/private/respaldos');
         File::ensureDirectoryExists($carpeta);
 
-        $archivo = $carpeta.DIRECTORY_SEPARATOR.'pol_bolivia_'.now()->format('Y-m-d_His').'.dump';
+        // El nombre lleva la base respaldada: así un respaldo de otra base (p. ej. pol_bolivia_manual)
+        // no se confunde con los de la base real ni entra en su rotación.
+        $base = preg_replace('/[^A-Za-z0-9_-]/', '_', (string) $db['database']);
+        $archivo = $carpeta.DIRECTORY_SEPARATOR.$base.'_'.now()->format('Y-m-d_His').'.dump';
 
         // La contraseña va por variable de entorno, nunca en la línea de comandos.
         $resultado = Process::env(['PGPASSWORD' => (string) $db['password']])
@@ -48,15 +51,17 @@ class RespaldarBaseDatos extends Command
             return self::FAILURE;
         }
 
-        $this->eliminarAntiguos($carpeta, max(1, (int) $this->option('conservar')));
+        $this->eliminarAntiguos($carpeta, $base, max(1, (int) $this->option('conservar')));
         $this->info('Respaldo creado: '.$archivo);
 
         return self::SUCCESS;
     }
 
-    private function eliminarAntiguos(string $carpeta, int $conservar): void
+    /** Conserva los $conservar respaldos más recientes de esta base; los de otras bases no se tocan. */
+    private function eliminarAntiguos(string $carpeta, string $base, int $conservar): void
     {
-        collect(File::glob($carpeta.DIRECTORY_SEPARATOR.'pol_bolivia_*.dump'))
+        // «{base}_» seguido de la fecha: pol_bolivia_2026-… no incluye pol_bolivia_manual_2026-…
+        collect(File::glob($carpeta.DIRECTORY_SEPARATOR.$base.'_[0-9]*.dump'))
             ->sortDesc()
             ->slice($conservar)
             ->each(fn (string $antiguo) => File::delete($antiguo));
