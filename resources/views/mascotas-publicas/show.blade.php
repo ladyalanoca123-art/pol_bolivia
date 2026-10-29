@@ -10,10 +10,10 @@
 @section('consulta_mascota', $mascota->nombre)
 
 @section('content')
-    <section class="px-4 py-12 sm:px-6 lg:px-8">
+    <section class="px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         <div class="mx-auto max-w-6xl">
-            <a href="{{ route('mascotas.catalogo') }}" class="text-sm font-bold text-emerald-800 hover:text-emerald-600">← Volver a mascotas</a>
-            <div class="mt-6 grid gap-10 lg:grid-cols-2">
+            <a href="{{ route('mascotas.catalogo') }}" class="text-sm font-bold text-blue-800 hover:text-blue-950">← Volver a mascotas</a>
+            <div class="mt-5 grid gap-8 lg:grid-cols-2 lg:gap-12">
                 <div class="space-y-4">
                     @if ($fotoPrincipal)
                         @php
@@ -29,7 +29,7 @@
                         {{-- Sin JavaScript se ve la primera foto; con Alpine, las miniaturas y las flechas la cambian. --}}
                         <div x-data="galeriaFotos(@js($lista))" class="space-y-3"
                              @if ($total > 1) x-on:keydown.arrow-left.prevent="anterior()" x-on:keydown.arrow-right.prevent="siguiente()" @endif>
-                            <div class="relative flex h-80 items-center justify-center overflow-hidden rounded-2xl bg-stone-100 sm:h-[28rem]"
+                            <div class="relative flex h-80 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 sm:h-[30rem]"
                                  @if ($total > 1) tabindex="0" role="region" aria-label="Galería de fotos de {{ $mascota->nombre }}. Usa las flechas del teclado para cambiar de foto." @endif>
                                 <img src="{{ $lista[0]['url'] }}" x-bind:src="fotos[actual].url" alt="{{ $lista[0]['alt'] }}" x-bind:alt="fotos[actual].alt"
                                      class="h-full w-full object-contain" data-galeria="principal">
@@ -67,19 +67,24 @@
                 </div>
 
                 <div>
-                    <p class="text-sm font-bold tracking-wider text-emerald-700">MASCOTA DISPONIBLE</p>
-                    <h1 class="mt-2 text-4xl font-extrabold">{{ $mascota->nombre }}</h1>
-                    <dl class="mt-7 grid grid-cols-2 gap-x-6 gap-y-5 border-y border-stone-200 py-6 text-sm">
-                        <div><dt class="font-semibold text-stone-500">Especie</dt><dd class="mt-1">{{ ucfirst($mascota->especie) }}</dd></div>
-                        <div><dt class="font-semibold text-stone-500">Sexo</dt><dd class="mt-1">{{ ucfirst($mascota->sexo) }}</dd></div>
-                        <div><dt class="font-semibold text-stone-500">Edad</dt><dd class="mt-1">{{ $mascota->edad_formateada }}</dd></div>
-                        <div><dt class="font-semibold text-stone-500">Tamaño</dt><dd class="mt-1">{{ ucfirst($mascota->tamano) }}</dd></div>
-                        <div><dt class="font-semibold text-stone-500">Raza</dt><dd class="mt-1">{{ $mascota->raza }}</dd></div>
-                        <div><dt class="font-semibold text-stone-500">Color</dt><dd class="mt-1">{{ $mascota->color }}</dd></div>
+                    <p class="text-sm font-bold tracking-wider text-amber-700">MASCOTA DISPONIBLE</p>
+                    <h1 class="mt-1 text-4xl font-extrabold text-blue-950">{{ $mascota->nombre }}</h1>
+                    <dl class="mt-6 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+                        <div class="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"><dt class="text-xs text-slate-500">Especie</dt><dd class="mt-0.5 font-semibold text-blue-950">{{ ucfirst($mascota->especie) }}</dd></div>
+                        <div class="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"><dt class="text-xs text-slate-500">Sexo</dt><dd class="mt-0.5 font-semibold text-blue-950">{{ ucfirst($mascota->sexo) }}</dd></div>
+                        <div class="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"><dt class="text-xs text-slate-500">Edad</dt><dd class="mt-0.5 font-semibold text-blue-950">{{ $mascota->edad_formateada }}</dd></div>
+                        <div class="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"><dt class="text-xs text-slate-500">Tamaño</dt><dd class="mt-0.5 font-semibold text-blue-950">{{ ucfirst($mascota->tamano) }}</dd></div>
+                        <div class="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"><dt class="text-xs text-slate-500">Raza</dt><dd class="mt-0.5 font-semibold text-blue-950">{{ $mascota->raza }}</dd></div>
+                        <div class="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"><dt class="text-xs text-slate-500">Color</dt><dd class="mt-0.5 font-semibold text-blue-950">{{ $mascota->color }}</dd></div>
                     </dl>
-                    <h2 class="mt-7 text-lg font-bold">Sobre {{ $mascota->nombre }}</h2>
+                    <h2 class="mt-7 text-lg font-bold text-blue-950">Sobre {{ $mascota->nombre }}</h2>
                     <p class="mt-2 whitespace-pre-line text-stone-700">{{ $mascota->descripcion }}</p>
-                    <x-boton-solicitar-adopcion :mascota="$mascota" class="mt-8 inline-block rounded-full bg-emerald-700 px-6 py-3 font-extrabold text-white hover:bg-emerald-800">ENVIAR SOLICITUD</x-boton-solicitar-adopcion>
+                    <x-boton-solicitar-adopcion :mascota="$mascota" class="mt-7 inline-block rounded-full bg-amber-400 px-7 py-3 font-extrabold text-blue-950 hover:bg-amber-300">ENVIAR SOLICITUD</x-boton-solicitar-adopcion>
+
+                    <div class="mt-8 rounded-2xl bg-sky-50 p-5">
+                        <h2 class="text-sm font-bold text-blue-950">Así funciona la adopción</h2>
+                        <x-pasos-adopcion compacto class="mt-4" />
+                    </div>
                 </div>
             </div>
         </div>

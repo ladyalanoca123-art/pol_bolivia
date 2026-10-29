@@ -62,6 +62,17 @@ class WhatsappConsultasTest extends TestCase
             ->get(route('home'))->assertOk()->assertSee('Mi espacio')->assertSee(route('inicio'), false);
     }
 
+    public function test_el_pie_de_pagina_muestra_las_redes_y_el_contacto_de_pol(): void
+    {
+        $respuesta = $this->get(route('home'))->assertOk()
+            ->assertSee('Cochabamba, Bolivia')->assertSee(config('pol.contacto.correo'))
+            ->assertSee('+591 7123 4567')->assertSee('Nuestro compromiso')->assertSee('Juntos por un futuro mejor');
+
+        foreach (config('pol.redes') as $url) {
+            $respuesta->assertSee($url, false);
+        }
+    }
+
     private function mascota(string $nombre): Mascota
     {
         $admin = User::factory()->create(['rol' => 'administrador']);

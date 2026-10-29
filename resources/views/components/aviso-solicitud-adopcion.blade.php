@@ -7,15 +7,7 @@
 @php
     $usuario = auth()->user();
     $boton = 'inline-flex h-12 w-full items-center justify-center rounded-full px-6 text-base font-extrabold focus:outline-none focus:ring-4';
-    $redes = [
-        ['nombre' => 'Facebook', 'url' => 'https://www.facebook.com/POLpaginaoficial',
-         'icono' => 'M13.5 21.9v-7.4h2.5l.4-2.9h-2.9V9.8c0-.8.3-1.4 1.5-1.4h1.5V5.8c-.3 0-1.2-.1-2.2-.1-2.2 0-3.7 1.3-3.7 3.8v2.1H8.1v2.9h2.5v7.4a10 10 0 1 1 2.9 0Z'],
-        ['nombre' => 'Instagram', 'url' => 'https://www.instagram.com/polgrupo/',
-         'icono' => 'M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm5.3-3.3a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4Z'],
-        ['nombre' => 'TikTok', 'url' => 'https://vm.tiktok.com/ZS9ULCPRfQA85-FoBQC/',
-         'icono' => 'M16.6 2c.4 2.3 1.8 3.8 4 4v3.1c-1.5 0-2.9-.4-4-1.2v6.6a6.2 6.2 0 1 1-6.2-6.2c.3 0 .7 0 1 .1v3.2a3.1 3.1 0 1 0 2.1 2.9V2h3.1Z'],
-    ];
-    $whatsapp = 'https://wa.me/59175239523';
+    $whatsapp = config('pol.redes.whatsapp');
 @endphp
 <div x-data="{ nombre: '', registro: '', inicio: '' }"
      x-on:abrir-aviso-adopcion.window="nombre = $event.detail.nombre; registro = $event.detail.registro ?? ''; inicio = $event.detail.inicio ?? ''; $refs.dialogo.showModal()">
@@ -75,17 +67,7 @@
                         ¿Tienes dudas? Escríbenos por WhatsApp
                         <span class="sr-only">(se abre en una pestaña nueva)</span>
                     </a>
-                    <ul class="mt-4 flex items-center gap-2" aria-label="Redes sociales de POL-Bolivia">
-                        @foreach ($redes as $red)
-                            <li>
-                                <a href="{{ $red['url'] }}" target="_blank" rel="noopener noreferrer"
-                                   aria-label="{{ $red['nombre'] }} de POL-Bolivia (se abre en una pestaña nueva)"
-                                   class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-blue-950 hover:bg-blue-950 hover:text-white focus:outline-none focus:ring-4 focus:ring-blue-700/15">
-                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="{{ $red['icono'] }}"/></svg>
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
+                    <x-redes-sociales class="mt-4" />
                 </div>
             </div>
         </div>

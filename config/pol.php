@@ -40,6 +40,19 @@ return [
         ],
     ],
 
+    // Contacto de POL-Bolivia en el pie de las páginas públicas. El teléfono es el de config('pol.whatsapp.consultas').
+    'contacto' => [
+        'correo' => env('POL_CORREO_CONTACTO', 'contacto.polbolivia@gmail.com'),
+    ],
+
+    // Redes oficiales de POL-Bolivia: pie de las páginas públicas y aviso de «ENVIAR SOLICITUD» (x-redes-sociales).
+    'redes' => [
+        'whatsapp' => 'https://wa.me/59175239523',
+        'facebook' => 'https://www.facebook.com/POLpaginaoficial',
+        'instagram' => 'https://www.instagram.com/polgrupo/',
+        'tiktok' => 'https://vm.tiktok.com/ZS9ULCPRfQA85-FoBQC/',
+    ],
+
     // Fechas sugeridas para el seguimiento, contadas desde la fecha real de entrega.
     'seguimiento' => [
         'visitas' => [

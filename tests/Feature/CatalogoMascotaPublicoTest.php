@@ -33,7 +33,6 @@ class CatalogoMascotaPublicoTest extends TestCase
             ->assertOk()
             ->assertSee('Molly')
             ->assertDontSee('Nala')
-            ->assertSee('Disponible para adopción')
             ->assertSee(route('mascotas.public.show', $available), false)
             // La sesión es del administrador: ENVIAR SOLICITUD abre el aviso explicativo (no es ciudadano).
             ->assertSee('ENVIAR SOLICITUD')

@@ -3,7 +3,7 @@
 @section('title', 'POL-Bolivia | Adopción responsable')
 
 @section('content')
-    <section class="bg-sky-50 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
+    <section class="bg-sky-50 px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
         <div class="mx-auto grid max-w-7xl overflow-hidden rounded-3xl bg-blue-950 shadow-xl lg:grid-cols-[0.9fr_1.1fr]">
             <div class="flex flex-col justify-center px-6 py-12 text-white sm:px-10 lg:px-14 lg:py-16">
                 <p class="text-sm font-bold tracking-[0.2em] text-amber-300">ADOPCIÓN RESPONSABLE EN COCHABAMBA</p>
@@ -37,17 +37,24 @@
         </div>
     </section>
 
-    <section id="mascotas" class="scroll-mt-24 bg-white px-4 py-16 sm:px-6 lg:px-8">
+    <section id="mascotas" class="scroll-mt-24 bg-white px-4 py-12 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-7xl">
-            <nav class="flex flex-wrap justify-center gap-3" aria-label="Categorías de mascotas">
-                <a href="{{ route('mascotas.catalogo') }}" class="rounded-full bg-blue-800 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-900">🐾 Todas</a>
-                <a href="{{ route('mascotas.catalogo', ['especie' => 'perro']) }}" class="rounded-full border border-blue-200 bg-sky-50 px-5 py-2.5 text-sm font-bold text-blue-900 transition hover:bg-sky-100">🐶 Perros</a>
-                <a href="{{ route('mascotas.catalogo', ['especie' => 'gato']) }}" class="rounded-full border border-blue-200 bg-sky-50 px-5 py-2.5 text-sm font-bold text-blue-900 transition hover:bg-sky-100">🐱 Gatos</a>
-            </nav>
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <p class="text-sm font-bold tracking-wider text-amber-700">ADOPTA</p>
+                    <h2 class="mt-1 text-3xl font-extrabold text-blue-950">Esperan un hogar</h2>
+                    <p class="mt-1 text-slate-600">Conócelas y encuentra a tu nuevo compañero en Cochabamba.</p>
+                </div>
+                <nav class="flex flex-wrap gap-2" aria-label="Categorías de mascotas">
+                    <a href="{{ route('mascotas.catalogo') }}" class="rounded-full bg-blue-800 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-900">🐾 Todas</a>
+                    <a href="{{ route('mascotas.catalogo', ['especie' => 'perro']) }}" class="rounded-full border border-blue-200 bg-sky-50 px-5 py-2.5 text-sm font-bold text-blue-900 transition hover:bg-sky-100">🐶 Perros</a>
+                    <a href="{{ route('mascotas.catalogo', ['especie' => 'gato']) }}" class="rounded-full border border-blue-200 bg-sky-50 px-5 py-2.5 text-sm font-bold text-blue-900 transition hover:bg-sky-100">🐱 Gatos</a>
+                </nav>
+            </div>
             @if ($mascotas->isNotEmpty())
                 <div class="mt-8 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
                     @foreach ($mascotas as $mascota)<x-mascota-publica-card :mascota="$mascota" />@endforeach
-                    <a href="{{ route('mascotas.catalogo') }}" class="group flex min-h-[31rem] flex-col items-center justify-center rounded-2xl bg-blue-950 p-6 text-center text-white shadow-sm transition hover:-translate-y-1 hover:bg-blue-900 hover:shadow-lg">
+                    <a href="{{ route('mascotas.catalogo') }}" class="group flex min-h-[25rem] flex-col items-center justify-center rounded-2xl bg-blue-950 p-6 text-center text-white shadow-sm transition hover:-translate-y-1 hover:bg-blue-900 hover:shadow-lg sm:min-h-[24rem]">
                         <span class="text-5xl" aria-hidden="true">🐾</span>
                         <h2 class="mt-5 text-2xl font-extrabold">Más mascotas esperan un hogar</h2>
                         <span class="mt-6 rounded-full bg-amber-400 px-5 py-3 text-sm font-extrabold text-blue-950">EXPLORAR CATÁLOGO</span>
@@ -59,11 +66,33 @@
         </div>
     </section>
 
-    <section id="como-adoptar" class="scroll-mt-24 bg-sky-50 px-4 py-16 sm:px-6 lg:px-8">
-        <div class="mx-auto max-w-4xl text-center"><p class="text-sm font-bold tracking-wider text-blue-800">¿CÓMO ADOPTAR?</p><h2 class="mt-2 text-3xl font-extrabold text-blue-950">Conoce, solicita y acompaña</h2><p class="mt-4 text-stone-600">Revisa el perfil de la mascota, completa la solicitud correspondiente y sigue el proceso de adopción responsable.</p></div>
+    <section id="como-adoptar" class="scroll-mt-24 bg-sky-50 px-4 py-12 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-7xl">
+            <div class="max-w-2xl">
+                <p class="text-sm font-bold tracking-wider text-amber-700">¿CÓMO ADOPTAR?</p>
+                <h2 class="mt-1 text-3xl font-extrabold text-blue-950">Conoce, solicita y acompaña</h2>
+                <p class="mt-2 text-slate-600">Un proceso corto y claro, pensado para el bienestar de cada mascota.</p>
+            </div>
+            <x-pasos-adopcion class="mt-8" />
+        </div>
     </section>
 
-    <section id="voluntariado" class="scroll-mt-24 bg-blue-950 px-4 py-16 sm:px-6 lg:px-8">
-        <div class="mx-auto max-w-4xl text-center"><p class="text-4xl" aria-hidden="true">🤝</p><h2 class="mt-3 text-3xl font-extrabold text-white">¿Quieres ayudar de otra forma?</h2><p class="mt-3 text-sky-100">Sé parte de nuestro equipo y ayuda a POL-Bolivia como voluntario.</p><a href="{{ route('postulaciones-voluntariado.create') }}" class="mt-6 inline-block rounded-full bg-emerald-600 px-6 py-3 font-extrabold text-white hover:bg-emerald-700">QUIERO SER VOLUNTARIO</a></div>
+    <section id="voluntariado" class="scroll-mt-24 bg-white px-4 py-12 sm:px-6 lg:px-8">
+        <div class="mx-auto grid max-w-7xl overflow-hidden rounded-3xl bg-blue-950 lg:grid-cols-2">
+            <div class="relative min-h-[16rem] sm:min-h-[20rem]">
+                <img src="{{ asset('images/pol-bolivia/grupo-voluntarios.jpg') }}" alt="Voluntarios de POL-Bolivia" class="absolute inset-0 h-full w-full object-cover">
+            </div>
+            <div class="flex flex-col justify-center px-6 py-10 text-white sm:px-10 lg:px-14">
+                <p class="text-sm font-bold tracking-wider text-amber-300">VOLUNTARIADO</p>
+                <h2 class="mt-2 text-3xl font-extrabold">¿Quieres ayudar de otra forma?</h2>
+                <p class="mt-3 text-sky-100">Sé parte de nuestro equipo y ayuda a POL-Bolivia como voluntario.</p>
+                <ul class="mt-6 space-y-3 text-sm text-sky-50">
+                    <li class="flex gap-3"><span class="text-amber-300" aria-hidden="true">✓</span> Acompaña a las familias que adoptan con visitas de seguimiento.</li>
+                    <li class="flex gap-3"><span class="text-amber-300" aria-hidden="true">✓</span> Apoya las actividades y campañas de la fundación.</li>
+                    <li class="flex gap-3"><span class="text-amber-300" aria-hidden="true">✓</span> Postula en línea; la fundación revisa tu postulación y te contacta.</li>
+                </ul>
+                <a href="{{ route('postulaciones-voluntariado.create') }}" class="mt-8 inline-flex self-start rounded-full bg-amber-400 px-6 py-3 font-extrabold text-blue-950 transition hover:bg-amber-300">QUIERO SER VOLUNTARIO</a>
+            </div>
+        </div>
     </section>
 @endsection
