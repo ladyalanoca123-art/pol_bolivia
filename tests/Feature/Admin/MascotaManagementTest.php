@@ -5,6 +5,7 @@ namespace Tests\Feature\Admin;
 use App\Models\FotoMascota;
 use App\Models\Mascota;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -178,14 +179,16 @@ class MascotaManagementTest extends TestCase
     public function test_pagination_preserves_pet_filters(): void
     {
         $administrator = User::factory()->create(['rol' => 'administrador']);
-        foreach (range(1, 16) as $number) { $this->createMascota(['nombre' => "Perro {$number}", 'especie' => 'perro']); }
+        foreach (range(1, 16) as $number) {
+            $this->createMascota(['nombre' => "Perro {$number}", 'especie' => 'perro']);
+        }
         $this->actingAs($administrator)->get('/admin/mascotas?especie=perro')->assertOk()->assertSee('especie=perro')->assertSee('page=2');
     }
 
     public function test_available_pets_cannot_be_persisted_without_a_principal_photo(): void
     {
         $this->registrant = User::factory()->create(['rol' => 'administrador']);
-        $this->expectException(\Illuminate\Database\QueryException::class);
+        $this->expectException(QueryException::class);
         DB::transaction(function (): void {
             Mascota::create([...$this->petData(), 'estado' => 'disponible', 'registrado_por' => $this->registrant->id]);
             DB::statement('SET CONSTRAINTS ALL IMMEDIATE');
@@ -285,7 +288,7 @@ class MascotaManagementTest extends TestCase
     public function test_database_rejects_invalid_age_unit_combinations(): void
     {
         $administrator = User::factory()->create(['rol' => 'administrador']);
-        $this->expectException(\Illuminate\Database\QueryException::class);
+        $this->expectException(QueryException::class);
 
         DB::table('mascotas')->insert([
             'nombre' => 'Luna',
@@ -302,9 +305,11 @@ class MascotaManagementTest extends TestCase
     private function createMascota(array $attributes = []): Mascota
     {
         $this->registrant ??= User::factory()->create(['rol' => 'administrador']);
+
         return DB::transaction(function () use ($attributes): Mascota {
             $mascota = Mascota::create([...$this->petData(), ...$attributes, 'estado' => 'disponible', 'registrado_por' => $this->registrant->id]);
             FotoMascota::create(['mascota_id' => $mascota->id, 'tipo' => 'foto', 'url' => "mascotas/{$mascota->id}/principal.jpg", 'es_principal' => true, 'orden' => 1]);
+
             return $mascota;
         });
     }
@@ -314,7 +319,10 @@ class MascotaManagementTest extends TestCase
         return FotoMascota::create(['mascota_id' => $mascota->id, 'tipo' => 'foto', 'url' => "mascotas/{$mascota->id}/foto.jpg", 'es_principal' => false, 'orden' => 2, ...$attributes]);
     }
 
-    private function registrationData(array $attributes = []): array { return [...$this->petData(), ...$attributes]; }
+    private function registrationData(array $attributes = []): array
+    {
+        return [...$this->petData(), ...$attributes];
+    }
 
     private function petData(): array
     {

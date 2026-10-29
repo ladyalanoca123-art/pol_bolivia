@@ -26,8 +26,8 @@ use Tests\TestCase;
  */
 class ReporteVistaTest extends TestCase
 {
-    use RefreshDatabase;
     use CompletaFlujoAdopcion;
+    use RefreshDatabase;
 
     private User $admin;
 

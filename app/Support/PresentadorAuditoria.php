@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\Auditoria;
 use App\Models\Mascota;
 use App\Models\SolicitudAdopcion;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
@@ -203,7 +204,7 @@ class PresentadorAuditoria
         // Fechas guardadas como texto ISO o «AAAA-MM-DD hh:mm:ss».
         if (preg_match('/^\d{4}-\d{2}-\d{2}([ T]\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}(:?\d{2})?)?)?$/', $texto)) {
             try {
-                $fecha = \Illuminate\Support\Carbon::parse($texto)->timezone(config('app.timezone'));
+                $fecha = Carbon::parse($texto)->timezone(config('app.timezone'));
 
                 return strlen($texto) === 10 ? $fecha->format('d/m/Y') : $fecha->format('d/m/Y H:i');
             } catch (\Throwable) {

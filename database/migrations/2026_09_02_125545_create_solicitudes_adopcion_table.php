@@ -64,4 +64,3 @@ SQL);
         DB::statement('DROP TABLE IF EXISTS solicitudes_adopcion');
     }
 };
-

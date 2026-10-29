@@ -26,9 +26,7 @@ use Illuminate\Support\Facades\Log;
  */
 class RegistroSeguridad
 {
-    public function __construct(private Request $request)
-    {
-    }
+    public function __construct(private Request $request) {}
 
     public function login(Login $evento): void
     {

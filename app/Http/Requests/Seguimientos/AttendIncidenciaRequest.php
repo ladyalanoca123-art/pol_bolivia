@@ -9,6 +9,7 @@ class AttendIncidenciaRequest extends FormRequest
     public function authorize(): bool
     {
         $incidencia = $this->route('incidencia');
+
         return auth()->user()?->can('attend', $incidencia) ?? false;
     }
 

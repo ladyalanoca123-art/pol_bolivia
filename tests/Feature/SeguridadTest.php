@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Auditoria;
 use App\Models\Mascota;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -164,7 +165,7 @@ class SeguridadTest extends TestCase
             try {
                 DB::transaction($intento);
                 $this->fail('La base de datos permitió alterar la auditoría.');
-            } catch (\Illuminate\Database\QueryException $exception) {
+            } catch (QueryException $exception) {
                 $this->assertStringContainsString('no se puede modificar', $exception->getMessage());
             }
         }

@@ -6,6 +6,7 @@ use App\Models\FotoMascota;
 use App\Models\Mascota;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -100,7 +101,7 @@ class DiagnosticarZonaHorariaCommandTest extends TestCase
         DB::beginTransaction();
         DB::statement('SET TRANSACTION READ ONLY');
         try {
-            $this->expectException(\Illuminate\Database\QueryException::class);
+            $this->expectException(QueryException::class);
             DB::table('usuarios')->insert(['nombres' => 'X', 'apellidos' => 'Y', 'email' => 'ro@example.test', 'password' => 'x']);
         } finally {
             DB::rollBack();

@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\Voluntario;
 use App\Models\User;
+use App\Models\Voluntario;
 
 class VoluntarioPolicy
 {

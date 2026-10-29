@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\FotoMascota;
 use App\Models\Mascota;
 use App\Models\PostulacionVoluntariado;
 use App\Models\User;
@@ -435,7 +436,7 @@ class VoluntariadoV1CompatibilidadTest extends TestCase
 
         return DB::transaction(function () use ($admin): Mascota {
             $mascota = Mascota::create(['nombre' => 'Canela', 'especie' => 'perro', 'raza' => 'Mestiza', 'edad' => 2, 'edad_en' => 'años', 'sexo' => 'hembra', 'tamano' => 'mediano', 'estado' => 'disponible', 'registrado_por' => $admin->id]);
-            \App\Models\FotoMascota::create(['mascota_id' => $mascota->id, 'tipo' => 'foto', 'url' => "mascotas/{$mascota->id}.jpg", 'es_principal' => true, 'orden' => 1]);
+            FotoMascota::create(['mascota_id' => $mascota->id, 'tipo' => 'foto', 'url' => "mascotas/{$mascota->id}.jpg", 'es_principal' => true, 'orden' => 1]);
 
             return $mascota;
         });

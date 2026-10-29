@@ -61,4 +61,3 @@ SQL);
         DB::statement('DROP TABLE IF EXISTS postulaciones_voluntariado');
     }
 };
-

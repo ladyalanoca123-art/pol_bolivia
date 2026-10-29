@@ -27,7 +27,7 @@ return new class extends Migration
         });
 
         DB::statement(
-            "ALTER TABLE auditorias ADD CONSTRAINT auditorias_accion_valida "
+            'ALTER TABLE auditorias ADD CONSTRAINT auditorias_accion_valida '
             ."CHECK (accion IN ('creado', 'actualizado', 'eliminado'))"
         );
 

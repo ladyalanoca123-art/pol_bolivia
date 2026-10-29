@@ -2,6 +2,8 @@
 
 namespace Tests\Support;
 
+use App\Support\CuestionarioVoluntariado;
+
 /**
  * Datos válidos del cuestionario de voluntariado V1 para las pruebas.
  */
@@ -37,7 +39,7 @@ final class CuestionarioVoluntariadoDatos
             'habilidades' => 'Primeros auxilios',
             'confirma_mayor_edad' => true,
             'declara_informacion_veraz' => true,
-            'version_cuestionario' => \App\Support\CuestionarioVoluntariado::VERSION,
+            'version_cuestionario' => CuestionarioVoluntariado::VERSION,
         ], $cambios);
     }
 }

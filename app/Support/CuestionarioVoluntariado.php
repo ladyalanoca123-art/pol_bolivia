@@ -54,6 +54,6 @@ final class CuestionarioVoluntariado
         $ordenar = fn (string $catalogo, array $claves) => array_values(array_intersect(self::claves($catalogo), $claves));
 
         return self::etiquetas('dias_disponibles', $ordenar('dias_disponibles', $dias))
-            . ' · ' . self::etiquetas('franjas_horarias', $ordenar('franjas_horarias', $franjas));
+            .' · '.self::etiquetas('franjas_horarias', $ordenar('franjas_horarias', $franjas));
     }
 }

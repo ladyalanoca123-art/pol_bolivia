@@ -10,12 +10,13 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\CompletaFlujoAdopcion;
+use Tests\Support\CuestionarioAdopcionDatos;
 use Tests\TestCase;
 
 class ReporteManagementTest extends TestCase
 {
-    use RefreshDatabase;
     use CompletaFlujoAdopcion;
+    use RefreshDatabase;
 
     public function test_only_active_administrator_can_access_reports(): void
     {
@@ -99,12 +100,13 @@ class ReporteManagementTest extends TestCase
         return DB::transaction(function () use ($administrator): Mascota {
             $pet = Mascota::create(['nombre' => fake()->unique()->firstName(), 'especie' => 'perro', 'raza' => 'Mestiza', 'edad' => 2, 'edad_en' => 'años', 'sexo' => 'hembra', 'tamano' => 'mediano', 'estado' => 'disponible', 'registrado_por' => $administrator->id]);
             FotoMascota::create(['mascota_id' => $pet->id, 'tipo' => 'foto', 'url' => "mascotas/{$pet->id}.jpg", 'es_principal' => true, 'orden' => 1]);
+
             return $pet;
         });
     }
 
     private function requestData(): array
     {
-        return \Tests\Support\CuestionarioAdopcionDatos::registro();
+        return CuestionarioAdopcionDatos::registro();
     }
 }

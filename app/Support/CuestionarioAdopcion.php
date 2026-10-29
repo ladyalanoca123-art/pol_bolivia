@@ -129,7 +129,7 @@ final class CuestionarioAdopcion
 
             return sprintf(
                 '%s · %s · Vacunas al día: %s · Esterilizadas: %s',
-                $valor['cantidad'] . ((int) $valor['cantidad'] === 1 ? ' mascota' : ' mascotas'),
+                $valor['cantidad'].((int) $valor['cantidad'] === 1 ? ' mascota' : ' mascotas'),
                 $especies,
                 self::etiqueta('estado_grupo', $valor['vacunas'] ?? null),
                 self::etiqueta('estado_grupo', $valor['esterilizadas'] ?? null),
@@ -143,9 +143,9 @@ final class CuestionarioAdopcion
         $texto = $catalogo ? self::etiqueta($catalogo, (string) $valor) : (string) $valor;
 
         // "Otro" con detalle opcional (preguntas 18 y 20).
-        $detalle = $respuestas[$campo . '_otro'] ?? null;
+        $detalle = $respuestas[$campo.'_otro'] ?? null;
         if ($valor === 'otro' && in_array($campo, ['motivo', 'si_no_puede'], true) && filled($detalle)) {
-            $texto .= ': ' . $detalle;
+            $texto .= ': '.$detalle;
         }
 
         return $texto;

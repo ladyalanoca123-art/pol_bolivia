@@ -82,6 +82,7 @@ final class CuestionarioVisitaSeguimiento
         }
 
         $sintomas = $respuestas['sintomas'] ?? [];
+
         return array_diff($sintomas, ['ninguno']) === [] ? 'Sin alertas reportadas' : 'Señales reportadas';
     }
 }

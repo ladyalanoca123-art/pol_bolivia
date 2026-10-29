@@ -20,6 +20,7 @@ class SeguimientoAdopcionController extends Controller
     public function index(): View
     {
         $seguimientos = SeguimientoAdopcion::query()->with(['solicitud.mascota', 'solicitud.solicitante', 'voluntario'])->latest()->paginate(15);
+
         return view('admin.seguimientos.index', compact('seguimientos'));
     }
 
@@ -33,6 +34,7 @@ class SeguimientoAdopcionController extends Controller
         $voluntarios = User::query()->where('rol', 'voluntario')->where('estado', true)
             ->whereKeyNot($seguimiento->solicitud->solicitante_id)
             ->orderBy('nombres')->get();
+
         return view('admin.seguimientos.show', compact('seguimiento', 'voluntarios', 'fechasSugeridas'));
     }
 
@@ -61,6 +63,7 @@ class SeguimientoAdopcionController extends Controller
             'estado' => 'activo',
             'fecha_inicio' => now(),
         ])->save();
+
         return back()->with('status', 'El voluntario fue asignado y el seguimiento fue activado.');
     }
 

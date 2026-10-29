@@ -7,9 +7,9 @@ use App\Models\Mascota;
 use App\Models\SeguimientoAdopcion;
 use App\Models\SolicitudAdopcion;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -21,6 +21,7 @@ class CompromisoYSeguimientoAdopcionTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $ciudadano;
 
     protected function setUp(): void
@@ -115,12 +116,12 @@ class CompromisoYSeguimientoAdopcionTest extends TestCase
             $mascota = $this->mascotaDisponible();
             try {
                 DB::transaction(fn () => SolicitudAdopcion::forceCreate([
-                        ...CuestionarioAdopcionDatos::registro(),
-                        'solicitante_id' => $this->ciudadano->id,
-                        'mascota_id' => $mascota->id,
-                        'estado' => 'pendiente',
-                        ...$datosProtegidos,
-                    ]));
+                    ...CuestionarioAdopcionDatos::registro(),
+                    'solicitante_id' => $this->ciudadano->id,
+                    'mascota_id' => $mascota->id,
+                    'estado' => 'pendiente',
+                    ...$datosProtegidos,
+                ]));
                 $this->fail('El trigger debía rechazar campos protegidos enviados al crear una solicitud.');
             } catch (QueryException $exception) {
                 $this->assertStringContainsString('Una solicitud nueva no puede traer evidencia', $exception->getMessage());
@@ -134,8 +135,8 @@ class CompromisoYSeguimientoAdopcionTest extends TestCase
 
         try {
             DB::transaction(fn () => DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update([
-                    'compromiso_foto_path' => 'compromisos/'.$solicitud->id.'/falso.png',
-                ]));
+                'compromiso_foto_path' => 'compromisos/'.$solicitud->id.'/falso.png',
+            ]));
             $this->fail('La evidencia solo debe añadirse en el estado aprobado.');
         } catch (QueryException $exception) {
             $this->assertStringContainsString('La evidencia del compromiso solo se registra en una solicitud reservada o con la adopción concretada', $exception->getMessage());
@@ -143,8 +144,8 @@ class CompromisoYSeguimientoAdopcionTest extends TestCase
 
         try {
             DB::transaction(fn () => DB::table('solicitudes_adopcion')->where('id', $solicitud->id)->update([
-                    'motivo_cancelacion' => 'Motivo agregado sin cancelar',
-                ]));
+                'motivo_cancelacion' => 'Motivo agregado sin cancelar',
+            ]));
             $this->fail('El motivo de cancelación solo debe guardarse al cancelar una solicitud activa.');
         } catch (QueryException $exception) {
             $this->assertStringContainsString('El motivo de cancelación solo se registra al cancelar una solicitud activa', $exception->getMessage());
@@ -167,11 +168,11 @@ class CompromisoYSeguimientoAdopcionTest extends TestCase
 
         try {
             DB::transaction(fn () => SolicitudAdopcion::forceCreate([
-                    ...CuestionarioAdopcionDatos::registro(),
-                    'solicitante_id' => $this->ciudadano->id,
-                    'mascota_id' => $terceraMascota->id,
-                    'estado' => 'pendiente',
-                ]));
+                ...CuestionarioAdopcionDatos::registro(),
+                'solicitante_id' => $this->ciudadano->id,
+                'mascota_id' => $terceraMascota->id,
+                'estado' => 'pendiente',
+            ]));
             $this->fail('La base debe limitar a dos las solicitudes activas por ciudadano.');
         } catch (QueryException $exception) {
             $this->assertStringContainsString('Ya tienes 2 solicitudes de adopción activas', $exception->getMessage());
@@ -220,6 +221,7 @@ class CompromisoYSeguimientoAdopcionTest extends TestCase
     private function solicitudPendiente(): SolicitudAdopcion
     {
         $mascota = $this->mascotaDisponible();
+
         return SolicitudAdopcion::create([
             ...CuestionarioAdopcionDatos::registro(),
             'solicitante_id' => $this->ciudadano->id,
@@ -236,6 +238,7 @@ class CompromisoYSeguimientoAdopcionTest extends TestCase
             'registrado_por' => $this->admin->id,
         ]);
         FotoMascota::create(['mascota_id' => $mascota->id, 'tipo' => 'foto', 'url' => 'test.jpg', 'es_principal' => true, 'orden' => 1]);
+
         return $mascota;
     }
 }

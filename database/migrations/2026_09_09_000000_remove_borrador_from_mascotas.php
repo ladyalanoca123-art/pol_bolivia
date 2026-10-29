@@ -107,6 +107,6 @@ return new class extends Migration
     {
         // No se registra qué filas eran borrador antes de convertirlas a disponible.
         // Restaurar el esquema sin restaurar esos datos sería una reversión engañosa.
-        throw new \LogicException('La eliminación del estado borrador no es reversible automáticamente.');
+        throw new LogicException('La eliminación del estado borrador no es reversible automáticamente.');
     }
 };

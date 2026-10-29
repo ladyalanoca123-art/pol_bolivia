@@ -11,8 +11,8 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
-use Tests\Support\CuestionarioAdopcionDatos;
 use Tests\Support\CompletaFlujoAdopcion;
+use Tests\Support\CuestionarioAdopcionDatos;
 use Tests\TestCase;
 
 /**
@@ -21,8 +21,8 @@ use Tests\TestCase;
  */
 class ZonaHorariaTest extends TestCase
 {
-    use RefreshDatabase;
     use CompletaFlujoAdopcion;
+    use RefreshDatabase;
 
     private const ZONA = 'America/La_Paz';
 

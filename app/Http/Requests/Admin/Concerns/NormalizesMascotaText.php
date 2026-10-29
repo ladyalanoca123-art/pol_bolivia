@@ -29,7 +29,7 @@ trait NormalizesMascotaText
         $value = mb_strtolower($value, 'UTF-8');
 
         return mb_strtoupper(mb_substr($value, 0, 1, 'UTF-8'), 'UTF-8')
-            . mb_substr($value, 1, null, 'UTF-8');
+            .mb_substr($value, 1, null, 'UTF-8');
     }
 
     private function normalizeDescription(mixed $value): mixed
@@ -45,6 +45,6 @@ trait NormalizesMascotaText
         }
 
         return mb_strtoupper(mb_substr($value, 0, 1, 'UTF-8'), 'UTF-8')
-            . mb_substr($value, 1, null, 'UTF-8');
+            .mb_substr($value, 1, null, 'UTF-8');
     }
 }

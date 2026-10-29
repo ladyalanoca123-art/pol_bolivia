@@ -10,9 +10,9 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Tests\Support\CompletaFlujoAdopcion;
 use Tests\Support\CuestionarioAdopcionDatos;
 use Tests\Support\CuestionarioVoluntariadoDatos;
-use Tests\Support\CompletaFlujoAdopcion;
 use Tests\TestCase;
 
 /**
@@ -20,8 +20,8 @@ use Tests\TestCase;
  */
 class AvisoSolicitudAdopcionTest extends TestCase
 {
-    use RefreshDatabase;
     use CompletaFlujoAdopcion;
+    use RefreshDatabase;
 
     private User $admin;
 
@@ -41,7 +41,7 @@ class AvisoSolicitudAdopcionTest extends TestCase
             $this->assertSame(1, substr_count($html, '<dialog'), "Un solo aviso en {$pagina}");
             $this->assertStringContainsString('Para adoptar a <span x-text="nombre"></span> necesitas una cuenta', $html);
             $this->assertStringContainsString('href="'.route('mascotas.solicitar-acceso', [$mascota, 'inicio']).'"', $html);
-            $this->assertStringContainsString("abrir-aviso-adopcion", $html);
+            $this->assertStringContainsString('abrir-aviso-adopcion', $html);
             $this->assertStringNotContainsString('href="'.route('solicitudes-adopcion.create', $mascota).'"', $html);
         }
     }

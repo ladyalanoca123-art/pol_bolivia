@@ -175,8 +175,8 @@ class DiagnosticarZonaHoraria extends Command
     private function triggersQueSeDisparan(string $tabla, string $columna): string
     {
         $nombres = [];
-        foreach (DB::select("select t.tgname, pg_get_triggerdef(t.oid) as def from pg_trigger t join pg_class c on c.oid = t.tgrelid
-            where c.relname = ? and not t.tgisinternal", [$tabla]) as $trigger) {
+        foreach (DB::select('select t.tgname, pg_get_triggerdef(t.oid) as def from pg_trigger t join pg_class c on c.oid = t.tgrelid
+            where c.relname = ? and not t.tgisinternal', [$tabla]) as $trigger) {
             if (! preg_match('/(BEFORE|AFTER) (.+?) ON /', $trigger->def, $m) || ! str_contains($m[2], 'UPDATE')) {
                 continue;
             }

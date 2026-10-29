@@ -152,6 +152,7 @@ class ReporteExportacionTest extends TestCase
         $libro = $this->leerExcel($this->actingAs($this->admin)->get(route('admin.reportes.excel'))->streamedContent());
         $this->assertStringContainsString('1 adopción aceptada carece de fecha de resolución verificable', $libro->getSheetByName('Evolución mensual')->getCell('A15')->getValue());
     }
+
     public function test_los_dos_formatos_respetan_el_periodo_solicitado(): void
     {
         $this->escenario();

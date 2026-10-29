@@ -10,8 +10,8 @@ use App\Models\SolicitudAdopcion;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Tests\Support\CuestionarioAdopcionDatos;
 use Tests\Support\CompletaFlujoAdopcion;
+use Tests\Support\CuestionarioAdopcionDatos;
 use Tests\Support\CuestionarioVoluntariadoDatos;
 use Tests\TestCase;
 
@@ -21,8 +21,8 @@ use Tests\TestCase;
  */
 class VoluntarioSolicitudesAdopcionTest extends TestCase
 {
-    use RefreshDatabase;
     use CompletaFlujoAdopcion;
+    use RefreshDatabase;
 
     private User $admin;
 

@@ -2,6 +2,9 @@
 
 namespace Tests\Support;
 
+use App\Services\EvaluadorSolicitudAdopcion;
+use App\Support\CuestionarioAdopcion;
+
 /**
  * Respuestas válidas del cuestionario de adopción A2 para las pruebas.
  * Caso base: casa propia, sin niños ni otras mascotas, sin antecedentes → sin alertas.
@@ -26,10 +29,10 @@ final class CuestionarioAdopcionDatos
             'horario_preferido' => 'Tarde, Fin de semana',
             'declara_informacion_veraz' => true,
             'respuestas' => $respuestas,
-            'version_cuestionario' => \App\Support\CuestionarioAdopcion::VERSION,
+            'version_cuestionario' => CuestionarioAdopcion::VERSION,
             'nivel_alerta' => 'verde',
             'alertas' => [],
-            'version_reglas' => \App\Services\EvaluadorSolicitudAdopcion::VERSION_REGLAS,
+            'version_reglas' => EvaluadorSolicitudAdopcion::VERSION_REGLAS,
         ], $cambios);
     }
 

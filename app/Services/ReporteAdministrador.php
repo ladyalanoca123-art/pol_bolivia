@@ -310,6 +310,7 @@ class ReporteAdministrador
                     if ($m[1] === 'fecha_decision') {
                         $decision = "case when estado = 'rechazada' then resuelta_at when estado in ('aprobada', 'aceptada', 'no_concretada', 'cancelada') then aprobada_at end";
                         array_push($enlaces, ...self::limites($p));
+
                         return "({$decision}) >= ?::timestamptz and ({$decision}) < ?::timestamptz";
                     }
                     if (($m[2] ?? '') === ':date') {

@@ -16,8 +16,8 @@ use Tests\TestCase;
 
 class SolicitudAdopcionManagementTest extends TestCase
 {
-    use RefreshDatabase;
     use CompletaFlujoAdopcion;
+    use RefreshDatabase;
 
     private const MOTIVO = ['comentarios_admin' => 'Visita realizada y hogar adecuado.'];
 
@@ -385,6 +385,7 @@ class SolicitudAdopcionManagementTest extends TestCase
                 'es_principal' => true,
                 'orden' => 1,
             ]);
+
             return $mascota;
         });
     }

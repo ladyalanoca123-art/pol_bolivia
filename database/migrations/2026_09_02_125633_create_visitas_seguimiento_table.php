@@ -58,4 +58,3 @@ SQL);
         DB::statement('DROP TABLE IF EXISTS visitas_seguimiento');
     }
 };
-

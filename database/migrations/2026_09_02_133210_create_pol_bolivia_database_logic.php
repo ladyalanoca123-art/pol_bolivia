@@ -10,7 +10,7 @@ return new class extends Migration
         $path = database_path('sql/pol_bolivia.sql');
 
         if (! file_exists($path)) {
-        throw new \RuntimeException(
+            throw new RuntimeException(
                 'No se encontró el archivo database/sql/pol_bolivia.sql'
             );
         }
@@ -24,10 +24,10 @@ return new class extends Migration
          */
         $sql = preg_replace(
             '/CREATE TABLE\s+'
-            . '(usuarios|mascotas|fotos_mascota|solicitudes_adopcion|'
-            . 'seguimientos_adopcion|visitas_seguimiento|incidencias|'
-            . 'postulaciones_voluntariado|voluntarios)'
-            . '\s*\(.*?\n\);\s*/is',
+            .'(usuarios|mascotas|fotos_mascota|solicitudes_adopcion|'
+            .'seguimientos_adopcion|visitas_seguimiento|incidencias|'
+            .'postulaciones_voluntariado|voluntarios)'
+            .'\s*\(.*?\n\);\s*/is',
             '',
             $sql
         );

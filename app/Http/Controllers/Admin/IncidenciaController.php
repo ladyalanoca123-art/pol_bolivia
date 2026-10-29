@@ -13,6 +13,7 @@ class IncidenciaController extends Controller
     {
         Gate::authorize('progress', $incidencia);
         $incidencia->forceFill(['estado' => 'en_proceso'])->save();
+
         return back()->with('status', 'La incidencia está en proceso.');
     }
 }

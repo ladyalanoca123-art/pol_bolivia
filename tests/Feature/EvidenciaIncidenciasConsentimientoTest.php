@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\FotoMascota;
 use App\Models\Incidencia;
 use App\Models\Mascota;
+use App\Models\SeguimientoAdopcion;
 use App\Models\SolicitudAdopcion;
 use App\Models\User;
 use App\Support\CuestionarioAdopcion;
@@ -176,7 +177,7 @@ class EvidenciaIncidenciasConsentimientoTest extends TestCase
         return SolicitudAdopcion::create(['solicitante_id' => $ciudadano->id, 'mascota_id' => $this->mascota()->id, 'estado' => 'pendiente', ...CuestionarioAdopcionDatos::registro($cambios)]);
     }
 
-    /** @return array{0: \App\Models\SeguimientoAdopcion, 1: User} */
+    /** @return array{0: SeguimientoAdopcion, 1: User} */
     private function seguimientoActivo(): array
     {
         $solicitud = $this->solicitudPendiente();

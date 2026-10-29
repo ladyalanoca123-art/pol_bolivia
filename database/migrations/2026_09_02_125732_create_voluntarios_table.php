@@ -40,4 +40,3 @@ SQL);
         DB::statement('DROP TABLE IF EXISTS voluntarios');
     }
 };
-

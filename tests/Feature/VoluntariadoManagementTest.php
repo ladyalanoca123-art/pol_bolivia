@@ -12,12 +12,14 @@ use App\Models\Voluntario;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\CompletaFlujoAdopcion;
+use Tests\Support\CuestionarioAdopcionDatos;
+use Tests\Support\CuestionarioVoluntariadoDatos;
 use Tests\TestCase;
 
 class VoluntariadoManagementTest extends TestCase
 {
-    use RefreshDatabase;
     use CompletaFlujoAdopcion;
+    use RefreshDatabase;
 
     public function test_active_citizen_can_submit_a_pending_application_and_sensitive_input_is_ignored(): void
     {
@@ -152,13 +154,13 @@ class VoluntariadoManagementTest extends TestCase
 
     private function makeApplication(User $citizen): PostulacionVoluntariado
     {
-        return PostulacionVoluntariado::create([...\Tests\Support\CuestionarioVoluntariadoDatos::registro(), 'usuario_id' => $citizen->id, 'estado' => 'pendiente']);
+        return PostulacionVoluntariado::create([...CuestionarioVoluntariadoDatos::registro(), 'usuario_id' => $citizen->id, 'estado' => 'pendiente']);
     }
 
     /** Datos que envía el formulario del cuestionario V1. */
     private function applicationData(): array
     {
-        return \Tests\Support\CuestionarioVoluntariadoDatos::valido();
+        return CuestionarioVoluntariadoDatos::valido();
     }
 
     private function trackingFor(User $volunteer): SeguimientoAdopcion
@@ -168,9 +170,10 @@ class VoluntariadoManagementTest extends TestCase
         $pet = DB::transaction(function () use ($administrator): Mascota {
             $pet = Mascota::create(['nombre' => fake()->unique()->firstName(), 'especie' => 'perro', 'raza' => 'Mestiza', 'edad' => 2, 'edad_en' => 'años', 'sexo' => 'hembra', 'tamano' => 'mediano', 'estado' => 'disponible', 'registrado_por' => $administrator->id]);
             FotoMascota::create(['mascota_id' => $pet->id, 'tipo' => 'foto', 'url' => 'mascotas/principal.jpg', 'es_principal' => true, 'orden' => 1]);
+
             return $pet;
         });
-        $request = SolicitudAdopcion::create(['solicitante_id' => $citizen->id, 'mascota_id' => $pet->id, ...\Tests\Support\CuestionarioAdopcionDatos::registro(), 'estado' => 'pendiente']);
+        $request = SolicitudAdopcion::create(['solicitante_id' => $citizen->id, 'mascota_id' => $pet->id, ...CuestionarioAdopcionDatos::registro(), 'estado' => 'pendiente']);
         $this->completarAdopcionPorRutas($administrator, $request);
 
         return SeguimientoAdopcion::query()->where('solicitud_id', $request->id)->sole();

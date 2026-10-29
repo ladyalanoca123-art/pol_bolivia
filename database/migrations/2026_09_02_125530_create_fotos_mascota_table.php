@@ -46,4 +46,3 @@ SQL);
         DB::statement('DROP TABLE IF EXISTS fotos_mascota');
     }
 };
-

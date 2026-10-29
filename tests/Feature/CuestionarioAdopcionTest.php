@@ -9,6 +9,8 @@ use App\Models\SolicitudAdopcion;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Tests\Support\CuestionarioAdopcionDatos as Datos;
 use Tests\TestCase;
 
@@ -260,7 +262,7 @@ class CuestionarioAdopcionTest extends TestCase
         $this->assertSame('disponible', $mascota->refresh()->estado);
 
         // «Solicitar información» ya no existe: solo guardaba una nota interna que el ciudadano nunca veía.
-        $this->assertFalse(\Illuminate\Support\Facades\Route::has('admin.solicitudes-adopcion.request-information'));
+        $this->assertFalse(Route::has('admin.solicitudes-adopcion.request-information'));
 
         $this->actingAs($admin)
             ->patch(route('admin.solicitudes-adopcion.approve', $solicitud), [])
@@ -268,7 +270,7 @@ class CuestionarioAdopcionTest extends TestCase
         $this->assertSame('aprobada', $solicitud->refresh()->estado);
         // Aprobar no requiere entrevista ni visita previa: esas columnas ya no existen (2026_10_24).
         foreach (['entrevista_fecha', 'entrevista_resultado', 'visita_previa_fecha', 'fecha_entrega_acordada', 'permitir_otra_adopcion'] as $columna) {
-            $this->assertFalse(\Illuminate\Support\Facades\Schema::hasColumn('solicitudes_adopcion', $columna), $columna);
+            $this->assertFalse(Schema::hasColumn('solicitudes_adopcion', $columna), $columna);
         }
 
         $this->actingAs($admin)

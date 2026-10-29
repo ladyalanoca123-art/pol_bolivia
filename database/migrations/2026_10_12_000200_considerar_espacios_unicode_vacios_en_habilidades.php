@@ -21,7 +21,7 @@ return new class extends Migration
 
     public function up(): void
     {
-        DB::unprepared($this->funcion("COALESCE(NULLIF(regexp_replace(NEW.habilidades, '" . self::PATRON . "', '', 'g'), ''), habilidades)"));
+        DB::unprepared($this->funcion("COALESCE(NULLIF(regexp_replace(NEW.habilidades, '".self::PATRON."', '', 'g'), ''), habilidades)"));
     }
 
     /** Vuelve a la versión de 2026_10_12_000100 (btrim, que solo quita espacios normales). */

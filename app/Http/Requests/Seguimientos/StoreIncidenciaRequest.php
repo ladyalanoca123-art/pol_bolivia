@@ -10,6 +10,7 @@ class StoreIncidenciaRequest extends FormRequest
     public function authorize(): bool
     {
         $seguimiento = $this->route('seguimiento');
+
         return auth()->user()?->can('work', $seguimiento) ?? false;
     }
 

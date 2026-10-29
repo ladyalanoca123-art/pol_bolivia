@@ -44,7 +44,7 @@ abstract class TestCase extends BaseTestCase
         }
 
         $configuracionPgsql = config('database.connections.pgsql');
-        if (!is_array($configuracionPgsql)) {
+        if (! is_array($configuracionPgsql)) {
             $this->detenerPruebas('no se puede verificar la configuración efectiva de la conexión pgsql.');
         }
 
@@ -57,7 +57,7 @@ abstract class TestCase extends BaseTestCase
             $this->detenerPruebas("la base efectiva configurada es '{$baseConfigurada}', no ".self::BASE_DE_PRUEBAS.'.');
         }
 
-        if (!array_key_exists('url', $configuracionPgsql) || !in_array($configuracionPgsql['url'], [null, ''], true)) {
+        if (! array_key_exists('url', $configuracionPgsql) || ! in_array($configuracionPgsql['url'], [null, ''], true)) {
             $this->detenerPruebas('DB_URL no está vacío o no se puede verificar; se detienen las pruebas antes de conectar.');
         }
 

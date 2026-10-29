@@ -70,4 +70,3 @@ SQL);
         DB::statement('DROP TABLE IF EXISTS seguimientos_adopcion');
     }
 };
-

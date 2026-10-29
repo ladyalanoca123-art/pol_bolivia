@@ -4,7 +4,9 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use App\Rules\TelefonoBoliviano;
+use Illuminate\Contracts\Validation\UncompromisedVerifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\Rules\Password;
 use Tests\TestCase;
 
 /**
@@ -40,8 +42,8 @@ class RegistroValidacionTest extends TestCase
     public function test_normaliza_correo_y_nombres(): void
     {
         $this->post('/register', $this->datos([
-            'nombres' => "  María   José ",
-            'apellidos' => " Quispe    Mamani  ",
+            'nombres' => '  María   José ',
+            'apellidos' => ' Quispe    Mamani  ',
             'email' => '  Ana.Quispe@Example.TEST ',
         ]))->assertRedirect();
 
@@ -118,8 +120,9 @@ class RegistroValidacionTest extends TestCase
     public function test_mensaje_de_contrasena_filtrada_en_espanol_natural(): void
     {
         // En producción Password::defaults() añade uncompromised(); aquí se simula con un verificador falso.
-        \Illuminate\Validation\Rules\Password::defaults(fn () => \Illuminate\Validation\Rules\Password::min(8)->uncompromised());
-        $this->app->instance(\Illuminate\Contracts\Validation\UncompromisedVerifier::class, new class implements \Illuminate\Contracts\Validation\UncompromisedVerifier {
+        Password::defaults(fn () => Password::min(8)->uncompromised());
+        $this->app->instance(UncompromisedVerifier::class, new class implements UncompromisedVerifier
+        {
             public function verify($data)
             {
                 return false;

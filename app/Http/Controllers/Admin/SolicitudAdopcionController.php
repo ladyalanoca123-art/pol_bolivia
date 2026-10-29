@@ -14,6 +14,7 @@ use App\Models\SolicitudAdopcion;
 use App\Services\ImagenNoProcesada;
 use App\Services\ImagenSegura;
 use App\Support\ErrorBaseDatos;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,7 +23,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\View\View;
 
 /**

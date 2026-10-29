@@ -1,23 +1,23 @@
 <?php
 
 use App\Http\Controllers\AccesoSolicitudAdopcionController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\CatalogoMascotaController;
-use App\Http\Controllers\DashboardRedirectController;
-use App\Http\Controllers\MiEspacioController;
 use App\Http\Controllers\Admin\AuditoriaController;
-use App\Http\Controllers\Admin\MascotaController;
 use App\Http\Controllers\Admin\IncidenciaController;
-use App\Http\Controllers\Admin\PostulacionVoluntariadoController as AdminPostulacionVoluntariadoController;
+use App\Http\Controllers\Admin\MascotaController;
 use App\Http\Controllers\Admin\PanelPrincipalController;
+use App\Http\Controllers\Admin\PostulacionVoluntariadoController as AdminPostulacionVoluntariadoController;
 use App\Http\Controllers\Admin\ReporteController;
 use App\Http\Controllers\Admin\SeguimientoAdopcionController as AdminSeguimientoAdopcionController;
 use App\Http\Controllers\Admin\SolicitudAdopcionController as AdminSolicitudAdopcionController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VoluntarioController as AdminVoluntarioController;
+use App\Http\Controllers\CatalogoMascotaController;
+use App\Http\Controllers\DashboardRedirectController;
+use App\Http\Controllers\MiEspacioController;
 use App\Http\Controllers\PostulacionVoluntariadoController;
-use App\Http\Controllers\SolicitudAdopcionController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SeguimientoAdopcionController;
+use App\Http\Controllers\SolicitudAdopcionController;
 use Illuminate\Support\Facades\Route;
 
 // Páginas públicas: máximo 60 peticiones por minuto por IP.

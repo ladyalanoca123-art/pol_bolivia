@@ -13,12 +13,13 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\CompletaFlujoAdopcion;
+use Tests\Support\CuestionarioAdopcionDatos;
 use Tests\TestCase;
 
 class SeguimientoAdopcionTest extends TestCase
 {
-    use RefreshDatabase;
     use CompletaFlujoAdopcion;
+    use RefreshDatabase;
 
     public function test_only_administrator_can_assign_activate_and_close_a_tracking_case(): void
     {
@@ -167,10 +168,12 @@ class SeguimientoAdopcionTest extends TestCase
         $mascota = DB::transaction(function () use ($administrator): Mascota {
             $mascota = Mascota::create(['nombre' => fake()->unique()->firstName(), 'especie' => 'perro', 'edad' => 2, 'edad_en' => 'años', 'sexo' => 'hembra', 'tamano' => 'mediano', 'estado' => 'disponible', 'registrado_por' => $administrator->id]);
             FotoMascota::create(['mascota_id' => $mascota->id, 'tipo' => 'foto', 'url' => 'test.jpg', 'es_principal' => true, 'orden' => 1]);
+
             return $mascota;
         });
-        $solicitud = SolicitudAdopcion::create(['solicitante_id' => $citizen->id, 'mascota_id' => $mascota->id, 'estado' => 'pendiente', ...\Tests\Support\CuestionarioAdopcionDatos::registro()]);
+        $solicitud = SolicitudAdopcion::create(['solicitante_id' => $citizen->id, 'mascota_id' => $mascota->id, 'estado' => 'pendiente', ...CuestionarioAdopcionDatos::registro()]);
         $this->completarAdopcionPorRutas($administrator, $solicitud);
+
         return [$administrator, $solicitud->seguimiento()->firstOrFail()];
     }
 
@@ -178,9 +181,17 @@ class SeguimientoAdopcionTest extends TestCase
     {
         $volunteer = User::factory()->create(['rol' => 'voluntario']);
         $seguimiento->update(['voluntario_id' => $volunteer->id, 'estado' => 'activo', 'fecha_inicio' => now()]);
+
         return $volunteer;
     }
 
-    private function visitData(array $data = []): array { return array_merge(['fecha_programada' => now()->toDateString()], $data); }
-    private function incidentData(array $data = []): array { return array_merge(['tipo' => 'salud', 'descripcion' => 'Revisión necesaria'], $data); }
+    private function visitData(array $data = []): array
+    {
+        return array_merge(['fecha_programada' => now()->toDateString()], $data);
+    }
+
+    private function incidentData(array $data = []): array
+    {
+        return array_merge(['tipo' => 'salud', 'descripcion' => 'Revisión necesaria'], $data);
+    }
 }

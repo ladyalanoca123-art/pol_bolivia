@@ -37,6 +37,7 @@ class SeguimientoAdopcionController extends Controller
     public function index(): View
     {
         $seguimientos = SeguimientoAdopcion::query()->where('voluntario_id', auth()->id())->with('solicitud.mascota')->latest()->paginate(15);
+
         return view('seguimientos.index', compact('seguimientos'));
     }
 
@@ -47,6 +48,7 @@ class SeguimientoAdopcionController extends Controller
         $fechasSugeridas = $seguimiento->solicitud->entregada_at
             ? FechasSeguimientoAdopcion::sugeridas($seguimiento->solicitud->entregada_at)
             : [];
+
         return view('seguimientos.show', compact('seguimiento', 'fechasSugeridas'));
     }
 
@@ -172,8 +174,11 @@ class SeguimientoAdopcionController extends Controller
     {
         Gate::authorize('work', $seguimiento);
         $data = $request->validated();
-        if (isset($data['visita_id']) && ! $seguimiento->visitas()->whereKey($data['visita_id'])->exists()) abort(404);
+        if (isset($data['visita_id']) && ! $seguimiento->visitas()->whereKey($data['visita_id'])->exists()) {
+            abort(404);
+        }
         $seguimiento->incidencias()->create([...$data, 'reportado_por' => auth()->id(), 'estado' => 'pendiente']);
+
         return back()->with('status', 'La incidencia fue registrada.');
     }
 
@@ -182,6 +187,7 @@ class SeguimientoAdopcionController extends Controller
         abort_unless($incidencia->seguimiento_id === $seguimiento->id, 404);
         Gate::authorize('attend', $incidencia);
         $incidencia->forceFill([...$request->validated(), 'estado' => 'atendida', 'atendida_por' => auth()->id(), 'atendida_at' => now()])->save();
+
         return back()->with('status', 'La incidencia fue atendida.');
     }
 

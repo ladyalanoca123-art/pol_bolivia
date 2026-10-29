@@ -9,12 +9,13 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\CompletaFlujoAdopcion;
+use Tests\Support\CuestionarioAdopcionDatos;
 use Tests\TestCase;
 
 class CatalogoMascotaPublicoTest extends TestCase
 {
-    use RefreshDatabase;
     use CompletaFlujoAdopcion;
+    use RefreshDatabase;
 
     public function test_home_only_shows_available_pets_and_existing_module_links(): void
     {
@@ -24,7 +25,7 @@ class CatalogoMascotaPublicoTest extends TestCase
         $solicitud = SolicitudAdopcion::create([
             'solicitante_id' => User::factory()->create(['rol' => 'ciudadano'])->id,
             'mascota_id' => $adopted->id,
-            ...\Tests\Support\CuestionarioAdopcionDatos::registro(),
+            ...CuestionarioAdopcionDatos::registro(),
             'estado' => 'pendiente',
         ]);
         $this->completarAdopcionPorRutas($administrator, $solicitud);

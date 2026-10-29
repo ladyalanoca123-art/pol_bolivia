@@ -15,9 +15,9 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\CompletaFlujoAdopcion;
 use Tests\Support\CuestionarioAdopcionDatos;
 use Tests\Support\CuestionarioVoluntariadoDatos;
-use Tests\Support\CompletaFlujoAdopcion;
 use Tests\TestCase;
 
 /**
@@ -26,8 +26,8 @@ use Tests\TestCase;
  */
 class PanelPrincipalTest extends TestCase
 {
-    use RefreshDatabase;
     use CompletaFlujoAdopcion;
+    use RefreshDatabase;
 
     private CarbonImmutable $ahora;
 
