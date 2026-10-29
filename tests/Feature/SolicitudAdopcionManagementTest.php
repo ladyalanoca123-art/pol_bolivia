@@ -311,8 +311,6 @@ class SolicitudAdopcionManagementTest extends TestCase
         $this->assertDatabaseHas('solicitudes_adopcion', [
             'id' => $solicitud->id,
             'estado' => 'aprobada',
-            'entrevista_fecha' => null,
-            'visita_previa_fecha' => null,
         ]);
     }
 

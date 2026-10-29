@@ -91,6 +91,9 @@ class CompromisoYSeguimientoAdopcionTest extends TestCase
             'compromiso_firmado' => '1',
         ])->assertRedirect();
 
+        // Como en un rollback real: primero se revierten las migraciones posteriores que tocan las mismas columnas.
+        (require database_path('migrations/2026_10_24_000000_quitar_columnas_sin_uso_de_solicitudes_adopcion.php'))->down();
+
         $migracion = require database_path('migrations/2026_10_20_000000_nuevo_flujo_solicitudes_adopcion.php');
         try {
             $migracion->down();
@@ -103,12 +106,11 @@ class CompromisoYSeguimientoAdopcionTest extends TestCase
         $this->assertSame('aceptada', $solicitud->refresh()->estado);
     }
 
-    public function test_insert_rejects_user_supplied_evidence_cancellation_reason_and_multi_adoption_permission(): void
+    public function test_insert_rejects_user_supplied_evidence_and_cancellation_reason(): void
     {
         foreach ([
             ['compromiso_foto_path' => 'compromisos/falso.png'],
             ['motivo_cancelacion' => 'Motivo inyectado'],
-            ['permitir_otra_adopcion' => true],
         ] as $datosProtegidos) {
             $mascota = $this->mascotaDisponible();
             try {

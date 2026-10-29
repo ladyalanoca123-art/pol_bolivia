@@ -266,8 +266,10 @@ class CuestionarioAdopcionTest extends TestCase
             ->patch(route('admin.solicitudes-adopcion.approve', $solicitud), [])
             ->assertRedirect();
         $this->assertSame('aprobada', $solicitud->refresh()->estado);
-        $this->assertNull($solicitud->entrevista_fecha, 'Aprobar no debe requerir ni registrar una entrevista.');
-        $this->assertNull($solicitud->visita_previa_fecha, 'Aprobar no debe requerir ni registrar una visita previa.');
+        // Aprobar no requiere entrevista ni visita previa: esas columnas ya no existen (2026_10_24).
+        foreach (['entrevista_fecha', 'entrevista_resultado', 'visita_previa_fecha', 'fecha_entrega_acordada', 'permitir_otra_adopcion'] as $columna) {
+            $this->assertFalse(\Illuminate\Support\Facades\Schema::hasColumn('solicitudes_adopcion', $columna), $columna);
+        }
 
         $this->actingAs($admin)
             ->patch(route('admin.solicitudes-adopcion.deliver', $solicitud), [
