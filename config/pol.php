@@ -23,14 +23,19 @@ return [
         'actividad_limite' => 8,
     ],
 
-    // Botón «Escribir por WhatsApp» (App\Support\ContactoTelefonico): solo para la administración y
-    // para el voluntario asignado al seguimiento. :nombre, :mascota y :voluntario se reemplazan al armar el enlace.
+    // Enlaces de WhatsApp (App\Support\ContactoTelefonico). «Escribir por WhatsApp» a una persona: solo para la
+    // administración y el voluntario asignado al seguimiento. :nombre, :mascota y :voluntario se reemplazan al armar el enlace.
     'whatsapp' => [
         // Prefijo internacional de Bolivia, sin «+».
         'prefijo' => '591',
+        // Botón flotante de consultas en las páginas públicas (x-whatsapp-flotante): número de contacto de POL-Bolivia,
+        // 8 dígitos. Se puede cambiar con POL_WHATSAPP_CONSULTAS en .env; vacío o inválido, el botón no aparece.
+        'consultas' => env('POL_WHATSAPP_CONSULTAS', '64630845'),
         'mensajes' => [
             'en_espera' => 'Hola :nombre, te escribimos de POL-Bolivia por tu solicitud para adoptar a :mascota. ¿Cuándo podemos conversar unos minutos?',
             'aprobada' => 'Hola :nombre, ¡tu solicitud para adoptar a :mascota fue aprobada! Coordinemos el día y lugar de la entrega.',
+            'consulta' => 'Hola POL-Bolivia, quisiera hacer una consulta.',
+            'consulta_mascota' => 'Hola POL-Bolivia, quisiera consultar sobre :mascota.',
             'seguimiento' => 'Hola :nombre, soy :voluntario, voluntario/a de POL-Bolivia. Quisiera coordinar la visita de seguimiento de :mascota.',
         ],
     ],

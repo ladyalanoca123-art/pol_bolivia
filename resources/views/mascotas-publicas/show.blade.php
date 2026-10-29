@@ -7,6 +7,7 @@
 @extends('layouts.public')
 
 @section('title', $mascota->nombre . ' | POL-Bolivia')
+@section('consulta_mascota', $mascota->nombre)
 
 @section('content')
     <section class="px-4 py-12 sm:px-6 lg:px-8">

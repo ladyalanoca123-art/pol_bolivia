@@ -47,6 +47,8 @@
     </header>
     <main>@yield('content')</main>
     <footer class="border-t border-stone-200 bg-white"><div class="mx-auto max-w-7xl px-4 py-8 text-sm text-stone-600 sm:px-6 lg:px-8"><p class="font-bold text-emerald-800">POL-BOLIVIA</p><p class="mt-1">Cochabamba, Bolivia</p></div></footer>
+    {{-- Consultas por WhatsApp; en la ficha de una mascota el mensaje lleva su nombre (@section('consulta_mascota')). --}}
+    <x-whatsapp-flotante :mascota="html_entity_decode(trim($__env->yieldContent('consulta_mascota')), ENT_QUOTES)" />
     {{-- Aviso de "ENVIAR SOLICITUD" para visitantes y cuentas que no son de ciudadano --}}
     @unless (auth()->user()?->hasRole('ciudadano'))
         <x-aviso-solicitud-adopcion />
