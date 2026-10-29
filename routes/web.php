@@ -4,6 +4,7 @@ use App\Http\Controllers\AccesoSolicitudAdopcionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CatalogoMascotaController;
 use App\Http\Controllers\DashboardRedirectController;
+use App\Http\Controllers\MiEspacioController;
 use App\Http\Controllers\Admin\AuditoriaController;
 use App\Http\Controllers\Admin\MascotaController;
 use App\Http\Controllers\Admin\IncidenciaController;
@@ -65,6 +66,9 @@ Route::middleware(['auth', 'verified', 'role:ciudadano'])->group(function () {
 // postulación el rol pasa a voluntario y conserva su historial). Crear (create/store) sigue siendo
 // solo para ciudadano. Cada show() verifica que el registro sea del usuario.
 Route::middleware(['auth', 'verified', 'role:ciudadano,voluntario'])->group(function () {
+    // «Mi espacio»: inicio del ciudadano y del voluntario al iniciar sesión.
+    Route::get('/mi-espacio', MiEspacioController::class)->name('inicio');
+
     Route::get('/mis-solicitudes-adopcion', [SolicitudAdopcionController::class, 'index'])
         ->name('solicitudes-adopcion.index');
 

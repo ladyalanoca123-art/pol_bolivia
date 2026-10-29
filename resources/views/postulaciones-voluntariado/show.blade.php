@@ -1,6 +1,3 @@
-<x-app-layout>
-    <x-slot name="header"><h2 class="font-semibold text-xl text-gray-800">Detalle de postulación</h2></x-slot>
-
     @php
         // Color y mensaje según el estado real de la postulación.
         $estados = [
@@ -16,17 +13,9 @@
         [$colorEstado, $mensajeEstado] = $estados[$postulacion->estado] ?? ['border-gray-300 bg-gray-50 text-gray-800', ''];
     @endphp
 
-    <div class="py-12"><div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <nav aria-label="Ruta de navegación" class="mb-4 text-sm">
-            <ol class="flex flex-wrap items-center gap-1 text-gray-600">
-                <li><a href="{{ route('postulaciones-voluntariado.index') }}" class="font-medium text-blue-800 hover:text-blue-950 hover:underline">Voluntariado</a></li>
-                <li aria-hidden="true" class="text-gray-400">›</li>
-                <li aria-current="page" class="font-semibold text-blue-950">Postulación del {{ $postulacion->created_at->format('d/m/Y') }}</li>
-            </ol>
-        </nav>
-
-        <div class="p-6 bg-white shadow-sm sm:rounded-lg">
-            <div class="rounded-md border p-4 text-sm {{ $colorEstado }}">
+<x-admin.pagina :titulo="'Postulación del '.$postulacion->created_at->format('d/m/Y')" seccion="Voluntariado" ancho="max-w-3xl" :volver="route('postulaciones-voluntariado.index')" volver-texto="Volver a voluntariado">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+            <div class="rounded-xl border p-4 text-sm {{ $colorEstado }}">
                 <p class="font-semibold">Estado: {{ ucfirst($postulacion->estado) }}</p>
                 @if ($mensajeEstado)<p class="mt-1">{{ $mensajeEstado }}</p>@endif
                 <p class="mt-1 opacity-80">Enviada el {{ $postulacion->created_at->format('d/m/Y H:i') }}</p>
@@ -42,7 +31,5 @@
             <h3 class="mt-6 text-base font-semibold text-gray-900">Tus respuestas</h3>
             <x-postulacion-respuestas :postulacion="$postulacion" />
 
-            <a href="{{ route('postulaciones-voluntariado.index') }}" class="mt-6 inline-block text-sm font-semibold text-blue-800 hover:text-blue-950 hover:underline"><span aria-hidden="true">‹</span> Volver a voluntariado</a>
         </div>
-    </div></div>
-</x-app-layout>
+</x-admin.pagina>

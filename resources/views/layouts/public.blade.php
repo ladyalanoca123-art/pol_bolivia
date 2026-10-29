@@ -34,8 +34,7 @@
                     @php
                         $usuario = auth()->user();
                         $enlaceCuenta = match (true) {
-                            $usuario->hasRole('ciudadano') => ['texto' => 'Mi cuenta', 'ruta' => route('solicitudes-adopcion.index')],
-                            $usuario->hasRole('voluntario') => ['texto' => 'Mis seguimientos', 'ruta' => route('seguimientos.index')],
+                            $usuario->hasRole('ciudadano', 'voluntario') => ['texto' => 'Mi espacio', 'ruta' => route('inicio')],
                             $usuario->hasRole('administrador') => ['texto' => 'Panel de administración', 'ruta' => route('dashboard')],
                         };
                     @endphp

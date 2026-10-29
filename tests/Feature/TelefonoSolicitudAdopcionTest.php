@@ -98,7 +98,7 @@ class TelefonoSolicitudAdopcionTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.solicitudes-adopcion.show', $solicitud))
             ->assertSee('https://wa.me/59171234567?text=', false)
-            ->assertSee('tel:+59171234567', false)
+            ->assertDontSee('tel:+591', false)                     // sin botón «Llamar»
             ->assertDontSee('El solicitante no tiene un teléfono válido registrado.');
     }
 

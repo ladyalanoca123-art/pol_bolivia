@@ -232,4 +232,20 @@ Alpine.data('galeriaFotos', (fotos) => ({
     },
 }));
 
+/**
+ * Fotos con respaldo (componente x-foto-mascota): si el archivo no carga, se quita la imagen y queda visible
+ * el fondo con la huella, en lugar del ícono de imagen rota.
+ */
+const quitarSiFalla = (imagen) => imagen.remove();
+document.addEventListener('error', (evento) => {
+    if (evento.target instanceof HTMLImageElement && evento.target.hasAttribute('data-respaldo')) {
+        quitarSiFalla(evento.target);
+    }
+}, true);
+document.querySelectorAll('img[data-respaldo]').forEach((imagen) => {
+    if (imagen.complete && imagen.naturalWidth === 0) {
+        quitarSiFalla(imagen);
+    }
+});
+
 Alpine.start();

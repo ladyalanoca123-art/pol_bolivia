@@ -13,3 +13,13 @@
     .admin-error { @apply mt-1 text-sm text-red-600; }
     .admin-ayuda { @apply mt-1 text-xs text-slate-500; }
 }
+
+/*
+ * Pantallas del ciudadano y del voluntario (layouts/app: <main class="vista-personal">): mismo diseño que el panel,
+ * pero más sobrio. Etiquetas sin mayúsculas y estados solo con su punto de color.
+ */
+@layer components {
+    .vista-personal .admin-etiqueta,
+    .vista-personal .dato-etiqueta { @apply text-[13px] font-medium normal-case tracking-normal text-slate-500; }
+    .vista-personal .insignia { @apply bg-transparent px-0 font-medium text-slate-600 ring-0; }
+}

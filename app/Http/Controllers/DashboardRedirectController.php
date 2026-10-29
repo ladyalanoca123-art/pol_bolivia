@@ -12,6 +12,11 @@ class DashboardRedirectController extends Controller
             return to_route('admin.dashboard');
         }
 
+        // Ciudadano y voluntario: su página de inicio, «Mi espacio».
+        if (auth()->user()->hasRole('ciudadano', 'voluntario')) {
+            return to_route('inicio');
+        }
+
         return to_route('profile.edit');
     }
 }

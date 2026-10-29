@@ -1,173 +1,92 @@
-{{-- Administrador: 9 secciones; el menú horizontal se muestra desde xl y, por debajo, el menú responsive. --}}
-@php($esAdmin = auth()->user()->hasRole('administrador'))
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
-    <!-- Primary Navigation Menu -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex">
-                <!-- Logo -->
-                <div class="shrink-0 flex items-center">
-                    {{-- Ciudadano: portada pública. Administrador y voluntario: mismos destinos que antes. --}}
-                    <a href="{{ auth()->user()->hasRole('ciudadano') ? route('home') : (auth()->user()->hasRole('administrador') ? route('admin.dashboard') : route('dashboard')) }}" class="flex items-center gap-2">
-                        <img src="{{ asset('images/pol-bolivia/logo.png') }}" alt="" class="block h-9 w-auto">
-                        <span class="text-lg font-bold text-blue-950">POL-Bolivia</span>
-                    </a>
-                </div>
-
-                <!-- Navigation Links -->
-                <div class="{{ $esAdmin ? 'hidden xl:-my-px xl:ms-8 xl:flex xl:gap-x-5 2xl:gap-x-7' : 'hidden space-x-8 sm:-my-px sm:ms-10 sm:flex' }}">
-                    @if (auth()->user()->hasRole('administrador'))
-                        <x-nav-link class="whitespace-nowrap" :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
-                            Panel principal
-                        </x-nav-link>
-
-                        <x-nav-link class="whitespace-nowrap" :href="route('admin.usuarios.index')" :active="request()->routeIs('admin.usuarios.*')">
-                            Usuarios
-                        </x-nav-link>
-
-                        <x-nav-link class="whitespace-nowrap" :href="route('admin.mascotas.index')" :active="request()->routeIs('admin.mascotas.*')">
-                            Mascotas
-                        </x-nav-link>
-
-                        <x-nav-link class="whitespace-nowrap" :href="route('admin.solicitudes-adopcion.index')" :active="request()->routeIs('admin.solicitudes-adopcion.*')">
-                            Solicitudes
-                        </x-nav-link>
-                        <x-nav-link class="whitespace-nowrap" :href="route('admin.seguimientos.index')" :active="request()->routeIs('admin.seguimientos.*')">
-                            Seguimientos
-                        </x-nav-link>
-                        <x-nav-link class="whitespace-nowrap" :href="route('admin.postulaciones-voluntariado.index')" :active="request()->routeIs('admin.postulaciones-voluntariado.*')">
-                            Postulaciones
-                        </x-nav-link>
-                        <x-nav-link class="whitespace-nowrap" :href="route('admin.voluntarios.index')" :active="request()->routeIs('admin.voluntarios.*')">
-                            Voluntarios
-                        </x-nav-link>
-                        <x-nav-link class="whitespace-nowrap" :href="route('admin.reportes.index')" :active="request()->routeIs('admin.reportes.*')">
-                            Reportes
-                        </x-nav-link>
-                        <x-nav-link class="whitespace-nowrap" :href="route('admin.auditoria.index')" :active="request()->routeIs('admin.auditoria.*')">
-                            Auditoría
-                        </x-nav-link>
-                    @elseif (auth()->user()->hasRole('ciudadano'))
-                        <x-nav-link :href="route('mascotas.catalogo')" :active="request()->routeIs('mascotas.catalogo', 'mascotas.public.show', 'solicitudes-adopcion.create')">
-                            Mascotas
-                        </x-nav-link>
-                        <x-nav-link :href="route('solicitudes-adopcion.index')" :active="request()->routeIs('solicitudes-adopcion.*') && ! request()->routeIs('solicitudes-adopcion.create')">
-                            Mis solicitudes
-                        </x-nav-link>
-                        <x-nav-link :href="route('postulaciones-voluntariado.index')" :active="request()->routeIs('postulaciones-voluntariado.*')">
-                            Voluntariado
-                        </x-nav-link>
-                    @elseif (auth()->user()->hasRole('voluntario'))
-                        <x-nav-link :href="route('seguimientos.index')" :active="request()->routeIs('seguimientos.*')">Mis seguimientos</x-nav-link>
-                        <x-nav-link :href="route('postulaciones-voluntariado.index')" :active="request()->routeIs('postulaciones-voluntariado.index', 'postulaciones-voluntariado.show')">Mi postulación</x-nav-link>
-                        <x-nav-link :href="route('solicitudes-adopcion.index')" :active="request()->routeIs('solicitudes-adopcion.index', 'solicitudes-adopcion.show')">Mis solicitudes</x-nav-link>
-                    @endif
-                </div>
-            </div>
-
-            <!-- Settings Dropdown -->
-            <div class="{{ $esAdmin ? 'hidden xl:flex xl:items-center xl:ms-6' : 'hidden sm:flex sm:items-center sm:ms-6' }}">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                            <div class="whitespace-nowrap">{{ Auth::user()->nombres }} {{ Auth::user()->apellidos }}</div>
-
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                        </button>
-                    </x-slot>
-
-                    <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
-                            Mi perfil
-                        </x-dropdown-link>
-
-                        <!-- Authentication -->
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-
-                            <x-dropdown-link :href="route('logout')"
-                                    x-on:click.prevent="$el.closest('form').submit()">
-                                Cerrar sesión
-                            </x-dropdown-link>
-                        </form>
-                    </x-slot>
-                </x-dropdown>
-            </div>
-
-            <!-- Hamburger -->
-            <div class="-me-2 flex items-center {{ $esAdmin ? 'xl:hidden' : 'sm:hidden' }}">
-                <button @click="open = ! open" :aria-expanded="open ? 'true' : 'false'" aria-label="Abrir o cerrar el menú" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+{{--
+    Menú del ciudadano y del voluntario (el administrador usa layouts/admin-navigation.blade.php).
+    Barra con el color del logo para fondo oscuro (#0d2138), así el logo se integra sin recuadro.
+--}}
+@php
+    $usuario = auth()->user();
+    $esVoluntario = $usuario->hasRole('voluntario');
+    $enlaces = [[route('inicio'), 'Mi espacio', request()->routeIs('inicio')]];
+    if ($esVoluntario) {
+        $enlaces[] = [route('seguimientos.index'), 'Mis seguimientos', request()->routeIs('seguimientos.*')];
+        $enlaces[] = [route('postulaciones-voluntariado.index'), 'Mi postulación', request()->routeIs('postulaciones-voluntariado.index', 'postulaciones-voluntariado.show')];
+        $enlaces[] = [route('solicitudes-adopcion.index'), 'Mis solicitudes', request()->routeIs('solicitudes-adopcion.index', 'solicitudes-adopcion.show')];
+    } else {
+        $enlaces[] = [route('mascotas.catalogo'), 'Mascotas', request()->routeIs('mascotas.catalogo', 'mascotas.public.show', 'solicitudes-adopcion.create')];
+        $enlaces[] = [route('solicitudes-adopcion.index'), 'Mis solicitudes', request()->routeIs('solicitudes-adopcion.*') && ! request()->routeIs('solicitudes-adopcion.create')];
+        $enlaces[] = [route('postulaciones-voluntariado.index'), 'Voluntariado', request()->routeIs('postulaciones-voluntariado.*')];
+    }
+    $iniciales = mb_strtoupper(mb_substr($usuario->nombres, 0, 1).mb_substr($usuario->apellidos ?? '', 0, 1));
+    $rol = $esVoluntario ? 'Voluntario/a' : 'Ciudadano/a';
+@endphp
+<nav x-data="{ open: false }" class="bg-[#0d2138] text-white shadow-sm">
+    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <div class="flex min-w-0 items-center gap-8">
+            {{-- Ciudadano: portada pública. Voluntario: su espacio. --}}
+            <a href="{{ $esVoluntario ? route('inicio') : route('home') }}" class="shrink-0" aria-label="POL-Bolivia, ir al inicio">
+                <img src="{{ asset('images/pol-bolivia/logos/POL_04_fondo_oscuro.png') }}" alt="POL-Bolivia, Hacedores de Sueños" class="h-10 w-auto">
+            </a>
+            <div class="hidden items-center gap-1 md:flex">
+                @foreach ($enlaces as [$url, $texto, $activo])
+                    <a href="{{ $url }}" @if ($activo) aria-current="page" @endif
+                       class="rounded-full px-4 py-2 text-sm font-semibold transition {{ $activo ? 'bg-amber-400 text-blue-950' : 'text-slate-200 hover:bg-white/10 hover:text-white' }}">{{ $texto }}</a>
+                @endforeach
             </div>
         </div>
+
+        {{-- Cuenta --}}
+        <div class="hidden md:block">
+            <x-dropdown align="right" width="48">
+                <x-slot name="trigger">
+                    <button class="flex items-center gap-3 rounded-full py-1 pe-3 ps-1 text-left transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+                        <span class="flex h-9 w-9 items-center justify-center rounded-full bg-amber-400 text-sm font-bold text-blue-950" aria-hidden="true">{{ $iniciales }}</span>
+                        <span class="leading-tight">
+                            <span class="block whitespace-nowrap text-sm font-semibold">{{ $usuario->nombres }} {{ $usuario->apellidos }}</span>
+                            <span class="block text-xs text-slate-300">{{ $rol }}</span>
+                        </span>
+                        <svg class="h-4 w-4 text-slate-300" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4Z" clip-rule="evenodd"/></svg>
+                    </button>
+                </x-slot>
+                <x-slot name="content">
+                    <x-dropdown-link :href="route('profile.edit')">Mi perfil</x-dropdown-link>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <x-dropdown-link :href="route('logout')" x-on:click.prevent="$el.closest('form').submit()">Cerrar sesión</x-dropdown-link>
+                    </form>
+                </x-slot>
+            </x-dropdown>
+        </div>
+
+        {{-- Botón del menú en celular --}}
+        <button @click="open = ! open" :aria-expanded="open ? 'true' : 'false'" aria-label="Abrir o cerrar el menú"
+                class="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-200 hover:bg-white/10 md:hidden">
+            <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
     </div>
 
-    <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden {{ $esAdmin ? 'xl:hidden' : 'sm:hidden' }}">
-        <div class="pt-2 pb-3 space-y-1">
-            @if (auth()->user()->hasRole('administrador'))
-                <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
-                    Panel principal
-                </x-responsive-nav-link>
-
-                <x-responsive-nav-link :href="route('admin.usuarios.index')" :active="request()->routeIs('admin.usuarios.*')">
-                    Usuarios
-                </x-responsive-nav-link>
-
-                <x-responsive-nav-link :href="route('admin.mascotas.index')" :active="request()->routeIs('admin.mascotas.*')">
-                    Mascotas
-                </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.solicitudes-adopcion.index')" :active="request()->routeIs('admin.solicitudes-adopcion.*')">
-                    Solicitudes
-                </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.seguimientos.index')" :active="request()->routeIs('admin.seguimientos.*')">Seguimientos</x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.postulaciones-voluntariado.index')" :active="request()->routeIs('admin.postulaciones-voluntariado.*')">Postulaciones</x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.voluntarios.index')" :active="request()->routeIs('admin.voluntarios.*')">Voluntarios</x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.reportes.index')" :active="request()->routeIs('admin.reportes.*')">Reportes</x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.auditoria.index')" :active="request()->routeIs('admin.auditoria.*')">Auditoría</x-responsive-nav-link>
-            @elseif (auth()->user()->hasRole('ciudadano'))
-                <x-responsive-nav-link :href="route('mascotas.catalogo')" :active="request()->routeIs('mascotas.catalogo', 'mascotas.public.show', 'solicitudes-adopcion.create')">
-                    Mascotas
-                </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('solicitudes-adopcion.index')" :active="request()->routeIs('solicitudes-adopcion.*') && ! request()->routeIs('solicitudes-adopcion.create')">
-                    Mis solicitudes
-                </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('postulaciones-voluntariado.index')" :active="request()->routeIs('postulaciones-voluntariado.*')">Voluntariado</x-responsive-nav-link>
-            @elseif (auth()->user()->hasRole('voluntario'))
-                <x-responsive-nav-link :href="route('seguimientos.index')" :active="request()->routeIs('seguimientos.*')">Mis seguimientos</x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('postulaciones-voluntariado.index')" :active="request()->routeIs('postulaciones-voluntariado.index', 'postulaciones-voluntariado.show')">Mi postulación</x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('solicitudes-adopcion.index')" :active="request()->routeIs('solicitudes-adopcion.index', 'solicitudes-adopcion.show')">Mis solicitudes</x-responsive-nav-link>
-            @endif
+    {{-- Menú en celular --}}
+    <div :class="{'block': open, 'hidden': ! open}" class="hidden border-t border-white/10 md:hidden">
+        <div class="space-y-1 px-4 py-3">
+            @foreach ($enlaces as [$url, $texto, $activo])
+                <a href="{{ $url }}" @if ($activo) aria-current="page" @endif
+                   class="block rounded-xl px-4 py-2.5 text-sm font-semibold {{ $activo ? 'bg-amber-400 text-blue-950' : 'text-slate-200 hover:bg-white/10' }}">{{ $texto }}</a>
+            @endforeach
         </div>
-
-        <!-- Responsive Settings Options -->
-        <div class="pt-4 pb-1 border-t border-gray-200">
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-800">{{ Auth::user()->nombres }} {{ Auth::user()->apellidos }}</div>
-                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
+        <div class="border-t border-white/10 px-4 py-4">
+            <div class="flex items-center gap-3">
+                <span class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-400 text-sm font-bold text-blue-950" aria-hidden="true">{{ $iniciales }}</span>
+                <div class="min-w-0">
+                    <p class="truncate text-sm font-semibold">{{ $usuario->nombres }} {{ $usuario->apellidos }}</p>
+                    <p class="truncate text-xs text-slate-300">{{ $usuario->email }}</p>
+                </div>
             </div>
-
             <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')">
-                    Mi perfil
-                </x-responsive-nav-link>
-
-                <!-- Authentication -->
+                <a href="{{ route('profile.edit') }}" class="block rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-200 hover:bg-white/10">Mi perfil</a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-
-                    <x-responsive-nav-link :href="route('logout')"
-                            x-on:click.prevent="$el.closest('form').submit()">
-                        Cerrar sesión
-                    </x-responsive-nav-link>
+                    <button type="submit" class="block w-full rounded-xl px-4 py-2.5 text-left text-sm font-semibold text-slate-200 hover:bg-white/10">Cerrar sesión</button>
                 </form>
             </div>
         </div>

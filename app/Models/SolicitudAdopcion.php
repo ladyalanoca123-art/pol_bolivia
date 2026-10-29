@@ -80,6 +80,21 @@ class SolicitudAdopcion extends Model
         return self::ESTADOS_LEGIBLES[$this->estado] ?? ucfirst(str_replace('_', ' ', $this->estado));
     }
 
+    /** Una línea para la persona que adopta: qué pasa a continuación con su solicitud. */
+    public function queSigue(): string
+    {
+        return match ($this->estado) {
+            'pendiente' => 'La fundación revisará tu solicitud y te escribirá por WhatsApp.',
+            'en_espera' => 'Estamos evaluando tu solicitud; te contactaremos para continuar.',
+            'aprobada' => 'La mascota está reservada para ti. Te contactaremos para coordinar la entrega.',
+            'aceptada' => 'Adopción concretada. La fundación hará 2 visitas de seguimiento.',
+            'no_concretada' => 'La entrega no se concretó. La fundación se pondrá en contacto contigo.',
+            'cerrada' => 'La mascota encontró un hogar mediante otra solicitud.',
+            'cancelada' => 'Esta solicitud fue cancelada.',
+            default => 'Si necesitas orientación, comunícate con la fundación.',
+        };
+    }
+
     public function estaActiva(): bool
     {
         return in_array($this->estado, self::ESTADOS_ACTIVOS, true);

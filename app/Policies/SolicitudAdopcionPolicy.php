@@ -79,7 +79,7 @@ class SolicitudAdopcionPolicy
             && $this->hasPendingDecision($solicitud);
     }
 
-    /** Botones «Escribir por WhatsApp» y «Llamar» junto a los datos del solicitante. */
+    /** Botón «Escribir por WhatsApp» junto a los datos del solicitante. */
     public function contact(User $user, SolicitudAdopcion $solicitud): bool
     {
         return $this->isActiveAdministrator($user)

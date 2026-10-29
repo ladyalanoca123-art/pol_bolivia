@@ -79,13 +79,13 @@ class AuthorizationTest extends TestCase
         $this->get('/admin/panel')->assertRedirect(route('login'));
     }
 
-    public function test_citizen_dashboard_redirects_to_profile(): void
+    public function test_citizen_dashboard_redirects_to_mi_espacio(): void
     {
         $citizen = User::factory()->create(['rol' => 'ciudadano']);
 
         $this->actingAs($citizen)
             ->get('/dashboard')
-            ->assertRedirect(route('profile.edit'));
+            ->assertRedirect(route('inicio'));
 
         $this->actingAs($citizen)
             ->get('/profile')
@@ -101,12 +101,12 @@ class AuthorizationTest extends TestCase
             ->assertRedirect(route('admin.dashboard'));
     }
 
-    public function test_volunteer_dashboard_redirects_to_profile(): void
+    public function test_volunteer_dashboard_redirects_to_mi_espacio(): void
     {
         $volunteer = User::factory()->create(['rol' => 'voluntario']);
 
         $this->actingAs($volunteer)
             ->get('/dashboard')
-            ->assertRedirect(route('profile.edit'));
+            ->assertRedirect(route('inicio'));
     }
 }

@@ -5,9 +5,11 @@
     'ancho' => 'max-w-7xl', // max-w-7xl, max-w-5xl o max-w-3xl
     'volver' => null,       // URL de «Volver»
     'volverTexto' => 'Volver',
+    'avisos' => true,       // false: la pantalla muestra sus propios avisos (p. ej. «Mi perfil» usa códigos en session('status'))
 ])
 {{--
-    Estructura común de las pantallas del panel de administración: encabezado, acciones, avisos de la sesión y contenido.
+    Estructura común de las pantallas del panel de administración y de las del ciudadano y el voluntario:
+    encabezado, acciones, avisos de la sesión y contenido.
     Mismo estilo que el panel principal, Reportes y Auditoría. Uso: <x-admin.pagina titulo="…"> … </x-admin.pagina>
 --}}
 <x-app-layout>
@@ -32,7 +34,7 @@
                 @endisset
             </header>
 
-            @if (session('status'))
+            @if ($avisos && session('status'))
                 <div class="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" role="status">
                     <svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L8 12.6l7.3-7.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
                     <span>{{ session('status') }}</span>

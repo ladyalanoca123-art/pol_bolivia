@@ -23,7 +23,7 @@ return [
         'actividad_limite' => 8,
     ],
 
-    // Botones «Escribir por WhatsApp» y «Llamar» (App\Support\ContactoTelefonico): solo para la administración y
+    // Botón «Escribir por WhatsApp» (App\Support\ContactoTelefonico): solo para la administración y
     // para el voluntario asignado al seguimiento. :nombre, :mascota y :voluntario se reemplazan al armar el enlace.
     'whatsapp' => [
         // Prefijo internacional de Bolivia, sin «+».

@@ -95,7 +95,7 @@ class AjustesFlujoAdopcionSeguimientoTest extends TestCase
         $this->actingAs($this->admin)->get(route('admin.solicitudes-adopcion.index'))->assertSee('Reservada');
 
         $this->actingAs($solicitud->solicitante)->get(route('solicitudes-adopcion.show', $solicitud))
-            ->assertSee('Estado: Reservada')
+            ->assertSee('Reservada')
             ->assertSee('La mascota quedó reservada para ti.')
             ->assertDontSee('Fecha de entrega acordada');
     }

@@ -1,9 +1,3 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Voluntariado POL</h2>
-        <p class="mt-1 text-sm text-gray-600">Ayuda a rescatar, cuidar y acompañar a las mascotas en adopción.</p>
-    </x-slot>
-
     @php
         $coloresEstado = [
             'pendiente' => 'bg-amber-100 text-amber-800 ring-amber-300',
@@ -16,20 +10,17 @@
         $puedePostularse = auth()->user()->hasRole('ciudadano');
     @endphp
 
-    <div class="py-12"><div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        @if (session('status'))
-            <div class="mb-6 rounded-md bg-emerald-50 p-4 text-sm text-emerald-700">{{ session('status') }}</div>
-        @endif
+<x-admin.pagina titulo="Voluntariado POL" seccion="Mi espacio" descripcion="Ayuda a rescatar, cuidar y acompañar a las mascotas en adopción." ancho="max-w-5xl">
 
         @if ($postulaciones->total() === 0)
             {{-- Estado vacío --}}
-            <div class="rounded-2xl bg-white px-6 py-12 text-center shadow-sm">
-                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-950 text-amber-300"><svg class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="9" r="2.2"/><circle cx="9.5" cy="5" r="2.2"/><circle cx="14.5" cy="5" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M12 10.5c-3.2 0-6 3.6-6 6.3 0 1.9 1.5 2.7 3 2.7 1.2 0 2-.6 3-.6s1.8.6 3 .6c1.5 0 3-.8 3-2.7 0-2.7-2.8-6.3-6-6.3z"/></svg></div>
+            <div class="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center">
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-300"><svg class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="9" r="2.2"/><circle cx="9.5" cy="5" r="2.2"/><circle cx="14.5" cy="5" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M12 10.5c-3.2 0-6 3.6-6 6.3 0 1.9 1.5 2.7 3 2.7 1.2 0 2-.6 3-.6s1.8.6 3 .6c1.5 0 3-.8 3-2.7 0-2.7-2.8-6.3-6-6.3z"/></svg></div>
                 @if ($puedePostularse)
                     <h3 class="mt-4 text-lg font-bold text-blue-950">Todavía no te has postulado</h3>
 
                     <div class="mx-auto mt-6 max-w-md text-left">
-                        <h4 class="text-sm font-bold uppercase tracking-wider text-blue-800">¿Cómo funciona?</h4>
+                        <h4 class="text-sm font-semibold text-blue-950">¿Cómo funciona?</h4>
                         <ol class="mt-3 space-y-3">
                             @foreach ([
                                 'Completa la postulación (10 preguntas, unos 5 minutos).',
@@ -64,8 +55,8 @@
 
             <ul class="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 @foreach ($postulaciones as $postulacion)
-                    <li class="flex gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
-                        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-blue-950 text-amber-300"><svg class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="9" r="2.2"/><circle cx="9.5" cy="5" r="2.2"/><circle cx="14.5" cy="5" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M12 10.5c-3.2 0-6 3.6-6 6.3 0 1.9 1.5 2.7 3 2.7 1.2 0 2-.6 3-.6s1.8.6 3 .6c1.5 0 3-.8 3-2.7 0-2.7-2.8-6.3-6-6.3z"/></svg></div>
+                    <li class="flex gap-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+                        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-400"><svg class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="9" r="2.2"/><circle cx="9.5" cy="5" r="2.2"/><circle cx="14.5" cy="5" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M12 10.5c-3.2 0-6 3.6-6 6.3 0 1.9 1.5 2.7 3 2.7 1.2 0 2-.6 3-.6s1.8.6 3 .6c1.5 0 3-.8 3-2.7 0-2.7-2.8-6.3-6-6.3z"/></svg></div>
                         <div class="flex min-w-0 flex-1 flex-col">
                             <div class="flex flex-wrap items-start justify-between gap-2">
                                 <h3 class="text-base font-bold text-blue-950">Postulación del {{ $postulacion->created_at->format('d/m/Y') }}</h3>
@@ -79,7 +70,6 @@
                 @endforeach
             </ul>
 
-            <div class="mt-6">{{ $postulaciones->links() }}</div>
+            @if ($postulaciones->hasPages())<div class="mt-6">{{ $postulaciones->links() }}</div>@endif
         @endif
-    </div></div>
-</x-app-layout>
+</x-admin.pagina>

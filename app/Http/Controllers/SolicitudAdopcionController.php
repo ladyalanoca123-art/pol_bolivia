@@ -92,7 +92,7 @@ class SolicitudAdopcionController extends Controller
     {
         abort_unless($solicitud->solicitante_id === auth()->id(), 404);
 
-        $solicitud->load('mascota');
+        $solicitud->load(['mascota.fotos' => fn ($query) => $query->where('tipo', 'foto')->orderByDesc('es_principal')->orderBy('orden')]);
 
         return view('solicitudes-adopcion.show', compact('solicitud'));
     }

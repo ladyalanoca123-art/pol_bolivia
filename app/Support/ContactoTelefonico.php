@@ -5,7 +5,7 @@ namespace App\Support;
 use App\Rules\TelefonoBoliviano;
 
 /**
- * Enlaces «Escribir por WhatsApp» (https://wa.me/591XXXXXXXX?text=...) y «Llamar» (tel:+591XXXXXXXX) a partir del
+ * Enlace «Escribir por WhatsApp» (https://wa.me/591XXXXXXXX?text=...) a partir del
  * teléfono guardado de una persona. Solo números móviles bolivianos válidos (TelefonoBoliviano::PATRON); con un
  * teléfono vacío o inválido no hay enlaces y la vista muestra un aviso.
  */
@@ -37,13 +37,6 @@ class ContactoTelefonico
         }
 
         return 'https://wa.me/'.$numero.'?text='.rawurlencode(self::mensaje($clave, $datos));
-    }
-
-    public static function llamada(?string $telefono): ?string
-    {
-        $numero = self::numeroInternacional($telefono);
-
-        return $numero === null ? null : 'tel:+'.$numero;
     }
 
     /** Texto del mensaje con :nombre, :mascota y :voluntario reemplazados. */
