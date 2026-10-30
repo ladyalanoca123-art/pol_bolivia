@@ -32,6 +32,9 @@ class RegisterRequest extends FormRequest
         return [
             ...$this->reglasDatosPersonales(),
             'password' => ['required', 'string', 'confirmed', Password::defaults()],
+            // Dos casillas separadas y obligatorias; la aceptación queda registrada (aceptaciones_legales).
+            'acepta_terminos' => ['accepted'],
+            'acepta_privacidad' => ['accepted'],
             // Honeypot: campo oculto que una persona nunca ve ni completa.
             'sitio_web' => ['prohibited'],
         ];
@@ -46,6 +49,8 @@ class RegisterRequest extends FormRequest
         return [
             ...$this->mensajesDatosPersonales(),
             ...self::mensajesContrasena(),
+            'acepta_terminos.accepted' => 'Para crear tu cuenta, confirma que tienes '.config('pol.legal.edad_minima').' años o más y acepta los Términos y condiciones.',
+            'acepta_privacidad.accepted' => 'Para crear tu cuenta, acepta la Política de privacidad.',
             'sitio_web.prohibited' => 'No pudimos procesar tu registro. Inténtalo de nuevo.',
         ];
     }

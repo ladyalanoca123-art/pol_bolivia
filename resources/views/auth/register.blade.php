@@ -20,12 +20,13 @@
 
     // Orden de los campos en el formulario: el resumen sigue este orden.
     $camposConError = array_values(array_filter(
-        ['nombres', 'apellidos', 'email', 'telefono', 'password', 'password_confirmation'],
+        ['nombres', 'apellidos', 'email', 'telefono', 'password', 'password_confirmation', 'acepta_terminos', 'acepta_privacidad'],
         fn (string $nombre) => $errors->has($nombre)
     ));
     $etiquetas = [
         'nombres' => 'Nombres', 'apellidos' => 'Apellidos', 'email' => 'Correo electrónico',
         'telefono' => 'Teléfono', 'password' => 'Contraseña', 'password_confirmation' => 'Confirmar contraseña',
+        'acepta_terminos' => 'Términos y condiciones', 'acepta_privacidad' => 'Política de privacidad',
     ];
     // Trazos de los iconos de mostrar / ocultar contraseña (los mismos del login).
     $iconoOjo = 'M2.04 12.32a1.01 1.01 0 0 1 0-.64C3.42 7.51 7.36 4.5 12 4.5c4.64 0 8.57 3 9.96 7.18.07.2.07.43 0 .64C20.58 16.49 16.64 19.5 12 19.5c-4.64 0-8.57-3-9.96-7.18Z';
@@ -256,6 +257,24 @@
                             </ul>
                         </div>
 
+                        {{-- Dos casillas separadas y obligatorias. La aceptación queda registrada (aceptaciones_legales). --}}
+                        <div class="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
+                            @foreach ([
+                                'acepta_terminos' => ['Tengo '.config('pol.legal.edad_minima').' años o más y acepto los', 'Términos y condiciones', route('legal.terminos')],
+                                'acepta_privacidad' => ['Acepto la', 'Política de privacidad', route('legal.privacidad')],
+                            ] as $campo => [$texto, $documento, $enlace])
+                                <div>
+                                    <label class="flex items-start gap-3 text-sm text-slate-700">
+                                        <input type="checkbox" name="{{ $campo }}" value="1" required @checked(old($campo))
+                                               class="mt-0.5 h-5 w-5 shrink-0 rounded border-slate-300 text-blue-900 focus:ring-blue-700/30"
+                                               @error($campo) aria-invalid="true" aria-describedby="{{ $campo }}-error" @enderror>
+                                        <span>{{ $texto }} <a href="{{ $enlace }}" target="_blank" rel="noopener" class="font-semibold text-blue-800 underline hover:text-blue-950">{{ $documento }}<span class="sr-only"> (se abre en una pestaña nueva)</span></a>.</span>
+                                    </label>
+                                    @error($campo)<p id="{{ $campo }}-error" class="ml-8 mt-1 text-sm font-medium text-red-700">{{ $message }}</p>@enderror
+                                </div>
+                            @endforeach
+                        </div>
+
                         <button type="submit"
                                 class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-amber-400 px-6 text-base font-extrabold text-blue-950 shadow-sm hover:bg-amber-500 focus:outline-none focus:ring-4 focus:ring-amber-400/40 disabled:cursor-wait disabled:opacity-80"
                                 x-bind:disabled="enviando" x-bind:aria-busy="enviando.toString()" aria-busy="false">
@@ -263,7 +282,7 @@
                             <span x-text="enviando ? 'Creando tu cuenta…' : 'Crear cuenta'">Crear cuenta</span>
                         </button>
 
-                        <p class="text-center text-xs leading-relaxed text-slate-500"><svg class="-mt-0.5 mr-1 inline h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5Zm-3 8V7a3 3 0 1 1 6 0v3H9Z"/></svg>Tus datos están protegidos y solo se usan para gestionar adopciones y voluntariado.</p>
+                        <p class="text-center text-xs leading-relaxed text-slate-500"><svg class="-mt-0.5 mr-1 inline h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5Zm-3 8V7a3 3 0 1 1 6 0v3H9Z"/></svg>Tus datos están protegidos y solo se usan para gestionar adopciones y voluntariado. <a href="{{ route('legal.cookies') }}" target="_blank" rel="noopener" class="underline hover:text-slate-700">Cookies</a></p>
                     </form>
 
                     <div class="mt-5 border-t border-slate-200 pt-4 text-center text-sm text-slate-600">

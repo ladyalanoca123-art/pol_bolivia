@@ -51,7 +51,9 @@ class UserController extends Controller
     {
         Gate::authorize('view', $user);
 
-        return view('admin.usuarios.show', compact('user'));
+        $aceptaciones = $user->aceptacionesLegales()->orderByDesc('aceptado_at')->orderBy('documento')->get();
+
+        return view('admin.usuarios.show', compact('user', 'aceptaciones'));
     }
 
     public function edit(User $user): View

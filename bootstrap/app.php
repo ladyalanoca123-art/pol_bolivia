@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CabecerasSeguridad;
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\ExigirAceptacionLegal;
 use App\Http\Middleware\ExpulsarCuentaDesactivada;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -23,11 +24,13 @@ return Application::configure(basePath: dirname(__DIR__))
         // AuthenticateSession: si la contraseña cambia (o se usa logoutOtherDevices), las sesiones
         // abiertas con la contraseña anterior se cierran en su siguiente petición.
         // ExpulsarCuentaDesactivada: una cuenta desactivada pierde su sesión y su «Recordarme».
+        // ExigirAceptacionLegal: quien no aceptó los Términos y la Política de privacidad vigentes los acepta primero.
         $middleware->web(append: [
             AuthenticateSession::class,
             CabecerasSeguridad::class,
             'throttle:general',
             ExpulsarCuentaDesactivada::class,
+            ExigirAceptacionLegal::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

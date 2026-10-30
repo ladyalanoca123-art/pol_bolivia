@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VoluntarioController as AdminVoluntarioController;
 use App\Http\Controllers\CatalogoMascotaController;
 use App\Http\Controllers\DashboardRedirectController;
+use App\Http\Controllers\DocumentoLegalController;
 use App\Http\Controllers\MiEspacioController;
 use App\Http\Controllers\PostulacionVoluntariadoController;
 use App\Http\Controllers\ProfileController;
@@ -32,6 +33,20 @@ Route::middleware('throttle:publico')->group(function () {
         ->whereIn('accion', ['registro', 'inicio'])
         ->middleware('guest')
         ->name('mascotas.solicitar-acceso');
+
+    // Documentos legales, abiertos para todos (también con sesión y sin haberlos aceptado).
+    Route::get('/terminos', [DocumentoLegalController::class, 'terminos'])->name('legal.terminos');
+    Route::get('/privacidad', [DocumentoLegalController::class, 'privacidad'])->name('legal.privacidad');
+    Route::get('/cookies', [DocumentoLegalController::class, 'cookies'])->name('legal.cookies');
+});
+
+// Cuentas creadas antes de los documentos legales, o una versión nueva: aceptarlos antes de seguir
+// (App\Http\Middleware\ExigirAceptacionLegal).
+Route::middleware('auth')->group(function () {
+    Route::get('/aceptar-condiciones', [DocumentoLegalController::class, 'aceptar'])->name('legal.aceptar');
+    Route::post('/aceptar-condiciones', [DocumentoLegalController::class, 'guardarAceptacion'])
+        ->middleware('throttle:formularios')
+        ->name('legal.aceptar.guardar');
 });
 
 Route::middleware('auth')->group(function () {

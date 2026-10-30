@@ -81,6 +81,12 @@ class User extends Authenticatable
         return $this->hasMany(Incidencia::class, 'reportado_por');
     }
 
+    /** Constancias de aceptación de los Términos y la Política de privacidad (tabla aceptaciones_legales). */
+    public function aceptacionesLegales(): HasMany
+    {
+        return $this->hasMany(AceptacionLegal::class, 'usuario_id');
+    }
+
     public function incidenciasAtendidas(): HasMany
     {
         return $this->hasMany(Incidencia::class, 'atendida_por');

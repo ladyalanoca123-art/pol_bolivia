@@ -134,7 +134,14 @@
             {{-- Barra final; el margen derecho deja libre el botón flotante de WhatsApp --}}
             <div class="relative border-t border-sky-300/15">
                 <div class="mx-auto flex max-w-7xl flex-col gap-3 px-4 pb-24 pt-5 text-sm text-slate-300 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:pb-5 sm:pr-64 lg:px-8 lg:pr-72">
-                    <p><span class="font-semibold text-white">© {{ now()->year }} POL-Bolivia</span> | Hacedores de Sueños. Todos los derechos reservados.</p>
+                    <div class="space-y-2">
+                        <p><span class="font-semibold text-white">© {{ now()->year }} POL-Bolivia</span> | Hacedores de Sueños. Todos los derechos reservados.</p>
+                        <nav class="flex flex-wrap gap-x-4 gap-y-1 text-xs" aria-label="Documentos legales">
+                            <a href="{{ route('legal.terminos') }}" class="hover:text-white hover:underline">Términos y condiciones</a>
+                            <a href="{{ route('legal.privacidad') }}" class="hover:text-white hover:underline">Política de privacidad</a>
+                            <a href="{{ route('legal.cookies') }}" class="hover:text-white hover:underline">Política de cookies</a>
+                        </nav>
+                    </div>
                     <p class="flex items-center gap-2.5">{!! $iconoPie($corazon, 'h-5 w-5 text-sky-300') !!} Juntos por un futuro mejor <span class="mx-1 h-5 w-px bg-sky-300/30" aria-hidden="true"></span> {!! $iconoPie($huellaPie, 'h-5 w-5 text-sky-300') !!}</p>
                 </div>
             </div>

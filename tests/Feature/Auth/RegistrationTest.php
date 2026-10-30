@@ -25,6 +25,8 @@ class RegistrationTest extends TestCase
             'telefono' => '70000000',
             'password' => 'ClaveSegura123',
             'password_confirmation' => 'ClaveSegura123',
+            'acepta_terminos' => '1',
+            'acepta_privacidad' => '1',
         ]);
 
         $this->assertAuthenticated();
@@ -47,6 +49,8 @@ class RegistrationTest extends TestCase
             'telefono' => '70000000',
             'password' => 'ClaveSegura123',
             'password_confirmation' => 'ClaveSegura123',
+            'acepta_terminos' => '1',
+            'acepta_privacidad' => '1',
             'rol' => 'administrador',
         ]);
 
@@ -70,6 +74,8 @@ class RegistrationTest extends TestCase
             'telefono' => '70000000',
             'password' => 'ClaveSegura123',
             'password_confirmation' => 'ClaveSegura123',
+            'acepta_terminos' => '1',
+            'acepta_privacidad' => '1',
         ])->assertRedirect($intended);
     }
 }

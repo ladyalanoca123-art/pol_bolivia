@@ -263,6 +263,8 @@ class RegistroValidacionTest extends TestCase
             'email' => 'no-es-correo',
             'password' => 'Secreta-que-no-vuelve-1',
             'password_confirmation' => 'Secreta-que-no-vuelve-1',
+            'acepta_terminos' => '1',
+            'acepta_privacidad' => '1',
         ]));
 
         $html = $this->get('/register')->getContent();
@@ -334,6 +336,8 @@ class RegistroValidacionTest extends TestCase
             'telefono' => '71234567',
             'password' => self::CLAVE,
             'password_confirmation' => self::CLAVE,
+            'acepta_terminos' => '1',
+            'acepta_privacidad' => '1',
         ], $cambios);
     }
 }

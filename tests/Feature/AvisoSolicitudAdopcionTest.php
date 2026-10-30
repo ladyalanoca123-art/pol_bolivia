@@ -129,6 +129,7 @@ class AvisoSolicitudAdopcionTest extends TestCase
         $this->post('/register', [
             'nombres' => 'Ana', 'apellidos' => 'Quispe', 'email' => 'ana.aviso@example.test', 'telefono' => '',
             'password' => 'ClaveSegura123', 'password_confirmation' => 'ClaveSegura123',
+            'acepta_terminos' => '1', 'acepta_privacidad' => '1',
         ])->assertRedirect(route('solicitudes-adopcion.create', $mascota));
 
         // Petición nueva: el usuario se vuelve a leer de la base (rol y estado los asigna PostgreSQL).

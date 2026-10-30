@@ -23,3 +23,13 @@
     .vista-personal .dato-etiqueta { @apply text-[13px] font-medium normal-case tracking-normal text-slate-500; }
     .vista-personal .insignia { @apply bg-transparent px-0 font-medium text-slate-600 ring-0; }
 }
+
+/* Documentos legales (resources/views/legal, componente x-documento-legal): texto largo y fácil de leer. */
+@layer components {
+    .legal h2 { @apply mt-9 text-xl font-bold text-blue-950; }
+    .legal h3 { @apply mt-5 font-semibold text-blue-950; }
+    .legal p { @apply mt-3 leading-relaxed; }
+    .legal ul { @apply mt-3 list-disc space-y-1.5 pl-5 leading-relaxed; }
+    .legal strong { @apply font-semibold text-slate-900; }
+    .legal a { @apply font-semibold text-blue-800 underline hover:text-blue-950; }
+}

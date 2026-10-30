@@ -45,6 +45,13 @@ return [
         'correo' => env('POL_CORREO_CONTACTO', 'contacto.polbolivia@gmail.com'),
     ],
 
+    // Documentos legales (resources/views/legal). Al cambiar el texto de los Términos o de la Política de privacidad,
+    // sube la versión (fecha): cada persona deberá aceptarlos de nuevo al iniciar sesión (App\Support\AceptacionDocumentosLegales).
+    'legal' => [
+        'version' => '2026-10-29',
+        'edad_minima' => 18,
+    ],
+
     // Redes oficiales de POL-Bolivia: pie de las páginas públicas y aviso de «ENVIAR SOLICITUD» (x-redes-sociales).
     'redes' => [
         'whatsapp' => 'https://wa.me/59175239523',

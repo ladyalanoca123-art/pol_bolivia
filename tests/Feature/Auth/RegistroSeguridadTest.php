@@ -119,6 +119,8 @@ class RegistroSeguridadTest extends TestCase
             'telefono' => '71234567',
             'password' => 'ClaveSegura123',
             'password_confirmation' => 'ClaveSegura123',
+            'acepta_terminos' => '1',
+            'acepta_privacidad' => '1',
         ], $cambios);
     }
 }

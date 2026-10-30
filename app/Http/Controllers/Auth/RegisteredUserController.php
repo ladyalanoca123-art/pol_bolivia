@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
+use App\Support\AceptacionDocumentosLegales;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -33,13 +35,19 @@ class RegisteredUserController extends Controller
         // la base de datos; nunca se toman del formulario.
         $datos = $request->validated();
 
-        $user = User::create([
-            'nombres' => $datos['nombres'],
-            'apellidos' => $datos['apellidos'],
-            'email' => $datos['email'],
-            'telefono' => $datos['telefono'] ?? null,
-            'password' => Hash::make($datos['password']),
-        ]);
+        // La cuenta y la constancia de que aceptó los Términos y la Política de privacidad se guardan juntas.
+        $user = DB::transaction(function () use ($datos, $request): User {
+            $user = User::create([
+                'nombres' => $datos['nombres'],
+                'apellidos' => $datos['apellidos'],
+                'email' => $datos['email'],
+                'telefono' => $datos['telefono'] ?? null,
+                'password' => Hash::make($datos['password']),
+            ]);
+            AceptacionDocumentosLegales::registrar($user, $request, 'registro');
+
+            return $user;
+        });
 
         event(new Registered($user));
 
