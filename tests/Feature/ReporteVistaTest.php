@@ -44,9 +44,11 @@ class ReporteVistaTest extends TestCase
     public function test_indicadores_de_gestion_del_periodo_y_del_anterior(): void
     {
         // La aprobación se fecha en PostgreSQL y es inmutable; el período se alinea con el reloj real.
+        // Se usa un período personalizado de 30 días que termina hoy (y no «este mes»), para que los
+        // datos del caso queden dentro del período cualquiera sea el día del mes en que se ejecute.
         $this->travelBack();
-        $hoy = CarbonImmutable::now(PeriodoReporte::ZONA);
-        $inicioMes = $hoy->startOfMonth();
+        $hoy = CarbonImmutable::now(PeriodoReporte::ZONA)->startOfDay();
+        $inicio = $hoy->subDays(29);
         $ahora = CarbonImmutable::parse(DB::selectOne('select CURRENT_TIMESTAMP as ahora')->ahora);
 
         $aceptada = $this->resuelta('aceptada', $ahora->subDays(2)->toDateTimeString(), $ahora->toDateTimeString());
@@ -55,23 +57,23 @@ class ReporteVistaTest extends TestCase
         ]);
         $this->resuelta('rechazada', $ahora->subDays(6)->toDateTimeString(), $ahora->toDateTimeString());
 
-        $decisionAnterior = $inicioMes->subMonthNoOverflow()->addDays(9);
+        $decisionAnterior = $inicio->subDays(30)->addDays(9);
         $this->resuelta('rechazada', $decisionAnterior->subDay()->toDateTimeString(), $decisionAnterior->toDateTimeString());
 
         [$seguimiento, $voluntario] = $this->seguimientoActivo($ahora);
         $incidencia = Incidencia::create(['seguimiento_id' => $seguimiento->id, 'reportado_por' => $voluntario->id, 'tipo' => 'salud', 'descripcion' => 'x', 'estado' => 'pendiente']);
         $incidencia->update(['estado' => 'atendida', 'comentarios_resolucion' => 'Resuelta', 'atendida_por' => $this->admin->id, 'atendida_at' => now()]);
-        DB::table('incidencias')->where('id', $incidencia->id)->update(['created_at' => $ahora->startOfMonth()->addDay()->toDateTimeString(), 'atendida_at' => $ahora->startOfMonth()->addDays(2)->addHours(12)->toDateTimeString()]);
-        $this->visita($seguimiento, $voluntario, $ahora->startOfMonth()->addDays(4)->toDateString(), 'realizada');
-        $this->visita($seguimiento, $voluntario, $ahora->startOfMonth()->addDays(5)->toDateString(), 'no_asistio');
+        DB::table('incidencias')->where('id', $incidencia->id)->update(['created_at' => $inicio->addDay()->toDateTimeString(), 'atendida_at' => $inicio->addDays(2)->addHours(12)->toDateTimeString()]);
+        $this->visita($seguimiento, $voluntario, $inicio->addDays(4)->toDateString(), 'realizada');
+        $this->visita($seguimiento, $voluntario, $inicio->addDays(5)->toDateString(), 'no_asistio');
         [$otro, $otroVoluntario] = $this->seguimientoActivo($ahora);
-        $this->visita($otro, $otroVoluntario, $ahora->startOfMonth()->addDays(6)->toDateString(), 'programada');
+        $this->visita($otro, $otroVoluntario, $inicio->addDays(6)->toDateString(), 'programada');
         $this->visita($otro, $otroVoluntario, $ahora->addDay()->toDateString(), 'realizada');
 
         $postulacion = PostulacionVoluntariado::create(['usuario_id' => User::factory()->create(['rol' => 'ciudadano'])->id, 'estado' => 'pendiente', ...CuestionarioVoluntariadoDatos::registro()]);
-        DB::table('postulaciones_voluntariado')->where('id', $postulacion->id)->update(['created_at' => $ahora->startOfMonth()->addDay()->toDateTimeString(), 'estado' => 'rechazada', 'revisado_por' => $this->admin->id, 'revisado_at' => $ahora->startOfMonth()->addDays(10)->toDateTimeString()]);
+        DB::table('postulaciones_voluntariado')->where('id', $postulacion->id)->update(['created_at' => $inicio->addDay()->toDateTimeString(), 'estado' => 'rechazada', 'revisado_por' => $this->admin->id, 'revisado_at' => $inicio->addDays(10)->toDateTimeString()]);
 
-        $g = app(ReporteAdministrador::class)->gestion(PeriodoReporte::crear('este_mes'));
+        $g = app(ReporteAdministrador::class)->gestion(PeriodoReporte::crear('personalizado', $inicio->toDateString(), $hoy->toDateString()));
 
         $this->assertSame(['actual' => 75.0, 'anterior' => 0.0, 'aceptadas' => 3, 'resueltas' => 4], $g['tasa_aprobacion']);
         $this->assertSame(['actual' => 3.0, 'anterior' => 1.0, 'diferencia' => 2.0], $g['tiempo_respuesta']);
