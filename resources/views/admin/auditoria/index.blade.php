@@ -107,7 +107,7 @@
                 <div class="mt-4 flex flex-wrap items-center gap-3">
                     <button type="submit" class="inline-flex min-h-10 items-center rounded-full bg-blue-950 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2">Aplicar filtros</button>
                     @if ($hayFiltros)
-                        <a href="{{ route('admin.auditoria.index') }}" class="text-sm font-semibold text-slate-600 hover:text-blue-950 hover:underline">Quitar filtros</a>
+                        <a href="{{ route('admin.auditoria.index') }}" class="admin-boton-borde">Quitar filtros</a>
                     @endif
                     <p class="text-sm text-slate-500 sm:ms-auto">{{ $auditorias->total() }} {{ $auditorias->total() === 1 ? 'registro' : 'registros' }}{{ $hayFiltros ? ' con estos filtros' : '' }}</p>
                 </div>
@@ -119,7 +119,7 @@
                     <p class="text-lg font-semibold text-blue-950">{{ $hayFiltros ? 'No hay movimientos con estos filtros' : 'Todavía no hay movimientos registrados' }}</p>
                     <p class="mx-auto mt-2 max-w-md text-sm text-slate-600">{{ $hayFiltros ? 'Prueba con otro módulo, otra persona u otras fechas.' : 'Cada vez que alguien cree, cambie o elimine información, aparecerá aquí.' }}</p>
                     @if ($hayFiltros)
-                        <a href="{{ route('admin.auditoria.index') }}" class="mt-5 inline-flex rounded-full border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Ver todos los movimientos</a>
+                        <a href="{{ route('admin.auditoria.index') }}" class="admin-boton-borde mt-5">Ver todos los movimientos</a>
                     @endif
                 </div>
             @else

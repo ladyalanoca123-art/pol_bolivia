@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\PanelAdministrador;
 use App\Support\RegistroSeguridad;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Lockout;
@@ -12,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -30,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->compartirAvisosDelPanel();
         $this->configurarLimitesDePeticiones();
         $this->configurarReglasDeContrasena();
         $this->registrarEventosDeSeguridad();
@@ -38,6 +41,21 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->isProduction()) {
             URL::forceScheme('https');
         }
+    }
+
+    /**
+     * Campana de avisos de la barra superior del panel (layouts/app): los avisos con casos de App\Services\PanelAdministrador.
+     * Solo para administradores activos; las demás cuentas no hacen ninguna consulta extra.
+     */
+    private function compartirAvisosDelPanel(): void
+    {
+        View::composer('layouts.app', function (\Illuminate\View\View $vista): void {
+            $usuario = auth()->user();
+
+            $vista->with('avisosCampana', $usuario?->estado && $usuario->hasRole('administrador')
+                ? app(PanelAdministrador::class)->avisosActivos()
+                : collect());
+        });
     }
 
     /**

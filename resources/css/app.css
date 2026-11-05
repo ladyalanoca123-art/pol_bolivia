@@ -7,11 +7,34 @@
 
 /* Formularios del panel de administración (resources/views/admin): mismo aspecto en todas las pantallas. */
 @layer components {
-    .admin-etiqueta { @apply block text-xs font-semibold uppercase tracking-wide text-slate-500; }
-    .admin-campo { @apply mt-1 block w-full rounded-lg border-slate-300 text-sm text-slate-900 shadow-sm focus:border-blue-800 focus:ring-blue-800; }
+    .admin-etiqueta { @apply block text-sm font-semibold text-slate-700; }
+    .admin-campo { @apply mt-1.5 block min-h-11 w-full rounded-lg border-slate-300 text-[15px] text-slate-900 shadow-sm focus:border-blue-800 focus:ring-blue-800; }
     .admin-archivo { @apply mt-1 block w-full text-sm text-slate-700 file:me-3 file:rounded-full file:border-0 file:bg-blue-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-900; }
     .admin-error { @apply mt-1 text-sm text-red-600; }
+    /* Botón de borde (Volver, Cancelar, Limpiar, Ver…): borde y texto oscuros para que se distinga sin acercarse. */
+    .admin-boton-borde { @apply inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-slate-400 bg-white px-4 text-sm font-semibold text-blue-950 shadow-sm transition hover:border-blue-900 hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2; }
     .admin-ayuda { @apply mt-1 text-xs text-slate-500; }
+}
+
+/*
+ * Escala de letra del panel de administración (layouts/app: <div class="panel-admin">). Las pantallas usan text-xs y
+ * text-sm en muchos lugares; dentro del panel suben a 13 px y 15 px para que todo se lea sin esfuerzo, sin tocar las
+ * páginas públicas ni las del ciudadano y el voluntario. Va fuera de las capas para prevalecer sobre las utilidades.
+ */
+.panel-admin .text-xs { font-size: 0.8125rem; line-height: 1.25rem; }
+.panel-admin .text-sm { font-size: 0.9375rem; line-height: 1.5rem; }
+
+/*
+ * Barra de desplazamiento del menú lateral del panel (layouts/admin-navigation: <nav class="menu-admin-desplazable">):
+ * fina (4 px) y del color del menú. Chrome y Edge usan ::-webkit-scrollbar; Firefox, scrollbar-width y scrollbar-color
+ * (se declaran solo en Firefox porque en Chrome anularían el ancho de 4 px).
+ */
+.menu-admin-desplazable::-webkit-scrollbar { width: 4px; }
+.menu-admin-desplazable::-webkit-scrollbar-track { background: transparent; }
+.menu-admin-desplazable::-webkit-scrollbar-thumb { background-color: rgb(147 197 253 / 0.3); border-radius: 9999px; }
+.menu-admin-desplazable::-webkit-scrollbar-thumb:hover { background-color: rgb(147 197 253 / 0.5); }
+@supports (-moz-appearance: none) {
+    .menu-admin-desplazable { scrollbar-width: thin; scrollbar-color: rgb(147 197 253 / 0.3) transparent; }
 }
 
 /*

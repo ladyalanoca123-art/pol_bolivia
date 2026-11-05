@@ -51,7 +51,7 @@
             </div>
             <div class="flex flex-wrap items-center gap-3 sm:col-span-2 lg:col-span-6">
                 <x-admin.boton>Buscar</x-admin.boton>
-                @if ($hayFiltros)<a href="{{ route('admin.mascotas.index') }}" class="text-sm font-semibold text-slate-600 hover:text-blue-950 hover:underline">Limpiar</a>@endif
+                @if ($hayFiltros)<a href="{{ route('admin.mascotas.index') }}" class="admin-boton-borde">Limpiar</a>@endif
                 <p class="text-sm text-slate-500 sm:ms-auto">{{ $mascotas->total() }} {{ $mascotas->total() === 1 ? 'mascota' : 'mascotas' }}</p>
             </div>
         </form>

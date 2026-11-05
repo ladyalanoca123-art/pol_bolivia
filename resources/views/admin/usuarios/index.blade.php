@@ -61,7 +61,7 @@
                                 <x-admin.boton variante="secundario" tamano="chico" :href="route('admin.usuarios.edit', $user)">Editar</x-admin.boton>
                             @endcan
                             @if ($user->hasRole('voluntario'))
-                                <a href="{{ route('admin.voluntarios.index') }}" class="px-1 text-xs text-slate-500 hover:text-blue-900 hover:underline" title="El estado de un voluntario se gestiona desde Voluntarios">Gestionar en Voluntarios</a>
+                                <a href="{{ route('admin.voluntarios.index') }}" class="px-1 text-sm font-semibold text-blue-800 underline underline-offset-2 hover:text-blue-950" title="El estado de un voluntario se gestiona desde Voluntarios">Gestionar en Voluntarios</a>
                             @elseif (auth()->user()->can('updateStatus', $user))
                                 <form method="POST" action="{{ route('admin.usuarios.estado.update', $user) }}">
                                     @csrf

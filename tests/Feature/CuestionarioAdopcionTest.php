@@ -238,7 +238,7 @@ class CuestionarioAdopcionTest extends TestCase
         $this->actingAs($this->administrador())
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('Solicitudes de adopción por revisar')
+            ->assertSee('Solicitudes pendientes')
             ->assertViewHas('indicadores', fn (array $i) => $i['solicitudesRojas'] === 1
                 && $i['solicitudesAmarillas'] === 2
                 && $i['solicitudesVerdes'] === 1);

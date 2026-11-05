@@ -11,7 +11,7 @@
             @php($activo = ($estadoActual ?? '') === $clave)
             <a href="{{ route('admin.solicitudes-adopcion.index', array_filter([...$filters, 'estado' => $clave ?: null])) }}"
                @if ($activo) aria-current="page" @endif
-               class="whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold transition {{ $activo ? 'bg-blue-950 text-white' : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50' }}">{{ $texto }}</a>
+               class="inline-flex min-h-10 items-center whitespace-nowrap rounded-full border px-4 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 {{ $activo ? 'border-blue-950 bg-blue-950 text-white' : 'border-slate-400 bg-white text-blue-950 hover:border-blue-900 hover:bg-blue-50' }}">{{ $texto }}</a>
         @endforeach
     </nav>
 
@@ -41,7 +41,7 @@
             </div>
             <div class="flex items-end gap-3">
                 <x-admin.boton>Filtrar</x-admin.boton>
-                @if ($hayFiltros)<a href="{{ route('admin.solicitudes-adopcion.index') }}" class="pb-2 text-sm font-semibold text-slate-600 hover:text-blue-950 hover:underline">Limpiar</a>@endif
+                @if ($hayFiltros)<a href="{{ route('admin.solicitudes-adopcion.index') }}" class="admin-boton-borde">Limpiar</a>@endif
             </div>
         </form>
     </x-admin.tarjeta>

@@ -60,15 +60,15 @@
                         @continue($clave === 'personalizado')
                         @php $activo = $periodoReporte?->tipo === $clave; @endphp
                         <a href="{{ route('admin.reportes.index', ['periodo' => $clave]) }}" @if ($activo) aria-current="true" @endif
-                           class="{{ $activo ? 'border-blue-950 bg-blue-950 text-white' : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400' }} inline-flex min-h-10 shrink-0 items-center whitespace-nowrap rounded-full border px-4 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">{{ $nombre }}</a>
+                           class="{{ $activo ? 'border-blue-950 bg-blue-950 text-white' : 'border-slate-400 bg-white text-blue-950 hover:border-blue-900 hover:bg-blue-50' }} inline-flex min-h-10 shrink-0 items-center whitespace-nowrap rounded-full border px-4 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">{{ $nombre }}</a>
                     @endforeach
                     @if ($conPeriodo)
-                        <a href="{{ route('admin.reportes.index') }}" class="inline-flex min-h-10 shrink-0 items-center whitespace-nowrap rounded-full px-3 text-sm font-medium text-slate-500 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">Quitar período</a>
+                        <a href="{{ route('admin.reportes.index') }}" class="admin-boton-borde shrink-0">Quitar período</a>
                     @endif
                 </nav>
 
                 <details class="group open:basis-full" @if ($personalizadoAbierto) open @endif>
-                    <summary class="{{ $periodoReporte?->tipo === 'personalizado' ? 'border-blue-950 bg-blue-950 text-white' : 'border-slate-300 bg-white text-slate-700' }} inline-flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-full border px-4 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+                    <summary class="{{ $periodoReporte?->tipo === 'personalizado' ? 'border-blue-950 bg-blue-950 text-white' : 'border-slate-400 bg-white text-blue-950 hover:border-blue-900 hover:bg-blue-50' }} inline-flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-full border px-4 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
                         <span aria-hidden="true">📅</span> Personalizado
                     </summary>
                     <form method="GET" action="{{ route('admin.reportes.index') }}" class="mt-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">

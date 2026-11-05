@@ -109,6 +109,12 @@ class PanelPrincipalTest extends TestCase
         $this->assertSame(1, $indicadores['solicitudesEnEvaluacion']);
         $this->assertSame(1, $indicadores['seguimientosActivos']);
         $this->assertSame(2, $indicadores['incidenciasAbiertas']);
+        // Tarjetas del panel: pendientes (las 4 de esta semana y la anterior menos la que pasó a evaluación,
+        // más la que quedó fuera de ambos periodos) y seguimientos sin voluntario.
+        $this->assertSame(4, $indicadores['solicitudesPendientes']);
+        $this->assertSame(1, $indicadores['seguimientosSinAsignar']);
+        $this->assertSame(Mascota::query()->where('estado', 'disponible')->count(), $indicadores['mascotasDisponibles']);
+        $this->assertSame(0, $indicadores['postulacionesPendientes']);
     }
 
     public function test_sin_solicitudes_anteriores_la_variacion_es_nuevo(): void
@@ -194,6 +200,33 @@ class PanelPrincipalTest extends TestCase
 
         $this->assertSame(0, $servicio->avisos($antesDelUmbral)['entregas_aprobadas_pendientes']['total']);
         $this->assertSame(1, $servicio->avisos($despuesDelUmbral)['entregas_aprobadas_pendientes']['total']);
+    }
+
+    public function test_la_campana_muestra_los_avisos_reales_en_todas_las_pantallas_del_panel(): void
+    {
+        // Una solicitud sin respuesta desde hace más de 7 días y una postulación sin revisar.
+        $this->solicitudEn($this->ahora->subDays(8));
+        $this->postulacionEn($this->ahora->subDays(8));
+
+        $avisos = app(PanelAdministrador::class)->avisosActivos($this->ahora);
+        $this->assertSame(['solicitudes_sin_respuesta', 'postulaciones_sin_revisar'], $avisos->pluck('clave')->all(), 'de la prioridad más alta a la más baja');
+        $this->assertSame([1, 1], $avisos->pluck('total')->all());
+        $this->assertSame(route('admin.solicitudes-adopcion.index', ['estado' => 'pendiente']), $avisos->first()['url']);
+
+        foreach (['admin.dashboard', 'admin.usuarios.index', 'admin.mascotas.index'] as $ruta) {
+            $this->actingAs($this->admin)->get(route($ruta))->assertOk()
+                ->assertSee('aria-label="Avisos: 2 pendientes"', false)
+                ->assertSee('Solicitudes sin respuesta (1)')
+                ->assertSee('Postulaciones sin revisar (1)');
+        }
+    }
+
+    public function test_sin_avisos_la_campana_no_muestra_el_punto_rojo(): void
+    {
+        $this->actingAs($this->admin)->get(route('admin.dashboard'))->assertOk()
+            ->assertSee('aria-label="Avisos: no hay pendientes"', false)
+            ->assertSee('Todo está al día.');
+        $this->assertTrue(app(PanelAdministrador::class)->avisosActivos($this->ahora)->isEmpty());
     }
 
     public function test_los_avisos_usan_plural(): void

@@ -19,13 +19,13 @@ class AuthorizationTest extends TestCase
             ->assertOk()
             ->assertSee('Panel principal')
             // Bloques del panel operativo (resources/views/admin/dashboard.blade.php).
-            ->assertSee('Solicitudes nuevas (7 días)')
-            ->assertSee('En evaluación')
+            ->assertSee('Solicitudes pendientes')
             ->assertSee('Seguimientos activos')
-            ->assertSee('Incidencias abiertas')
-            ->assertSee('Requiere tu atención')
+            ->assertSee('Mascotas disponibles')
+            ->assertSee('Postulaciones por revisar')
+            ->assertSee('Necesitan tu atención')
             ->assertSee('Agenda de la semana')
-            ->assertSee('Actividad reciente');
+            ->assertSee('Registrar mascota');
 
         $this->assertSame([
             'mascotas' => 0,

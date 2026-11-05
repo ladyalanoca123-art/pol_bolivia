@@ -14,19 +14,19 @@
 --}}
 <x-app-layout>
     <div class="min-h-[calc(100vh-4rem)] bg-slate-50">
-        <div class="mx-auto {{ $ancho }} space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <div class="mx-auto {{ $ancho }} space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
             @if ($volver)
-                <a href="{{ $volver }}" class="inline-flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-blue-950">
-                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.7 15.3a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4l4.6-4.6a1 1 0 1 1 1.4 1.4L8.8 10l3.9 3.9a1 1 0 0 1 0 1.4Z" clip-rule="evenodd"/></svg>
+                <a href="{{ $volver }}" class="admin-boton-borde !min-h-11 ps-3">
+                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.7 15.3a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4l4.6-4.6a1 1 0 1 1 1.4 1.4L8.8 10l3.9 3.9a1 1 0 0 1 0 1.4Z" clip-rule="evenodd"/></svg>
                     {{ $volverTexto }}
                 </a>
             @endif
 
             <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div class="min-w-0">
-                    @if ($seccion)<p class="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">{{ $seccion }}</p>@endif
-                    <h1 class="mt-1 text-2xl font-bold text-blue-950 sm:text-3xl">{{ $titulo }}</h1>
-                    @if ($descripcion)<p class="mt-1 max-w-3xl text-sm text-slate-600 sm:text-base">{{ $descripcion }}</p>@endif
+                    @if ($seccion)<p class="text-[13px] font-semibold uppercase tracking-[0.14em] text-amber-700">{{ $seccion }}</p>@endif
+                    <h1 class="mt-1 text-[28px] font-bold leading-tight text-blue-950 sm:text-[30px]">{{ $titulo }}</h1>
+                    @if ($descripcion)<p class="mt-2 max-w-3xl text-base text-slate-600">{{ $descripcion }}</p>@endif
                     {{ $subtitulo ?? '' }}
                 </div>
                 @isset($acciones)

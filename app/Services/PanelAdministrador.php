@@ -87,6 +87,12 @@ class PanelAdministrador
             'solicitudesEnEvaluacion' => SolicitudAdopcion::query()->where('estado', 'en_espera')->count(),
             'seguimientosActivos' => SeguimientoAdopcion::query()->where('estado', 'activo')->count(),
             'incidenciasAbiertas' => $this->incidenciasAbiertas()->count(),
+            // Tarjetas del panel: lo que espera una decisión y lo que está disponible.
+            'solicitudesPendientes' => SolicitudAdopcion::query()->where('estado', 'pendiente')->count(),
+            'solicitudesUrgentes' => SolicitudAdopcion::query()->where('estado', 'pendiente')->where('nivel_alerta', 'rojo')->count(),
+            'seguimientosSinAsignar' => SeguimientoAdopcion::query()->where('estado', 'sin_asignar')->count(),
+            'mascotasDisponibles' => Mascota::query()->where('estado', 'disponible')->count(),
+            'postulacionesPendientes' => PostulacionVoluntariado::query()->where('estado', 'pendiente')->count(),
         ];
     }
 
@@ -179,6 +185,61 @@ class PanelAdministrador
                 'parametros' => ['estado' => 'pendiente'],
             ],
         ];
+    }
+
+    /**
+     * Avisos que tienen casos, de la prioridad más alta a la más baja, listos para mostrar en la campana de la barra
+     * superior y en «Necesitan tu atención» del panel principal. Incluye las incidencias abiertas.
+     *
+     * @return Collection<int, array{clave: string, prioridad: 'alta'|'media'|'baja', titulo: string, descripcion: string, total: int, accion: string, url: string}>
+     */
+    public function avisosActivos(?CarbonInterface $ahora = null): Collection
+    {
+        $ahora ??= CarbonImmutable::now();
+
+        return self::ordenarAvisos($this->avisos($ahora), $this->incidenciasAbiertas()->count());
+    }
+
+    /**
+     * Convierte los avisos de avisos() (y el total de incidencias abiertas) en la lista de avisosActivos(): solo los que
+     * tienen casos, con un título corto, una explicación breve y su prioridad.
+     */
+    public static function ordenarAvisos(array $avisos, int $incidenciasAbiertas): Collection
+    {
+        $dias = fn (string $clave) => self::dias((int) config("pol.panel.{$clave}"));
+        $textos = [
+            'solicitudes_sin_respuesta' => ['alta', 'Solicitudes sin respuesta', 'Llevan más de '.$dias('solicitud_dias_alerta').' esperando una decisión.'],
+            'visitas_vencidas' => ['alta', 'Visitas atrasadas', 'Su fecha ya pasó y la visita no se registró.'],
+            'entregas_aprobadas_pendientes' => ['media', 'Entregas pendientes', 'Adopciones reservadas hace más de '.$dias('aprobada_dias_alerta').' sin registrar la entrega.'],
+            'seguimientos_sin_asignar' => ['media', 'Seguimientos sin voluntario', 'Llevan más de '.$dias('seguimiento_sin_asignar_dias').' sin un voluntario a cargo.'],
+            'postulaciones_sin_revisar' => ['media', 'Postulaciones sin revisar', 'Llevan más de '.$dias('postulacion_dias_alerta').' esperando revisión.'],
+            'mascotas_sin_fotos' => ['baja', 'Mascotas sin foto', 'No se muestran bien en el catálogo público.'],
+        ];
+
+        $lista = collect();
+
+        if ($incidenciasAbiertas > 0) {
+            $lista->push([
+                'clave' => 'incidencias_abiertas', 'prioridad' => 'alta', 'titulo' => 'Incidencias abiertas',
+                'descripcion' => 'Problemas reportados en seguimientos que aún no se resolvieron.',
+                'total' => $incidenciasAbiertas, 'accion' => 'Ver seguimientos', 'url' => route('admin.seguimientos.index'),
+            ]);
+        }
+
+        foreach ($textos as $clave => [$prioridad, $titulo, $descripcion]) {
+            $aviso = $avisos[$clave] ?? null;
+
+            if ($aviso !== null && $aviso['total'] > 0) {
+                $lista->push([
+                    'clave' => $clave, 'prioridad' => $prioridad, 'titulo' => $titulo, 'descripcion' => $descripcion,
+                    'total' => $aviso['total'], 'accion' => $aviso['accion'], 'url' => route($aviso['ruta'], $aviso['parametros']),
+                ]);
+            }
+        }
+
+        $orden = ['alta' => 0, 'media' => 1, 'baja' => 2];
+
+        return $lista->sortBy(fn (array $aviso) => $orden[$aviso['prioridad']])->values();
     }
 
     /**
