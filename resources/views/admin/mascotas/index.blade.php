@@ -61,30 +61,32 @@
         @if ($mascotas->isEmpty())
             <x-admin.vacio titulo="No se encontraron mascotas." :texto="$hayFiltros ? 'Prueba con otros filtros.' : 'Registra la primera mascota para que aparezca en el catálogo.'" />
         @else
-            <ul class="divide-y divide-slate-100">
+            {{-- Tarjetas con la foto grande (miniatura de 400 px) y los datos esenciales. --}}
+            <ul class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-3 2xl:grid-cols-4">
                 @foreach ($mascotas as $mascota)
                     @php($fotoPrincipal = $mascota->fotos->first())
-                    <li class="flex items-center gap-4 px-4 py-3 sm:px-6">
-                        @if ($fotoPrincipal)
-                            <img src="{{ $fotoPrincipal->url_miniatura }}" alt="{{ $mascota->nombre }}" class="h-14 w-14 shrink-0 rounded-xl object-cover">
-                        @else
-                            <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs text-slate-500">Sin foto</span>
-                        @endif
-                        <div class="min-w-0 flex-1">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <a href="{{ route('admin.mascotas.show', $mascota) }}" class="truncate font-semibold text-blue-950 hover:underline">{{ $mascota->nombre }}</a>
+                    <li class="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-blue-200 hover:shadow-md">
+                        <a href="{{ route('admin.mascotas.show', $mascota) }}" class="block focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-400" tabindex="-1" aria-hidden="true">
+                            @if ($fotoPrincipal)
+                                <img src="{{ $fotoPrincipal->url_miniatura }}" alt="" class="aspect-[4/3] w-full bg-slate-100 object-cover">
+                            @else
+                                <span class="flex aspect-[4/3] w-full items-center justify-center bg-slate-100 text-sm font-medium text-slate-500">Sin foto</span>
+                            @endif
+                        </a>
+                        <div class="flex flex-1 flex-col p-4">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <a href="{{ route('admin.mascotas.show', $mascota) }}" class="truncate text-lg font-bold text-blue-950 hover:underline">{{ $mascota->nombre }}</a>
                                 @if ($mascota->estado === 'reservada')
                                     <x-estado-mascota :mascota="$mascota" />
                                 @else
                                     <x-admin.estado de="mascota" :valor="$mascota->estado" />
                                 @endif
                             </div>
-                            <p class="mt-0.5 truncate text-sm text-slate-600">
-                                {{ ucfirst($mascota->especie) }} · {{ $mascota->raza ?? 'Raza sin indicar' }} · {{ $mascota->edad_formateada }} · {{ ucfirst($mascota->sexo) }} · {{ $tamanos[$mascota->tamano] ?? ucfirst($mascota->tamano) }}
-                            </p>
-                            <p class="mt-0.5 text-xs text-slate-500">Registrada el {{ $mascota->created_at->format('d/m/Y H:i') }}</p>
+                            <p class="mt-1.5 text-[15px] text-slate-700">{{ ucfirst($mascota->especie) }} · {{ $mascota->edad_formateada }} · {{ ucfirst($mascota->sexo) }}</p>
+                            <p class="text-sm text-slate-600">{{ $mascota->raza ?? 'Raza sin indicar' }} · {{ $tamanos[$mascota->tamano] ?? ucfirst($mascota->tamano) }}</p>
+                            <p class="mt-1 text-sm text-slate-500">Registrada el {{ $mascota->created_at->format('d/m/Y H:i') }}</p>
+                            <x-admin.boton variante="secundario" tamano="chico" :href="route('admin.mascotas.show', $mascota)" class="mt-4 w-full">Ver detalle<span class="sr-only"> de {{ $mascota->nombre }}</span></x-admin.boton>
                         </div>
-                        <x-admin.boton variante="secundario" tamano="chico" :href="route('admin.mascotas.show', $mascota)" class="shrink-0">Ver detalle</x-admin.boton>
                     </li>
                 @endforeach
             </ul>
