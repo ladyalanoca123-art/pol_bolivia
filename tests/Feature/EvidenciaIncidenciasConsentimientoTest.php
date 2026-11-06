@@ -117,7 +117,7 @@ class EvidenciaIncidenciasConsentimientoTest extends TestCase
         [$seguimiento, $voluntario] = $this->seguimientoActivo();
         $incidencia = Incidencia::create(['seguimiento_id' => $seguimiento->id, 'reportado_por' => $voluntario->id, 'tipo' => 'otro', 'descripcion' => 'La familia pidió orientación', 'estado' => 'pendiente']);
 
-        $this->actingAs($this->admin)->get(route('admin.seguimientos.show', $seguimiento))->assertSee('Marcar en proceso (opcional)');
+        $this->actingAs($this->admin)->get(route('admin.seguimientos.show', $seguimiento))->assertDontSee('Marcar en proceso'); // el botón ya no se muestra; la ruta sigue disponible
         $this->actingAs($this->admin)->patch(route('admin.incidencias.progress', $incidencia))->assertRedirect();
         $this->assertSame('en_proceso', $incidencia->refresh()->estado);
 

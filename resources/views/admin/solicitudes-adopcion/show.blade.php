@@ -91,17 +91,13 @@
         <div class="min-w-0 space-y-6 lg:col-span-2">
 
             {{-- Acciones de la etapa actual --}}
-            <x-admin.tarjeta titulo="Seguimiento de la solicitud">
+            <x-admin.tarjeta titulo="Próximo paso">
                 @if (in_array($solicitud->estado, ['rechazada', 'cancelada', 'cerrada', 'no_concretada'], true))
                     <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
                         <p class="font-semibold">{{ $solicitud->estadoLegible() }}</p>
                         @if (filled($mensajesFinales[$solicitud->estado] ?? null))<p class="mt-1 whitespace-pre-line">{{ $mensajesFinales[$solicitud->estado] }}</p>@endif
                         @if ($solicitud->resuelta_at)<p class="mt-2 text-xs text-amber-800">Registrada el {{ $solicitud->resuelta_at->timezone('America/La_Paz')->format('d/m/Y H:i') }}</p>@endif
                     </div>
-                @endif
-
-                @if ($solicitud->comentarios_admin && $solicitud->estado !== 'rechazada')
-                    <p class="mb-4 rounded-xl bg-slate-50 p-3 text-sm"><span class="font-semibold text-slate-500">Último comentario interno:</span> <span class="whitespace-pre-line text-slate-900">{{ $solicitud->comentarios_admin }}</span></p>
                 @endif
 
                 <div class="space-y-4">
@@ -212,7 +208,7 @@
             </x-admin.tarjeta>
 
             {{-- Alertas --}}
-            <x-admin.tarjeta titulo="Alertas para el administrador" :tono="$alertas->contains('nivel', 'rojo') ? 'rojo' : ($alertas->isNotEmpty() ? 'ambar' : 'blanco')">
+            <x-admin.tarjeta titulo="Respuestas que necesitan revisión" :tono="$alertas->contains('nivel', 'rojo') ? 'rojo' : ($alertas->isNotEmpty() ? 'ambar' : 'blanco')">
                 <x-slot name="acciones">
                     <div class="flex flex-wrap gap-2">
                         <x-admin.insignia tono="rojo">{{ $alertas->where('nivel', 'rojo')->count() }} incompatibles</x-admin.insignia>
@@ -306,14 +302,14 @@
             al bajar por el cuestionario; si es más alta que la pantalla, se desplaza por dentro con una barra fina.
         --}}
         <div class="columna-fija order-first min-w-0 space-y-6 lg:sticky lg:top-24 lg:order-none lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto lg:pe-1">
-            {{-- 1. Contacto: arriba, a la altura de «Seguimiento de la solicitud». --}}
+            {{-- 1. Contacto: arriba, a la altura de «Próximo paso». --}}
             @can('contact', $solicitud)
                 <section class="rounded-2xl border border-green-200 bg-green-50 p-5 shadow-sm sm:p-6" aria-labelledby="titulo-contacto">
                     <h2 id="titulo-contacto" class="flex items-center gap-2 text-lg font-semibold text-green-900">
                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.8s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6-.3.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.6 2 1.1 1 2 1.3 2.3 1.4.3.1.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.6-.2 1.2z"/></svg>
                         Contactar al solicitante
                     </h2>
-                    <p class="mt-1 text-[15px] text-green-900">{{ $solicitud->solicitante->nombres }} {{ $solicitud->solicitante->apellidos }} · {{ $solicitud->solicitante->telefono ?: 'sin teléfono' }}</p>
+                    <p class="mt-1 text-[15px] text-green-900">Teléfono: {{ $solicitud->solicitante->telefono ?: 'sin teléfono' }}</p>
                     <div class="mt-4">
                         <x-botones-contacto
                             :telefono="$solicitud->solicitante->telefono"
@@ -342,7 +338,7 @@
                                 <a href="{{ route('admin.solicitudes-adopcion.commitment-evidence.download', $solicitud) }}"
                                    class="mt-3 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-center text-[15px] font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
                                     <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5" /></svg>
-                                    Descargar evidencia privada
+                                    Ver foto del acta firmada
                                 </a>
                                 <p class="mt-2 text-sm text-emerald-800">El acta firmada y sellada ya está subida.</p>
                             @endcan
@@ -354,9 +350,6 @@
                     @if (in_array($solicitud->estado, ['aprobada', 'aceptada'], true))
                         <dl class="mt-4 space-y-3">
                             @if ($solicitud->numero_acta)<x-admin.dato etiqueta="Número de acta"><span class="font-semibold text-blue-950">{{ $solicitud->numero_acta }}</span></x-admin.dato>@endif
-                            @if ($solicitud->aprobada_at)<x-admin.dato etiqueta="Reservada el">{{ $solicitud->aprobada_at->timezone('America/La_Paz')->format('d/m/Y H:i') }}</x-admin.dato>@endif
-                            @if ($solicitud->entregada_at)<x-admin.dato etiqueta="Entrega registrada">{{ $solicitud->entregada_at->timezone('America/La_Paz')->format('d/m/Y H:i') }}</x-admin.dato>@endif
-                            @if ($solicitud->compromiso_firmado)<x-admin.dato etiqueta="Compromiso">Firma confirmada al registrar la entrega</x-admin.dato>@endif
                         </dl>
                     @endif
 
@@ -367,7 +360,7 @@
                                 <label for="evidencia-compromiso" class="block text-sm font-semibold text-blue-950">{{ $solicitud->compromiso_foto_path ? 'Reemplazar la foto del acta firmada' : 'Subir la foto del acta firmada' }} (JPG, PNG o PDF; máximo 10 MB)</label>
                                 <input id="evidencia-compromiso" name="evidencia_compromiso" type="file" accept="image/jpeg,image/png,application/pdf" required class="admin-archivo mt-2">
                                 <x-input-error class="mt-1" :messages="$errors->get('evidencia_compromiso')" />
-                                <p class="admin-ayuda">Se guarda de forma privada. Puedes subirla antes o después de registrar la entrega. Subirla no reemplaza la casilla «El adoptante firmó el compromiso».</p>
+                                <p class="admin-ayuda">Se guarda de forma privada; solo la administración puede verla.</p>
                                 <x-admin.boton variante="secundario" tamano="chico" class="mt-3">Guardar foto del acta</x-admin.boton>
                             </form>
                         @endcan
@@ -375,7 +368,7 @@
 
                     @if (! in_array($solicitud->estado, ['aprobada', 'aceptada'], true) && $solicitud->compromiso_foto_path)
                         @can('viewCommitmentEvidence', $solicitud)
-                            <p class="text-sm"><a href="{{ route('admin.solicitudes-adopcion.commitment-evidence.download', $solicitud) }}" class="font-semibold text-blue-900 underline">Descargar evidencia privada del compromiso</a></p>
+                            <p class="text-sm"><a href="{{ route('admin.solicitudes-adopcion.commitment-evidence.download', $solicitud) }}" class="font-semibold text-blue-900 underline">Ver foto del acta firmada</a></p>
                         @endcan
                     @endif
                 </x-admin.tarjeta>

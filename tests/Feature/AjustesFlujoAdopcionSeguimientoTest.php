@@ -91,7 +91,7 @@ class AjustesFlujoAdopcionSeguimientoTest extends TestCase
 
         $this->assertSame('Reservada', SolicitudAdopcion::ESTADOS_LEGIBLES['aprobada']);
         $this->actingAs($this->admin)->get(route('admin.solicitudes-adopcion.show', $solicitud))
-            ->assertSee('3 · Reservada')->assertSee('Reservada el')->assertDontSee('3 · Aprobada');
+            ->assertSee('3 · Reservada')->assertDontSee('3 · Aprobada'); // la fecha de reserva queda en el historial
         $this->actingAs($this->admin)->get(route('admin.solicitudes-adopcion.index'))->assertSee('Reservada');
 
         $this->actingAs($solicitud->solicitante)->get(route('solicitudes-adopcion.show', $solicitud))

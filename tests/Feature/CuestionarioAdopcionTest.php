@@ -207,7 +207,7 @@ class CuestionarioAdopcionTest extends TestCase
         $this->actingAs($this->administrador())
             ->get(route('admin.solicitudes-adopcion.show', $solicitud))
             ->assertOk()
-            ->assertSee('Alertas para el administrador')
+            ->assertSee('Respuestas que necesitan revisión')
             ->assertSee('Pregunta 3')
             ->assertSee('El propietario o responsable no permite mascotas.')
             ->assertSee('Respuestas del cuestionario')

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\FilterSeguimientosRequest;
 use App\Http\Requests\Seguimientos\AssignVolunteerRequest;
 use App\Models\SeguimientoAdopcion;
 use App\Models\User;
@@ -17,16 +18,34 @@ use Illuminate\View\View;
 
 class SeguimientoAdopcionController extends Controller
 {
-    public function index(): View
+    public function index(FilterSeguimientosRequest $request): View
     {
-        $seguimientos = SeguimientoAdopcion::query()->with(['solicitud.mascota', 'solicitud.solicitante', 'voluntario'])->latest()->paginate(15);
+        $filters = $request->validated();
 
-        return view('admin.seguimientos.index', compact('seguimientos'));
+        // Fotos y conteos solo para mostrarlos en las filas de la lista.
+        $seguimientos = SeguimientoAdopcion::query()
+            ->with(['solicitud.mascota.fotos', 'solicitud.solicitante', 'voluntario'])
+            ->withCount(['visitas', 'incidencias as incidencias_pendientes_count' => fn ($consulta) => $consulta->where('estado', '<>', 'atendida')])
+            ->when($filters['estado'] ?? null, fn ($consulta, string $estado) => $consulta->where('estado', $estado))
+            ->when($filters['voluntario'] ?? null, fn ($consulta, $voluntario) => $consulta->where('voluntario_id', (int) $voluntario))
+            ->when($filters['buscar'] ?? null, function ($consulta, string $buscar): void {
+                $consulta->whereHas('solicitud', fn ($solicitud) => $solicitud
+                    ->whereHas('mascota', fn ($mascota) => $mascota->where('nombre', 'ilike', "%{$buscar}%"))
+                    ->orWhereHas('solicitante', fn ($persona) => $persona
+                        ->where('nombres', 'ilike', "%{$buscar}%")
+                        ->orWhere('apellidos', 'ilike', "%{$buscar}%")));
+            })
+            ->latest()->paginate(15)->withQueryString();
+
+        // Voluntarios para el filtro (también los inactivos, porque pueden tener seguimientos antiguos).
+        $voluntarios = User::query()->where('rol', 'voluntario')->orderBy('nombres')->orderBy('apellidos')->get(['id', 'nombres', 'apellidos']);
+
+        return view('admin.seguimientos.index', compact('seguimientos', 'filters', 'voluntarios'));
     }
 
     public function show(SeguimientoAdopcion $seguimiento): View
     {
-        $seguimiento->load(['solicitud.mascota', 'solicitud.solicitante', 'voluntario', 'visitas', 'incidencias']);
+        $seguimiento->load(['solicitud.mascota.fotos', 'solicitud.solicitante', 'voluntario', 'visitas', 'incidencias']);
         $fechasSugeridas = $seguimiento->solicitud->entregada_at
             ? FechasSeguimientoAdopcion::sugeridas($seguimiento->solicitud->entregada_at)
             : [];

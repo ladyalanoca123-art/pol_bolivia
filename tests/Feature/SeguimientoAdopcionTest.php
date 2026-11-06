@@ -161,6 +161,29 @@ class SeguimientoAdopcionTest extends TestCase
         $this->assertDatabaseHas('seguimientos_adopcion', ['id' => $seguimiento->id, 'estado' => 'cerrado']);
     }
 
+    public function test_admin_list_filters_by_search_state_and_volunteer(): void
+    {
+        [$administrator, $asignado] = $this->acceptedTracking();
+        [, $sinAsignar] = $this->acceptedTracking();
+        $volunteer = $this->activate($administrator, $asignado);
+        $mascotaAsignada = $asignado->solicitud->mascota->nombre;
+        $mascotaSinAsignar = $sinAsignar->solicitud->mascota->nombre;
+        $familia = $sinAsignar->solicitud->solicitante;
+
+        $this->actingAs($administrator)->get(route('admin.seguimientos.index'))->assertOk()
+            ->assertSee($mascotaAsignada)->assertSee($mascotaSinAsignar)->assertSee('2 seguimientos');
+        $this->actingAs($administrator)->get(route('admin.seguimientos.index', ['estado' => 'sin_asignar']))
+            ->assertSee($mascotaSinAsignar)->assertDontSee($mascotaAsignada)->assertSee('Asignar voluntario');
+        $this->actingAs($administrator)->get(route('admin.seguimientos.index', ['voluntario' => $volunteer->id]))
+            ->assertSee($mascotaAsignada)->assertDontSee($mascotaSinAsignar);
+        $this->actingAs($administrator)->get(route('admin.seguimientos.index', ['buscar' => $mascotaAsignada]))
+            ->assertSee($mascotaAsignada)->assertDontSee($mascotaSinAsignar);
+        $this->actingAs($administrator)->get(route('admin.seguimientos.index', ['buscar' => $familia->apellidos]))
+            ->assertSee($mascotaSinAsignar);
+        $this->actingAs($administrator)->get(route('admin.seguimientos.index', ['estado' => 'inventado']))
+            ->assertSessionHasErrors('estado');
+    }
+
     private function acceptedTracking(): array
     {
         $administrator = User::factory()->create(['rol' => 'administrador']);

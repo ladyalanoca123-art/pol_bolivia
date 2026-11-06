@@ -18,10 +18,12 @@ class PostulacionVoluntariadoController extends Controller
 
         // Filtros por área de interés y día disponible (columnas JSON del cuestionario V1).
         $postulaciones = PostulacionVoluntariado::query()
-            ->with(['usuario', 'revisadoPor'])
+            ->with(['usuario', 'revisadoPor', 'voluntario'])
             ->when($filters['estado'] ?? null, fn ($query, string $estado) => $query->where('estado', $estado))
             ->when($filters['area'] ?? null, fn ($query, string $area) => $query->whereJsonContains('areas_interes', $area))
             ->when($filters['dia'] ?? null, fn ($query, string $dia) => $query->whereJsonContains('dias_disponibles', $dia))
+            // Primero las que esperan revisión (expresión fija, sin datos del usuario).
+            ->orderByRaw("CASE WHEN estado = 'pendiente' THEN 0 ELSE 1 END")
             ->latest()
             ->paginate(15)
             ->withQueryString();

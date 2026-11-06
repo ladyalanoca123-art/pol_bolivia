@@ -42,7 +42,7 @@ class CompromisoYSeguimientoAdopcionTest extends TestCase
         // por eso se comprueba el texto del botón).
         $this->actingAs($this->admin)->get(route('admin.solicitudes-adopcion.show', $solicitud))->assertOk()
             ->assertSee('Falta subir la foto del acta firmada y sellada')
-            ->assertDontSee('Descargar evidencia privada');
+            ->assertDontSee('Ver foto del acta firmada');
 
         $this->actingAs($this->admin)
             ->post(route('admin.solicitudes-adopcion.commitment-evidence.store', $solicitud), [
@@ -58,7 +58,7 @@ class CompromisoYSeguimientoAdopcionTest extends TestCase
 
         // Después: el botón verde de descarga, con el aviso de que ya está subida.
         $this->actingAs($this->admin)->get(route('admin.solicitudes-adopcion.show', $solicitud))->assertOk()
-            ->assertSee('Descargar evidencia privada')
+            ->assertSee('Ver foto del acta firmada')
             ->assertSee('El acta firmada y sellada ya está subida.')
             ->assertDontSee('Falta subir la foto del acta firmada y sellada');
 

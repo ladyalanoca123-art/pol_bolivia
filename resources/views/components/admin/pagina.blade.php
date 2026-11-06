@@ -6,6 +6,7 @@
     'volver' => null,       // URL de «Volver»
     'volverTexto' => 'Volver',
     'avisos' => true,       // false: la pantalla muestra sus propios avisos (p. ej. «Mi perfil» usa códigos en session('status'))
+    'contador' => null,     // total de una lista, junto al título (p. ej. «3 seguimientos»)
 ])
 {{--
     Estructura común de las pantallas del panel de administración y de las del ciudadano y el voluntario:
@@ -25,7 +26,10 @@
             <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div class="min-w-0">
                     @if ($seccion)<p class="text-[13px] font-semibold uppercase tracking-[0.14em] text-amber-700">{{ $seccion }}</p>@endif
-                    <h1 class="mt-1 text-[28px] font-bold leading-tight text-blue-950 sm:text-[30px]">{{ $titulo }}</h1>
+                    <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <h1 class="text-[28px] font-bold leading-tight text-blue-950 sm:text-[30px]">{{ $titulo }}</h1>
+                        @if (filled($contador))<span class="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-950">{{ $contador }}</span>@endif
+                    </div>
                     @if ($descripcion)<p class="mt-2 max-w-3xl text-base text-slate-600">{{ $descripcion }}</p>@endif
                     {{ $subtitulo ?? '' }}
                 </div>

@@ -133,6 +133,18 @@ class VoluntariadoManagementTest extends TestCase
         $this->assertDatabaseHas('voluntarios', ['id' => $profile->id, 'estado' => 'activo']);
     }
 
+    public function test_volunteer_list_shows_each_volunteer_workload(): void
+    {
+        [$administrator, $volunteer] = $this->approvedVolunteer();
+        $this->actingAs($administrator)->get(route('admin.voluntarios.index'))->assertOk()
+            ->assertSee('Libre · sin seguimientos')->assertDontSee('seguimiento activo');
+
+        $this->trackingFor($volunteer)->update(['voluntario_id' => $volunteer->id, 'estado' => 'activo', 'fecha_inicio' => now()]);
+
+        $this->actingAs($administrator)->get(route('admin.voluntarios.index'))->assertOk()
+            ->assertSee('1 seguimiento activo')->assertDontSee('Libre · sin seguimientos');
+    }
+
     public function test_inactive_users_cannot_access_volunteer_operations(): void
     {
         $inactiveCitizen = User::factory()->create(['rol' => 'ciudadano', 'estado' => false]);
