@@ -60,7 +60,7 @@ class AuditoriaPantallaTest extends TestCase
 
         $this->actingAs($this->admin)->get(route('admin.auditoria.index'))->assertOk()
             ->assertSee('El sistema')
-            ->assertSee('registró una mascota')
+            ->assertSee('registró la mascota')
             ->assertSee('León')->assertSee('Disponible')
             ->assertDontSee('Raza')                                  // en una creación no se listan los campos vacíos
             ->assertSee('actualizó una cuenta de usuario')
@@ -115,6 +115,24 @@ class AuditoriaPantallaTest extends TestCase
         $this->actingAs($this->admin)->get(route('admin.auditoria.index', ['modelo' => 'Incidencia']))->assertOk()
             ->assertSee('No hay movimientos con estos filtros')
             ->assertSee('Quitar filtros');
+    }
+
+    public function test_muestra_el_nombre_del_registro_en_lugar_de_su_numero(): void
+    {
+        $mascota = DB::transaction(function () {
+            $mascota = \App\Models\Mascota::create(['nombre' => 'Toby', 'especie' => 'perro', 'edad' => 2, 'edad_en' => 'años', 'sexo' => 'macho', 'tamano' => 'mediano', 'estado' => 'disponible', 'registrado_por' => $this->admin->id]);
+            \App\Models\FotoMascota::create(['mascota_id' => $mascota->id, 'tipo' => 'foto', 'url' => 'mascotas/toby.jpg', 'es_principal' => true, 'orden' => 1]);
+
+            return $mascota;
+        });
+
+        $html = $this->actingAs($this->admin)->get(route('admin.auditoria.index'))->assertOk()
+            ->assertSee('registró la mascota')
+            ->assertSee('registró una foto de')
+            ->assertSee('>Toby</a>', false)
+            ->assertSee(route('admin.mascotas.show', $mascota), false)
+            ->getContent();
+        $this->assertStringNotContainsString('#'.$mascota->id.'</a>', $html);
     }
 
     public function test_presentador_traduce_campos_y_valores(): void

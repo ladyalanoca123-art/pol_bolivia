@@ -3,8 +3,15 @@
 namespace App\Support;
 
 use App\Models\Auditoria;
+use App\Models\FotoMascota;
+use App\Models\Incidencia;
 use App\Models\Mascota;
+use App\Models\PostulacionVoluntariado;
+use App\Models\SeguimientoAdopcion;
 use App\Models\SolicitudAdopcion;
+use App\Models\User;
+use App\Models\VisitaSeguimiento;
+use App\Models\Voluntario;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -107,6 +114,66 @@ class PresentadorAuditoria
         $objeto = self::MODULOS[$auditoria->modelo][1] ?? 'un registro de '.Str::headline($auditoria->modelo);
 
         return $verbo.' '.$objeto;
+    }
+
+    /**
+     * Nombres para las frases de la lista: «la mascota Luna», «el seguimiento de Michi», «la solicitud de Ana para
+     * adoptar a Copito». Hace una consulta de solo lectura por módulo; si el registro ya no existe, usa los valores
+     * guardados en la auditoría. Sin nombre, la vista usa la frase general («una mascota»).
+     *
+     * @param  iterable<Auditoria>  $auditorias
+     * @return array<string, array{0: string, 1: string, 2: string, 3: ?string}> «Modelo:id» => [antes del nombre, nombre, después, enlace]
+     */
+    public static function objetos(iterable $auditorias): array
+    {
+        $auditorias = collect($auditorias);
+        $ids = fn (string $modelo) => $auditorias->where('modelo', $modelo)->pluck('modelo_id')->filter()->unique()->values();
+        $valores = fn (Auditoria $a) => ($a->valores_nuevos ?? []) + ($a->valores_anteriores ?? []);
+        $persona = fn ($u) => $u ? trim($u->nombres.' '.$u->apellidos) : null;
+        $mascotaDe = fn ($seguimiento) => $seguimiento?->solicitud?->mascota?->nombre;
+        $conSeguimiento = ['seguimiento:id,solicitud_id', 'seguimiento.solicitud:id,mascota_id', 'seguimiento.solicitud.mascota:id,nombre'];
+
+        // Registros actuales de cada módulo (solo los que aparecen en esta página).
+        $mascotas = Mascota::query()->whereIn('id', $ids('Mascota'))->pluck('nombre', 'id');
+        $fotos = FotoMascota::query()->whereIn('id', $ids('FotoMascota'))->pluck('mascota_id', 'id');
+        $idsMascotaFoto = $fotos->values()->merge($auditorias->where('modelo', 'FotoMascota')->map(fn ($a) => $valores($a)['mascota_id'] ?? null))->filter()->unique();
+        $mascotasDeFotos = Mascota::query()->whereIn('id', $idsMascotaFoto)->pluck('nombre', 'id');
+        $solicitudes = SolicitudAdopcion::query()->with(['solicitante:id,nombres,apellidos', 'mascota:id,nombre'])->whereIn('id', $ids('SolicitudAdopcion'))->get(['id', 'solicitante_id', 'mascota_id'])->keyBy('id');
+        $seguimientos = SeguimientoAdopcion::query()->with(['solicitud:id,mascota_id', 'solicitud.mascota:id,nombre'])->whereIn('id', $ids('SeguimientoAdopcion'))->get(['id', 'solicitud_id'])->keyBy('id');
+        $visitas = VisitaSeguimiento::query()->with($conSeguimiento)->whereIn('id', $ids('VisitaSeguimiento'))->get(['id', 'seguimiento_id'])->keyBy('id');
+        $incidencias = Incidencia::query()->with($conSeguimiento)->whereIn('id', $ids('Incidencia'))->get(['id', 'seguimiento_id'])->keyBy('id');
+        $postulaciones = PostulacionVoluntariado::query()->with('usuario:id,nombres,apellidos')->whereIn('id', $ids('PostulacionVoluntariado'))->get(['id', 'usuario_id'])->keyBy('id');
+        $voluntarios = Voluntario::query()->with('usuario:id,nombres,apellidos')->whereIn('id', $ids('Voluntario'))->get(['id', 'usuario_id'])->keyBy('id');
+        $usuarios = User::query()->whereIn('id', $ids('User'))->get(['id', 'nombres', 'apellidos'])->keyBy('id');
+
+        $objetos = [];
+        foreach ($auditorias as $a) {
+            $id = $a->modelo_id;
+            $v = $valores($a);
+            $enlace = self::enlace($a);
+            $objeto = match ($a->modelo) {
+                'Mascota' => ($n = $mascotas[$id] ?? ($v['nombre'] ?? null)) ? ['la mascota', $n, '', $enlace] : null,
+                'FotoMascota' => ($m = $fotos[$id] ?? ($v['mascota_id'] ?? null)) && ($n = $mascotasDeFotos[$m] ?? null)
+                    ? ['una foto de', $n, '', route('admin.mascotas.show', $m)] : null,
+                'SolicitudAdopcion' => ($s = $solicitudes[$id] ?? null) && ($p = $persona($s->solicitante))
+                    ? ['la solicitud de', $p, $s->mascota ? 'para adoptar a '.$s->mascota->nombre : '', $enlace] : null,
+                'SeguimientoAdopcion' => ($n = $mascotaDe($seguimientos[$id] ?? null)) ? ['el seguimiento de', $n, '', $enlace] : null,
+                'VisitaSeguimiento' => ($x = $visitas[$id] ?? null) && ($n = $mascotaDe($x->seguimiento))
+                    ? ['una visita del seguimiento de', $n, '', route('admin.seguimientos.show', $x->seguimiento_id)] : null,
+                'Incidencia' => ($x = $incidencias[$id] ?? null) && ($n = $mascotaDe($x->seguimiento))
+                    ? ['una incidencia del seguimiento de', $n, '', route('admin.seguimientos.show', $x->seguimiento_id)] : null,
+                'PostulacionVoluntariado' => ($p = $persona($postulaciones[$id]->usuario ?? null)) ? ['la postulación de', $p, '', $enlace] : null,
+                'Voluntario' => ($p = $persona($voluntarios[$id]->usuario ?? null)) ? ['el perfil de voluntario de', $p, '', $enlace] : null,
+                'User' => ($p = $persona($usuarios[$id] ?? null) ?: trim(($v['nombres'] ?? '').' '.($v['apellidos'] ?? '')))
+                    ? ['la cuenta de', $p, '', $enlace] : null,
+                default => null,
+            };
+            if ($objeto) {
+                $objetos[$a->modelo.':'.$id] = $objeto;
+            }
+        }
+
+        return $objetos;
     }
 
     public static function actor(Auditoria $auditoria): string

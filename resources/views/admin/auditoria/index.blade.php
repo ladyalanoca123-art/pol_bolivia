@@ -1,205 +1,229 @@
 @use('App\Support\PresentadorAuditoria', 'P')
-<x-app-layout>
-    {{--
-        Auditoría: quién hizo qué y cuándo, en lenguaje claro (App\Support\PresentadorAuditoria).
-        Datos: App\Http\Controllers\Admin\AuditoriaController. created_at ya llega en la zona de la aplicación.
-    --}}
-    @php
-        $tarjeta = 'rounded-2xl border border-slate-200 bg-white';
-        $campo = 'mt-1 block w-full rounded-lg border-slate-300 text-sm shadow-sm focus:border-blue-800 focus:ring-blue-800';
-        $etiqueta = 'block text-xs font-semibold uppercase tracking-wide text-slate-500';
-        $hayFiltros = collect($filtros)->filter(fn ($valor) => filled($valor))->isNotEmpty();
-        // Clases completas (Tailwind solo genera las que aparecen escritas).
-        $colores = [
-            'amber' => ['bg-amber-100 text-amber-800', 'bg-amber-500'],
-            'emerald' => ['bg-emerald-100 text-emerald-800', 'bg-emerald-500'],
-            'sky' => ['bg-sky-100 text-sky-800', 'bg-sky-500'],
-            'red' => ['bg-red-100 text-red-800', 'bg-red-500'],
-            'violet' => ['bg-violet-100 text-violet-800', 'bg-violet-500'],
-            'slate' => ['bg-slate-100 text-slate-700', 'bg-slate-400'],
-        ];
-        $acciones = [
-            'creado' => 'bg-emerald-50 text-emerald-700 ring-emerald-200',
-            'actualizado' => 'bg-blue-50 text-blue-800 ring-blue-200',
-            'eliminado' => 'bg-red-50 text-red-700 ring-red-200',
-        ];
-        $hoy = now()->toDateString();
-        $ayer = now()->subDay()->toDateString();
-        $titulosDia = fn ($fecha) => match ($fecha->toDateString()) {
-            $hoy => 'Hoy',
-            $ayer => 'Ayer',
-            default => \Illuminate\Support\Str::ucfirst($fecha->translatedFormat('l j \d\e F \d\e Y')),
-        };
-        $porDia = $auditorias->getCollection()->groupBy(fn ($a) => $a->created_at?->toDateString());
-        $iniciales = fn (string $nombre) => collect(preg_split('/\s+/', trim($nombre)))->filter()->take(2)->map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)))->join('');
-    @endphp
+{{--
+    Auditoría: quién hizo qué y cuándo, en lenguaje claro (App\Support\PresentadorAuditoria).
+    Datos: App\Http\Controllers\Admin\AuditoriaController. created_at ya llega en la zona de la aplicación.
+--}}
+@php
+    $hayFiltros = collect($filtros)->filter(fn ($valor) => filled($valor))->isNotEmpty();
+    $hoy = now()->toDateString();
+    $ayer = now()->subDay()->toDateString();
+    $titulosDia = fn ($fecha) => match ($fecha->toDateString()) {
+        $hoy => 'Hoy',
+        $ayer => 'Ayer',
+        default => \Illuminate\Support\Str::ucfirst($fecha->translatedFormat('l j \d\e F \d\e Y')),
+    };
+    $porDia = $auditorias->getCollection()->groupBy(fn ($a) => $a->created_at?->toDateString());
+    $objetos = P::objetos($auditorias->getCollection());
 
-    <div class="min-h-[calc(100vh-4rem)] bg-slate-50">
-        <div class="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    // Un ícono de color por acción: creó (verde), cambió (azul), eliminó (rojo).
+    $iconos = [
+        'creado' => ['bg-emerald-100 text-emerald-700', 'M12 5v14M5 12h14'],
+        'actualizado' => ['bg-blue-100 text-blue-800', 'M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Zm9.5-13.5 3 3'],
+        'eliminado' => ['bg-red-100 text-red-700', 'M4 7h16M10 11v6m4-6v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3'],
+    ];
 
-            {{-- Encabezado --}}
-            <header>
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">Seguridad y trazabilidad</p>
-                <h1 class="mt-2 text-2xl font-bold text-blue-950 sm:text-3xl">Auditoría</h1>
-                <p class="mt-1 max-w-3xl text-sm text-slate-600 sm:text-base">Registro de todo lo que se crea, cambia o elimina en el sistema: quién lo hizo, cuándo y qué cambió.</p>
-            </header>
+    // Pestañas de período: usan el filtro «desde» (sin «hasta»).
+    $desdeActual = $filtros['desde'] ?? null;
+    $hastaActual = $filtros['hasta'] ?? null;
+    $periodos = [
+        'Hoy' => $hoy,
+        'Últimos 7 días' => now()->subDays(6)->toDateString(),
+        'Últimos 30 días' => now()->subDays(29)->toDateString(),
+        'Todo' => null,
+    ];
+    $periodoActivo = $hastaActual ? null : array_search($desdeActual, $periodos, true);
+    $fechasAMano = $hastaActual || ($desdeActual && $periodoActivo === false) || $errors->has('desde') || $errors->has('hasta');
+@endphp
+<x-admin.pagina titulo="Auditoría" seccion="Seguridad y trazabilidad"
+    :contador="$auditorias->total().($auditorias->total() === 1 ? ' movimiento' : ' movimientos')"
+    descripcion="Registro de todo lo que se crea, cambia o elimina en el sistema: quién lo hizo, cuándo y qué cambió.">
 
-            {{-- Resumen --}}
-            <section aria-labelledby="titulo-resumen">
-                <h2 id="titulo-resumen" class="sr-only">Resumen de actividad</h2>
-                <dl class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-                    @foreach ([
-                        ['Movimientos hoy', $resumen['hoy'], 'Desde las 00:00'],
-                        ['Últimos 7 días', $resumen['semana'], 'Incluye hoy'],
-                        ['Personas activas', $resumen['personas'], 'Hicieron cambios en 7 días'],
-                        ['Eliminaciones', $resumen['eliminaciones'], 'En los últimos 7 días'],
-                    ] as [$titulo, $valor, $ayuda])
-                        <div class="{{ $tarjeta }} p-4 sm:p-5">
-                            <dt class="text-sm font-medium text-slate-600">{{ $titulo }}</dt>
-                            <dd class="mt-2 text-3xl font-bold leading-none {{ $titulo === 'Eliminaciones' && $valor > 0 ? 'text-red-700' : 'text-blue-950' }}">{{ $valor }}</dd>
-                            <dd class="mt-2 text-xs text-slate-500">{{ $ayuda }}</dd>
-                        </div>
-                    @endforeach
-                </dl>
-            </section>
+    {{-- Resumen compacto --}}
+    <section aria-labelledby="titulo-resumen">
+        <h2 id="titulo-resumen" class="sr-only">Resumen de actividad</h2>
+        <dl class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            @foreach ([
+                ['Movimientos hoy', $resumen['hoy'], 'Desde las 00:00'],
+                ['Últimos 7 días', $resumen['semana'], 'Incluye hoy'],
+                ['Personas activas', $resumen['personas'], 'Hicieron cambios en 7 días'],
+                ['Eliminaciones', $resumen['eliminaciones'], 'En los últimos 7 días'],
+            ] as [$titulo, $valor, $ayuda])
+                <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <dd class="text-2xl font-bold leading-none {{ $titulo === 'Eliminaciones' && $valor > 0 ? 'text-red-700' : 'text-blue-950' }}">{{ $valor }}</dd>
+                    <dt class="min-w-0 text-sm leading-tight text-slate-700">{{ $titulo }}<span class="block text-xs text-slate-500">{{ $ayuda }}</span></dt>
+                </div>
+            @endforeach
+        </dl>
+    </section>
 
-            {{-- Filtros --}}
-            <form method="GET" action="{{ route('admin.auditoria.index') }}" class="{{ $tarjeta }} p-4 sm:p-5" aria-label="Filtrar auditoría">
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    {{-- Período --}}
+    <nav aria-label="Período" class="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+        @foreach ($periodos as $texto => $desde)
+            @php $activo = $periodoActivo === $texto; @endphp
+            <a href="{{ route('admin.auditoria.index', array_filter([...collect($filtros)->except(['desde', 'hasta'])->all(), 'desde' => $desde])) }}"
+               @if ($activo) aria-current="page" @endif
+               class="inline-flex min-h-10 items-center whitespace-nowrap rounded-full border px-4 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 {{ $activo ? 'border-blue-950 bg-blue-950 text-white' : 'border-slate-300 bg-white text-blue-950 hover:border-blue-900 hover:bg-blue-50' }}">{{ $texto }}</a>
+        @endforeach
+    </nav>
+
+    {{-- Filtros --}}
+    <x-admin.tarjeta>
+        <form method="GET" action="{{ route('admin.auditoria.index') }}" aria-label="Filtrar auditoría">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                    <label for="modelo" class="admin-etiqueta">Módulo</label>
+                    <select id="modelo" name="modelo" class="admin-campo">
+                        <option value="">Todos</option>
+                        @foreach ($modelos as $modelo)
+                            <option value="{{ $modelo }}" @selected(($filtros['modelo'] ?? null) === $modelo)>{{ P::modulo($modelo) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="accion" class="admin-etiqueta">Acción</label>
+                    <select id="accion" name="accion" class="admin-campo">
+                        <option value="">Todas</option>
+                        @foreach (P::ACCIONES as $clave => [$nombre])
+                            <option value="{{ $clave }}" @selected(($filtros['accion'] ?? null) === $clave)>{{ $nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="usuario" class="admin-etiqueta">Persona</label>
+                    <select id="usuario" name="usuario" class="admin-campo">
+                        <option value="">Todas</option>
+                        @foreach ($usuarios as $usuario)
+                            <option value="{{ $usuario->id }}" @selected((int) ($filtros['usuario'] ?? 0) === $usuario->id)>{{ $usuario->nombres }} {{ $usuario->apellidos }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            {{-- Fechas exactas, plegadas: casi siempre bastan las pestañas de período. --}}
+            <details class="group mt-4" @if ($fechasAMano) open @endif>
+                <summary class="inline-flex cursor-pointer list-none items-center gap-1 rounded text-sm font-semibold text-blue-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+                    Elegir fechas
+                    <svg class="h-4 w-4 transition group-open:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4Z" clip-rule="evenodd"/></svg>
+                </summary>
+                <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div>
-                        <label for="modelo" class="{{ $etiqueta }}">Módulo</label>
-                        <select id="modelo" name="modelo" class="{{ $campo }}">
-                            <option value="">Todos</option>
-                            @foreach ($modelos as $modelo)
-                                <option value="{{ $modelo }}" @selected(($filtros['modelo'] ?? null) === $modelo)>{{ P::modulo($modelo) }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label for="accion" class="{{ $etiqueta }}">Acción</label>
-                        <select id="accion" name="accion" class="{{ $campo }}">
-                            <option value="">Todas</option>
-                            @foreach (P::ACCIONES as $clave => [$nombre])
-                                <option value="{{ $clave }}" @selected(($filtros['accion'] ?? null) === $clave)>{{ $nombre }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label for="usuario" class="{{ $etiqueta }}">Persona</label>
-                        <select id="usuario" name="usuario" class="{{ $campo }}">
-                            <option value="">Todas</option>
-                            @foreach ($usuarios as $usuario)
-                                <option value="{{ $usuario->id }}" @selected((int) ($filtros['usuario'] ?? 0) === $usuario->id)>{{ $usuario->nombres }} {{ $usuario->apellidos }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label for="desde" class="{{ $etiqueta }}">Desde</label>
-                        <input id="desde" name="desde" type="date" value="{{ $filtros['desde'] ?? '' }}" max="{{ $hoy }}" class="{{ $campo }}">
+                        <label for="desde" class="admin-etiqueta">Desde</label>
+                        <input id="desde" name="desde" type="date" value="{{ $desdeActual ?? '' }}" max="{{ $hoy }}" class="admin-campo">
                         <x-input-error class="mt-1" :messages="$errors->get('desde')" />
                     </div>
                     <div>
-                        <label for="hasta" class="{{ $etiqueta }}">Hasta</label>
-                        <input id="hasta" name="hasta" type="date" value="{{ $filtros['hasta'] ?? '' }}" max="{{ $hoy }}" class="{{ $campo }}">
+                        <label for="hasta" class="admin-etiqueta">Hasta</label>
+                        <input id="hasta" name="hasta" type="date" value="{{ $hastaActual ?? '' }}" max="{{ $hoy }}" class="admin-campo">
                         <x-input-error class="mt-1" :messages="$errors->get('hasta')" />
                     </div>
                 </div>
-                <div class="mt-4 flex flex-wrap items-center gap-3">
-                    <button type="submit" class="inline-flex min-h-10 items-center rounded-full bg-blue-950 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2">Aplicar filtros</button>
-                    @if ($hayFiltros)
-                        <a href="{{ route('admin.auditoria.index') }}" class="admin-boton-borde">Quitar filtros</a>
-                    @endif
-                    <p class="text-sm text-slate-500 sm:ms-auto">{{ $auditorias->total() }} {{ $auditorias->total() === 1 ? 'registro' : 'registros' }}{{ $hayFiltros ? ' con estos filtros' : '' }}</p>
-                </div>
-            </form>
+            </details>
 
-            {{-- Línea de tiempo --}}
-            @if ($auditorias->isEmpty())
-                <div class="{{ $tarjeta }} px-6 py-14 text-center">
-                    <p class="text-lg font-semibold text-blue-950">{{ $hayFiltros ? 'No hay movimientos con estos filtros' : 'Todavía no hay movimientos registrados' }}</p>
-                    <p class="mx-auto mt-2 max-w-md text-sm text-slate-600">{{ $hayFiltros ? 'Prueba con otro módulo, otra persona u otras fechas.' : 'Cada vez que alguien cree, cambie o elimine información, aparecerá aquí.' }}</p>
-                    @if ($hayFiltros)
-                        <a href="{{ route('admin.auditoria.index') }}" class="admin-boton-borde mt-5">Ver todos los movimientos</a>
-                    @endif
-                </div>
-            @else
-                @foreach ($porDia as $dia => $registros)
-                    <section aria-labelledby="dia-{{ $dia }}">
-                        <h2 id="dia-{{ $dia }}" class="mb-3 flex items-center gap-3 text-sm font-semibold text-slate-700">
-                            {{ $titulosDia($registros->first()->created_at) }}
-                            <span class="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-600">{{ $registros->count() }}</span>
-                        </h2>
-                        <ol class="{{ $tarjeta }} divide-y divide-slate-100">
-                            @foreach ($registros as $auditoria)
-                                @php
-                                    $actor = P::actor($auditoria);
-                                    [$chip, $punto] = $colores[P::color($auditoria->modelo)];
-                                    $enlace = P::enlace($auditoria);
-                                    $estado = P::cambioDeEstado($auditoria);
-                                    $cambios = P::cambios($auditoria);
-                                @endphp
-                                <li class="flex gap-3 p-4 sm:gap-4 sm:p-5">
-                                    <span aria-hidden="true" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold {{ $auditoria->usuario_id ? 'bg-blue-950 text-amber-300' : 'bg-slate-200 text-slate-600' }}">{{ $auditoria->usuario_id ? $iniciales($actor) : 'SIS' }}</span>
-                                    <div class="min-w-0 flex-1">
-                                        <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
-                                            <p class="text-sm text-slate-900">
-                                                <span class="font-semibold">{{ $actor }}</span>
-                                                {{ P::accion($auditoria) }}
-                                                @if ($enlace)
-                                                    <a href="{{ $enlace }}" class="font-semibold text-blue-800 hover:text-blue-950 hover:underline">#{{ $auditoria->modelo_id }}</a>
-                                                @else
-                                                    <span class="text-slate-500">#{{ $auditoria->modelo_id }}</span>
-                                                @endif
-                                            </p>
-                                            <time datetime="{{ $auditoria->created_at?->toIso8601String() }}" class="shrink-0 text-xs text-slate-500" title="{{ $auditoria->created_at?->format('d/m/Y H:i') }}">{{ $auditoria->created_at?->format('d/m/Y H:i') }}</time>
-                                        </div>
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+                <x-admin.boton>Aplicar filtros</x-admin.boton>
+                @if ($hayFiltros)<a href="{{ route('admin.auditoria.index') }}" class="admin-boton-borde">Quitar filtros</a>@endif
+                @if ($hayFiltros)<p class="text-sm text-slate-500 sm:ms-auto">{{ $auditorias->total() }} {{ $auditorias->total() === 1 ? 'registro' : 'registros' }} con estos filtros</p>@endif
+            </div>
+        </form>
+    </x-admin.tarjeta>
 
-                                        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                                            <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-semibold {{ $chip }}"><span aria-hidden="true" class="h-1.5 w-1.5 rounded-full {{ $punto }}"></span>{{ P::modulo($auditoria->modelo) }}</span>
-                                            <span class="rounded-full px-2.5 py-0.5 font-semibold ring-1 ring-inset {{ $acciones[$auditoria->accion] ?? 'bg-slate-50 text-slate-700 ring-slate-200' }}">{{ P::ACCIONES[$auditoria->accion][0] ?? $auditoria->accion }}</span>
-                                            @if ($estado)
-                                                <span class="text-slate-600">{{ $estado[0] }} <span aria-hidden="true">→</span><span class="sr-only">a</span> <span class="font-semibold text-slate-900">{{ $estado[1] }}</span></span>
-                                            @endif
-                                        </div>
-
-                                        @if ($cambios)
-                                            <details class="group mt-3">
-                                                <summary class="inline-flex cursor-pointer list-none items-center gap-1 text-xs font-semibold text-blue-800 hover:text-blue-950">
-                                                    <span class="group-open:hidden">Ver detalle ({{ count($cambios) }} {{ count($cambios) === 1 ? 'campo' : 'campos' }})</span>
-                                                    <span class="hidden group-open:inline">Ocultar detalle</span>
-                                                </summary>
-                                                <div class="mt-2 overflow-x-auto rounded-lg border border-slate-200">
-                                                    <table class="min-w-full text-left text-xs">
-                                                        <thead class="bg-slate-50 text-slate-500">
-                                                            <tr>
-                                                                <th scope="col" class="px-3 py-2 font-semibold">Campo</th>
-                                                                @if ($auditoria->accion === 'actualizado')<th scope="col" class="px-3 py-2 font-semibold">Antes</th>@endif
-                                                                <th scope="col" class="px-3 py-2 font-semibold">{{ $auditoria->accion === 'actualizado' ? 'Después' : ($auditoria->accion === 'eliminado' ? 'Valor eliminado' : 'Valor') }}</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody class="divide-y divide-slate-100">
-                                                            @foreach ($cambios as [$nombreCampo, $antes, $despues])
-                                                                <tr class="align-top">
-                                                                    <th scope="row" class="whitespace-nowrap px-3 py-2 font-medium text-slate-700">{{ $nombreCampo }}</th>
-                                                                    @if ($auditoria->accion === 'actualizado')<td class="px-3 py-2 text-slate-500 line-through decoration-slate-300">{{ $antes ?? '—' }}</td>@endif
-                                                                    <td class="px-3 py-2 text-slate-900">{{ $auditoria->accion === 'eliminado' ? $antes : $despues }}</td>
-                                                                </tr>
-                                                            @endforeach
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                                @if ($auditoria->ip)<p class="mt-2 text-xs text-slate-400">IP {{ $auditoria->ip }}</p>@endif
-                                            </details>
+    {{-- Línea de tiempo por día --}}
+    @if ($auditorias->isEmpty())
+        <x-admin.tarjeta>
+            <x-admin.vacio :titulo="$hayFiltros ? 'No hay movimientos con estos filtros' : 'Todavía no hay movimientos registrados'"
+                :texto="$hayFiltros ? 'Prueba con otro módulo, otra persona u otras fechas.' : 'Cada vez que alguien cree, cambie o elimine información, aparecerá aquí.'">
+                @if ($hayFiltros)<a href="{{ route('admin.auditoria.index') }}" class="admin-boton-borde">Ver todos los movimientos</a>@endif
+            </x-admin.vacio>
+        </x-admin.tarjeta>
+    @else
+        @foreach ($porDia as $dia => $registros)
+            <section aria-labelledby="dia-{{ $dia }}">
+                <h2 id="dia-{{ $dia }}" class="mb-2 flex items-center gap-2 text-base font-semibold text-blue-950">
+                    {{ $titulosDia($registros->first()->created_at) }}
+                    <span class="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-600">{{ $registros->count() }}</span>
+                </h2>
+                <ol class="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    @foreach ($registros as $auditoria)
+                        @php
+                            [$colorIcono, $trazo] = $iconos[$auditoria->accion] ?? ['bg-slate-100 text-slate-600', 'M12 8v4m0 4h.01'];
+                            $objeto = $objetos[$auditoria->modelo.':'.$auditoria->modelo_id] ?? null;
+                            $enlace = P::enlace($auditoria);
+                            $estado = P::cambioDeEstado($auditoria);
+                            $cambios = P::cambios($auditoria);
+                            $verbo = P::ACCIONES[$auditoria->accion][1] ?? $auditoria->accion;
+                        @endphp
+                        <li class="flex gap-3 px-4 py-3.5 sm:gap-4 sm:px-5">
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full {{ $colorIcono }}">
+                                <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ $trazo }}" /></svg>
+                                <span class="sr-only">{{ P::ACCIONES[$auditoria->accion][0] ?? $auditoria->accion }}</span>
+                            </span>
+                            <div class="min-w-0 flex-1">
+                                {{-- Frase: «Lady Alanoca cambió el seguimiento de Michi» (o la frase general si no hay nombre). --}}
+                                <p class="text-[15px] leading-snug text-slate-900">
+                                    <span class="font-semibold">{{ P::actor($auditoria) }}</span>
+                                    @if ($objeto)
+                                        {{ $verbo }} {{ $objeto[0] }}
+                                        @if ($objeto[3])<a href="{{ $objeto[3] }}" class="font-semibold text-blue-800 hover:text-blue-950 hover:underline">{{ $objeto[1] }}</a>@else<span class="font-semibold">{{ $objeto[1] }}</span>@endif
+                                        {{ $objeto[2] }}
+                                    @else
+                                        {{ P::accion($auditoria) }}
+                                        @if ($enlace)
+                                            <a href="{{ $enlace }}" class="font-semibold text-blue-800 hover:text-blue-950 hover:underline">#{{ $auditoria->modelo_id }}</a>
                                         @endif
-                                    </div>
-                                </li>
-                            @endforeach
-                        </ol>
-                    </section>
-                @endforeach
+                                    @endif
+                                </p>
 
-                @if ($auditorias->hasPages())<div>{{ $auditorias->links() }}</div>@endif
-            @endif
-        </div>
-    </div>
-</x-app-layout>
+                                @if ($estado)
+                                    <p class="mt-1.5 flex flex-wrap items-center gap-1.5 text-[13px]">
+                                        <span class="sr-only">Estado:</span>
+                                        <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-700">{{ $estado[0] }}</span>
+                                        <span aria-hidden="true" class="text-slate-400">→</span><span class="sr-only">a</span>
+                                        <span class="rounded-full bg-blue-100 px-2.5 py-0.5 font-semibold text-blue-950">{{ $estado[1] }}</span>
+                                    </p>
+                                @endif
+
+                                {{-- Línea gris: módulo · hora · ver qué cambió --}}
+                                <div class="mt-1.5 text-[13px] text-slate-500">
+                                    {{ P::modulo($auditoria->modelo) }}
+                                    <span aria-hidden="true">·</span>
+                                    <time datetime="{{ $auditoria->created_at?->toIso8601String() }}" title="{{ $auditoria->created_at?->format('d/m/Y H:i') }}">{{ $auditoria->created_at?->format('H:i') }}</time>
+                                    @if ($cambios)
+                                        <span aria-hidden="true">·</span>
+                                        <details class="group inline open:mt-1 open:block">
+                                            <summary class="inline cursor-pointer list-none font-semibold text-blue-800 hover:text-blue-950 hover:underline">
+                                                <span class="group-open:hidden">{{ $auditoria->accion === 'actualizado' ? 'Ver qué cambió' : 'Ver datos' }} ({{ count($cambios) }}) ▾</span>
+                                                <span class="hidden group-open:inline">Ocultar ▴</span>
+                                            </summary>
+                                            <div class="mt-2 overflow-x-auto rounded-lg border border-slate-200">
+                                                <table class="min-w-full text-left text-[13px]">
+                                                    <thead class="bg-slate-50 text-slate-500">
+                                                        <tr>
+                                                            <th scope="col" class="px-3 py-2 font-semibold">Campo</th>
+                                                            @if ($auditoria->accion === 'actualizado')<th scope="col" class="px-3 py-2 font-semibold">Antes</th>@endif
+                                                            <th scope="col" class="px-3 py-2 font-semibold">{{ $auditoria->accion === 'actualizado' ? 'Después' : ($auditoria->accion === 'eliminado' ? 'Valor eliminado' : 'Valor') }}</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="divide-y divide-slate-100">
+                                                        @foreach ($cambios as [$nombreCampo, $antes, $despues])
+                                                            <tr class="align-top">
+                                                                <th scope="row" class="whitespace-nowrap px-3 py-2 font-medium text-slate-700">{{ $nombreCampo }}</th>
+                                                                @if ($auditoria->accion === 'actualizado')<td class="px-3 py-2 text-slate-500 line-through decoration-slate-300">{{ $antes ?? '—' }}</td>@endif
+                                                                <td class="px-3 py-2 text-slate-900">{{ $auditoria->accion === 'eliminado' ? $antes : $despues }}</td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            @if ($auditoria->ip)<p class="mt-1 text-xs text-slate-400">IP {{ $auditoria->ip }}</p>@endif
+                                        </details>
+                                    @endif
+                                </div>
+                            </div>
+                        </li>
+                    @endforeach
+                </ol>
+            </section>
+        @endforeach
+        @if ($auditorias->hasPages())<div>{{ $auditorias->links() }}</div>@endif
+    @endif
+</x-admin.pagina>
