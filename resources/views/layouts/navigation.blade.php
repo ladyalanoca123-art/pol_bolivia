@@ -20,7 +20,7 @@
     // Color del rol, el mismo de la lista de Usuarios: ámbar el voluntario y verde el ciudadano.
     $acento = $esVoluntario ? 'bg-amber-400 text-blue-950' : 'bg-emerald-400 text-blue-950';
 @endphp
-<nav x-data="{ open: false }" class="border-b-4 {{ $esVoluntario ? 'border-amber-400' : 'border-emerald-400' }} bg-[#0d2138] text-white shadow-sm">
+<nav x-data="{ open: false }" class="border-b-4 {{ $esVoluntario ? 'border-amber-400 lg:hidden' : 'border-emerald-400' }} bg-[#0d2138] text-white shadow-sm">
     <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <div class="flex min-w-0 items-center gap-8">
             {{-- Ciudadano: portada pública. Voluntario: su espacio. --}}

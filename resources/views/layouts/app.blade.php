@@ -112,7 +112,12 @@
                 </div>
             </div>
         @else
-            <div class="min-h-screen bg-slate-50">
+            {{-- El voluntario tiene además un menú lateral celeste en computadora (layouts/voluntario-navigation). --}}
+            @php $esVoluntario = auth()->user()?->hasRole('voluntario'); @endphp
+            <div class="min-h-screen bg-slate-50 {{ $esVoluntario ? 'lg:ps-64' : '' }}">
+                @if ($esVoluntario)
+                    @include('layouts.voluntario-navigation')
+                @endif
                 @include('layouts.navigation')
                 @isset($header)
                     <header class="border-b border-slate-200 bg-white">
