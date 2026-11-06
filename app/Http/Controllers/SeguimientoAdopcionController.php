@@ -36,7 +36,14 @@ class SeguimientoAdopcionController extends Controller
 
     public function index(): View
     {
-        $seguimientos = SeguimientoAdopcion::query()->where('voluntario_id', auth()->id())->with('solicitud.mascota')->latest()->paginate(15);
+        // Foto, familia y conteos solo para mostrarlos en las filas de la lista.
+        $seguimientos = SeguimientoAdopcion::query()->where('voluntario_id', auth()->id())
+            ->with(['solicitud.mascota.fotos', 'solicitud.solicitante:id,nombres,apellidos'])
+            ->withCount([
+                'visitas as visitas_hechas_count' => fn ($q) => $q->where('estado', '<>', 'programada'),
+                'incidencias as incidencias_pendientes_count' => fn ($q) => $q->where('estado', '<>', 'atendida'),
+            ])
+            ->latest()->paginate(15);
 
         return view('seguimientos.index', compact('seguimientos'));
     }

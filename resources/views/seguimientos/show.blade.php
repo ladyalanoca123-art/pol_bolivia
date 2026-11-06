@@ -17,6 +17,88 @@
         </div>
     </x-slot>
 
+    {{-- Etapas: la misma franja azul compacta que ve la administración (✓ verde hecha, ámbar la que toca ahora). --}}
+    @if ($fechasSugeridas)
+        @php
+            $etapas = [[
+                'titulo' => 'Entrega',
+                'estado' => $seguimiento->solicitud->entregada_at?->timezone('America/La_Paz')->format('d/m/Y') ?? 'Sin registrar',
+                'pasada' => (bool) $seguimiento->solicitud->entregada_at, 'ok' => (bool) $seguimiento->solicitud->entregada_at, 'aviso' => null,
+            ]];
+            foreach ($fechasSugeridas as $numero => $fechas) {
+                $visita = $visitasOrdenadas->get($numero - 1);
+                $aviso = null;
+                if (! $visita) {
+                    $estado = $numero === $siguienteNumeroVisita ? 'Próxima para coordinar' : 'Se habilita al registrar la visita 1';
+                } elseif ($visita->estado === 'programada') {
+                    $estado = 'Programada '.$visita->fecha_programada->format('d/m/Y');
+                    if (! \App\Support\FechasSeguimientoAdopcion::dentroDelMargen($visita->fecha_programada->toDateString(), $fechas)) {
+                        $aviso = 'Fuera del margen recomendado';
+                    }
+                } else {
+                    $estado = $visita->estado === 'realizada' ? 'Realizada '.$visita->fecha_realizada?->format('d/m/Y') : 'No asistió ('.$visita->fecha_programada->format('d/m/Y').')';
+                }
+                $etapas[] = [
+                    'titulo' => "Visita {$numero} · ".$fecha($fechas['fecha']),
+                    'estado' => $estado,
+                    'pasada' => $visita && $visita->estado !== 'programada',
+                    'ok' => $visita && $visita->estado === 'realizada',
+                    'aviso' => $aviso,
+                ];
+            }
+            $etapas[] = [
+                'titulo' => 'Cierre',
+                'estado' => $seguimiento->estado === 'cerrado' ? 'Seguimiento cerrado' : 'Lo cierra la fundación',
+                'pasada' => $seguimiento->estado === 'cerrado', 'ok' => $seguimiento->estado === 'cerrado', 'aviso' => null,
+            ];
+            $actual = collect($etapas)->search(fn ($etapa) => ! $etapa['pasada']);
+        @endphp
+        <section class="rounded-2xl bg-gradient-to-r from-blue-950 to-blue-900 px-4 py-4 shadow-sm sm:px-6">
+            <h2 class="sr-only">Etapas del seguimiento</h2>
+            <ol class="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Etapas del seguimiento">
+                @foreach ($etapas as $i => $etapa)
+                    @php
+                        $esActual = $i === $actual;
+                        $circulo = match (true) {
+                            $etapa['ok'] => 'bg-emerald-400 text-blue-950',
+                            $etapa['pasada'] => 'bg-orange-300 text-blue-950',
+                            $esActual => 'bg-amber-400 text-blue-950 ring-4 ring-amber-400/30',
+                            default => 'border-2 border-white/30 text-blue-200',
+                        };
+                    @endphp
+                    <li class="flex items-start gap-3" @if ($esActual) aria-current="step" @endif>
+                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold {{ $circulo }}" aria-hidden="true">
+                            @if ($etapa['ok'])
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+                            @elseif ($etapa['pasada'])
+                                !
+                            @else
+                                {{ $i + 1 }}
+                            @endif
+                        </span>
+                        <span class="min-w-0">
+                            <span class="block text-[15px] font-semibold leading-tight {{ $etapa['pasada'] || $esActual ? 'text-white' : 'text-blue-200' }}">{{ $etapa['titulo'] }}</span>
+                            <span class="mt-0.5 block text-sm {{ $esActual ? 'text-amber-200' : 'text-blue-200' }}">{{ $etapa['estado'] }}</span>
+                            @if ($etapa['aviso'])<span class="mt-1 inline-block rounded-full bg-amber-400 px-2 py-0.5 text-[13px] font-semibold text-blue-950">{{ $etapa['aviso'] }}</span>@endif
+                        </span>
+                    </li>
+                @endforeach
+            </ol>
+            <details class="group mt-3 border-t border-white/10 pt-2">
+                <summary class="inline-flex cursor-pointer list-none items-center gap-1 rounded text-sm font-semibold text-blue-200 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+                    Ver márgenes recomendados
+                    <svg class="h-4 w-4 transition group-open:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4Z" clip-rule="evenodd"/></svg>
+                </summary>
+                <ul class="mt-2 space-y-1 text-sm text-blue-100">
+                    @foreach ($fechasSugeridas as $numero => $fechas)
+                        <li>Visita {{ $numero }}: objetivo a los {{ $fechas['dias'] }} días ({{ $fecha($fechas['fecha']) }}) · margen recomendado: {{ $fecha($fechas['desde']) }}–{{ $fecha($fechas['hasta']) }}</li>
+                    @endforeach
+                </ul>
+                <p class="mt-2 text-[13px] text-blue-200">Se calculan desde la entrega real. Son sugerencias; cada visita se programa cuando coordines con la familia.</p>
+            </details>
+        </section>
+    @endif
+
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {{-- Visitas --}}
         <div class="min-w-0 space-y-6 lg:col-span-2">
@@ -158,26 +240,6 @@
                 </x-admin.tarjeta>
             @endcan
 
-            @if ($fechasSugeridas)
-                <x-admin.tarjeta titulo="Fechas sugeridas para visitas de seguimiento" descripcion="Se calculan desde la fecha real de entrega. Son sugerencias; cada visita se programa cuando coordines con la familia.">
-                    <ul class="space-y-3 text-sm">
-                        @foreach ($fechasSugeridas as $numero => $fechas)
-                            @php $visitaSugerida = $visitasOrdenadas->get($numero - 1); @endphp
-                            <li class="rounded-xl bg-slate-50 p-3">
-                                <p class="font-semibold text-blue-950">Visita {{ $numero }} · objetivo a los {{ $fechas['dias'] }} días: {{ $fecha($fechas['fecha']) }}</p>
-                                <p class="text-slate-600">(margen recomendado: {{ $fecha($fechas['desde']) }}–{{ $fecha($fechas['hasta']) }})</p>
-                                <p class="mt-1">
-                                    @if ($visitaSugerida && $visitaSugerida->estado === 'realizada')<span class="font-medium text-emerald-700">Realizada: {{ $visitaSugerida->fecha_realizada->format('d/m/Y') }}</span>
-                                    @elseif ($visitaSugerida && $visitaSugerida->estado === 'no_asistio')<span class="font-medium text-amber-800">No asistió ({{ $visitaSugerida->fecha_programada->format('d/m/Y') }})</span>
-                                    @elseif ($visitaSugerida) programada: {{ $visitaSugerida->fecha_programada->format('d/m/Y') }}@if (! \App\Support\FechasSeguimientoAdopcion::dentroDelMargen($visitaSugerida->fecha_programada->toDateString(), $fechas))<span class="font-semibold text-amber-800"> · Fuera del margen recomendado</span>@endif
-                                    @elseif ($numero === $siguienteNumeroVisita)<span class="font-medium text-blue-900">Próxima para coordinar</span>
-                                    @else<span class="text-slate-500">Se habilita al registrar la visita 1</span>@endif
-                                </p>
-                            </li>
-                        @endforeach
-                    </ul>
-                </x-admin.tarjeta>
-            @endif
 
             @if ($seguimiento->estado === 'activo')
                 <x-admin.tarjeta titulo="Reportar incidencia" descripcion="Avisa a la fundación si observas un problema de salud, posible maltrato o pierdes contacto con la familia.">

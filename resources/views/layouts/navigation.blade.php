@@ -17,6 +17,8 @@
     }
     $iniciales = mb_strtoupper(mb_substr($usuario->nombres, 0, 1).mb_substr($usuario->apellidos ?? '', 0, 1));
     $rol = $esVoluntario ? 'Voluntario/a' : 'Ciudadano/a';
+    // Color del rol, el mismo de la lista de Usuarios: ámbar el voluntario y verde el ciudadano.
+    $acento = $esVoluntario ? 'bg-amber-400 text-blue-950' : 'bg-emerald-400 text-blue-950';
 @endphp
 <nav x-data="{ open: false }" class="bg-[#0d2138] text-white shadow-sm">
     <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
@@ -28,7 +30,7 @@
             <div class="hidden items-center gap-1 md:flex">
                 @foreach ($enlaces as [$url, $texto, $activo])
                     <a href="{{ $url }}" @if ($activo) aria-current="page" @endif
-                       class="rounded-full px-4 py-2 text-sm font-semibold transition {{ $activo ? 'bg-amber-400 text-blue-950' : 'text-slate-200 hover:bg-white/10 hover:text-white' }}">{{ $texto }}</a>
+                       class="rounded-full px-4 py-2 text-sm font-semibold transition {{ $activo ? $acento : 'text-slate-200 hover:bg-white/10 hover:text-white' }}">{{ $texto }}</a>
                 @endforeach
             </div>
         </div>
@@ -38,7 +40,7 @@
             <x-dropdown align="right" width="48">
                 <x-slot name="trigger">
                     <button class="flex items-center gap-3 rounded-full py-1 pe-3 ps-1 text-left transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
-                        <span class="flex h-9 w-9 items-center justify-center rounded-full bg-amber-400 text-sm font-bold text-blue-950" aria-hidden="true">{{ $iniciales }}</span>
+                        <span class="flex h-9 w-9 items-center justify-center rounded-full {{ $acento }} text-sm font-bold" aria-hidden="true">{{ $iniciales }}</span>
                         <span class="leading-tight">
                             <span class="block whitespace-nowrap text-sm font-semibold">{{ $usuario->nombres }} {{ $usuario->apellidos }}</span>
                             <span class="block text-xs text-slate-300">{{ $rol }}</span>
@@ -71,12 +73,12 @@
         <div class="space-y-1 px-4 py-3">
             @foreach ($enlaces as [$url, $texto, $activo])
                 <a href="{{ $url }}" @if ($activo) aria-current="page" @endif
-                   class="block rounded-xl px-4 py-2.5 text-sm font-semibold {{ $activo ? 'bg-amber-400 text-blue-950' : 'text-slate-200 hover:bg-white/10' }}">{{ $texto }}</a>
+                   class="block rounded-xl px-4 py-2.5 text-sm font-semibold {{ $activo ? $acento : 'text-slate-200 hover:bg-white/10' }}">{{ $texto }}</a>
             @endforeach
         </div>
         <div class="border-t border-white/10 px-4 py-4">
             <div class="flex items-center gap-3">
-                <span class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-400 text-sm font-bold text-blue-950" aria-hidden="true">{{ $iniciales }}</span>
+                <span class="flex h-10 w-10 items-center justify-center rounded-full {{ $acento }} text-sm font-bold" aria-hidden="true">{{ $iniciales }}</span>
                 <div class="min-w-0">
                     <p class="truncate text-sm font-semibold">{{ $usuario->nombres }} {{ $usuario->apellidos }}</p>
                     <p class="truncate text-xs text-slate-300">{{ $usuario->email }}</p>
