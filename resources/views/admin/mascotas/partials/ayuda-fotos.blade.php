@@ -3,7 +3,8 @@
     el resultado de la optimización en el navegador y los avisos del campo $campo. $ayuda = false omite el texto de ayuda.
 --}}
 @if ($ayuda ?? true)
-    <p class="text-xs text-gray-500">JPG, PNG o WEBP · máximo {{ \App\Http\Requests\Admin\RegisterMascotaRequest::megasMaximos() }} MB por foto · mínimo {{ \App\Services\ImagenSegura::LADO_MINIMO }} × {{ \App\Services\ImagenSegura::LADO_MINIMO }} px · hasta {{ \App\Models\FotoMascota::MAXIMO_POR_MASCOTA }} fotos por mascota. Las fotos grandes se optimizan automáticamente antes de subir.</p>
+    {{-- Corta: el límite de fotos ya se ve en «Fotos: N de 4» y la optimización ocurre sola. --}}
+    <p class="mt-3 text-[13px] text-slate-500">JPG, PNG o WEBP · hasta {{ \App\Http\Requests\Admin\RegisterMascotaRequest::megasMaximos() }} MB · mínimo {{ \App\Services\ImagenSegura::LADO_MINIMO }} × {{ \App\Services\ImagenSegura::LADO_MINIMO }} px</p>
 @endif
 <p x-cloak x-show="optimizando(@js($campo))" class="text-xs font-medium text-blue-800" role="status">Optimizando fotos…</p>
 <ul x-cloak x-show="lineas(@js($campo)).length" class="space-y-0.5 text-xs text-gray-600" aria-live="polite">

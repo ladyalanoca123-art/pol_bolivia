@@ -311,7 +311,7 @@ class SubidaMultipleFotosTest extends TestCase
     public function test_los_formularios_incluyen_el_optimizador_y_los_selectores_correctos(): void
     {
         $mascota = $this->mascota(fotos: 1);
-        $ayuda = 'JPG, PNG o WEBP · máximo 10 MB por foto · mínimo 400 × 400 px · hasta 4 fotos por mascota. Las fotos grandes se optimizan automáticamente antes de subir.';
+        $ayuda = 'JPG, PNG o WEBP · hasta 10 MB · mínimo 400 × 400 px';
 
         $this->actingAs($this->admin)->get(route('admin.mascotas.show', $mascota))->assertOk()
             ->assertSee('x-data="optimizadorFotos(', false)

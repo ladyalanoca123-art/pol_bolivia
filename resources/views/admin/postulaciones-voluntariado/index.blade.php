@@ -2,14 +2,9 @@
 @php $hayFiltros = collect($filters)->filter(fn ($v) => filled($v))->isNotEmpty(); @endphp
 <x-admin.pagina titulo="Postulaciones de voluntariado" :contador="$postulaciones->total().($postulaciones->total() === 1 ? ' postulación' : ' postulaciones')" seccion="Voluntariado" descripcion="Revisa las postulaciones: al aprobar una, la persona pasa a ser voluntaria y puede recibir seguimientos.">
     <x-admin.tarjeta>
-        <form method="GET" action="{{ route('admin.postulaciones-voluntariado.index') }}" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-                <label for="estado" class="admin-etiqueta">Estado</label>
-                <select id="estado" name="estado" class="admin-campo">
-                    <option value="">Todos</option>
-                    @foreach (['pendiente', 'aprobada', 'rechazada', 'cancelada'] as $estado)<option value="{{ $estado }}" @selected(($filters['estado'] ?? '') === $estado)>{{ ucfirst($estado) }}</option>@endforeach
-                </select>
-            </div>
+        {{-- El estado se elige con los botones de abajo (se conserva al buscar). --}}
+        <form method="GET" action="{{ route('admin.postulaciones-voluntariado.index') }}" class="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+            @if (filled($filters['estado'] ?? null))<input type="hidden" name="estado" value="{{ $filters['estado'] }}">@endif
             <div>
                 <label for="area" class="admin-etiqueta">Área de interés</label>
                 <select id="area" name="area" class="admin-campo">
@@ -30,6 +25,18 @@
             </div>
         </form>
     </x-admin.tarjeta>
+
+    {{-- Estado: botones debajo de los filtros, como en las demás listas. --}}
+    @php
+        $opcionesEstado = collect([
+            ['Todas', null, \App\Support\IconosPestanas::LISTA],
+            ['Por revisar', 'pendiente', \App\Support\IconosPestanas::BANDEJA],
+            ['Aprobadas', 'aprobada', \App\Support\IconosPestanas::CHECK],
+            ['Rechazadas', 'rechazada', \App\Support\IconosPestanas::RECHAZO],
+            ['Canceladas', 'cancelada', \App\Support\IconosPestanas::ARCHIVO],
+        ])->map(fn ($o) => [$o[0], route('admin.postulaciones-voluntariado.index', array_filter([...$filters, 'estado' => $o[1]])), ($filters['estado'] ?? null) === $o[1], $o[2]])->all();
+    @endphp
+    <x-admin.pestanas etiqueta="Filtrar por estado" :opciones="$opcionesEstado" />
 
     @if ($postulaciones->isEmpty())
         <x-admin.tarjeta>

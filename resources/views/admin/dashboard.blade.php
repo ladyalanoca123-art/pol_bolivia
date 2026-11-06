@@ -98,8 +98,10 @@
                 <h2 id="titulo-indicadores" class="sr-only">Indicadores principales</h2>
                 <ul class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
                     @foreach ($tarjetas as [$titulo, $valor, $detalle, $tonoDetalle, $url, $icono, $tonoIcono])
+                        @php $pestanaDeTarjeta = ['solicitudes', 'seguimientos', 'incidencias', 'postulaciones'][$loop->index] ?? 'solicitudes'; @endphp
                         <li>
-                            <a href="{{ $url }}" class="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/60 transition hover:border-blue-200 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 sm:p-5">
+                            {{-- Abre su pestaña en «Necesitan tu atención» (sin JavaScript, el enlace lleva a la lista). --}}
+                            <a href="{{ $url }}" x-on:click.prevent="$dispatch('abrir-pestana', '{{ $pestanaDeTarjeta }}'); document.getElementById('titulo-atencion').scrollIntoView({ behavior: 'smooth', block: 'start' })" class="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/60 transition hover:border-blue-200 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 sm:p-5">
                                 <div class="flex items-center gap-3">
                                     <span class="hidden h-12 w-12 shrink-0 items-center justify-center rounded-full sm:flex {{ $tonoIcono }}" aria-hidden="true">
                                         <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icono }}" /></svg>
@@ -121,6 +123,7 @@
 
                 {{-- Necesitan tu atención: avisos urgentes arriba y cada caso por pestañas --}}
                 <section aria-labelledby="titulo-atencion" class="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60 lg:col-span-2 lg:self-start"
+                         x-on:abrir-pestana.window="pestana = $event.detail"
                          x-data="{
                              pestana: 'solicitudes',
                              orden: ['solicitudes', 'seguimientos', 'incidencias', 'postulaciones'],
@@ -171,8 +174,6 @@
                                     :class="pestana === '{{ $clave }}' ? 'bg-blue-950 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
                                     class="{{ $loop->first ? 'bg-blue-950 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }} inline-flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 text-[15px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
                                 {{ $titulo }}
-                                <span :class="pestana === '{{ $clave }}' ? 'bg-white text-blue-950' : 'bg-white text-slate-700'"
-                                      class="inline-flex min-w-6 items-center justify-center rounded-full bg-white px-1.5 text-[13px] font-bold leading-6 {{ $loop->first ? 'text-blue-950' : 'text-slate-700' }}">{{ $total }}</span>
                             </button>
                         @endforeach
                     </div>

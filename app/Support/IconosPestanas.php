@@ -38,6 +38,8 @@ class IconosPestanas
 
     public const ARCHIVO = 'M4 4h16v3H4zM5 7l1 12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-12M10 11h4';
 
+    public const RECHAZO = 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm-3-12 6 6m0-6-6 6';
+
     public const CHECK = 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm-4-9 3 3 5-6';
 
     public const HOY = self::CALENDARIO.'M8.5 13h3v3h-3z';

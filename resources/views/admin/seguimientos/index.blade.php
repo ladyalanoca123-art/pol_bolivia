@@ -3,20 +3,13 @@
 @endphp
 <x-admin.pagina titulo="Seguimientos de adopción" :contador="$seguimientos->total().($seguimientos->total() === 1 ? ' seguimiento' : ' seguimientos')" seccion="Seguimientos" descripcion="Cada adopción concretada tiene su seguimiento: asigna un voluntario, revisa sus visitas e incidencias y ciérralo al terminar.">
     <x-admin.tarjeta>
-        <form method="GET" action="{{ route('admin.seguimientos.index') }}" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+        <form method="GET" action="{{ route('admin.seguimientos.index') }}" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]">
             <div class="sm:col-span-2 lg:col-span-1">
                 <label for="buscar" class="admin-etiqueta">Buscar</label>
                 <input id="buscar" name="buscar" type="search" class="admin-campo" value="{{ $filters['buscar'] ?? '' }}" placeholder="Mascota o familia">
             </div>
-            <div>
-                <label for="estado" class="admin-etiqueta">Estado</label>
-                <select id="estado" name="estado" class="admin-campo">
-                    <option value="">Todos</option>
-                    @foreach (['sin_asignar' => 'Sin asignar', 'activo' => 'Activo', 'cerrado' => 'Cerrado'] as $valor => $texto)
-                        <option value="{{ $valor }}" @selected(($filters['estado'] ?? '') === $valor)>{{ $texto }}</option>
-                    @endforeach
-                </select>
-            </div>
+            {{-- El estado se elige con los botones de abajo (se conserva al buscar). --}}
+            @if (filled($filters['estado'] ?? null))<input type="hidden" name="estado" value="{{ $filters['estado'] }}">@endif
             <div>
                 <label for="voluntario" class="admin-etiqueta">Voluntario</label>
                 <select id="voluntario" name="voluntario" class="admin-campo">
@@ -32,6 +25,17 @@
             </div>
         </form>
     </x-admin.tarjeta>
+
+    {{-- Estado: botones debajo de los filtros, como en las demás listas. --}}
+    @php
+        $opcionesEstado = collect([
+            ['Todos', null, \App\Support\IconosPestanas::LISTA],
+            ['Sin asignar', 'sin_asignar', \App\Support\IconosPestanas::PERSONA],
+            ['Activos', 'activo', \App\Support\IconosPestanas::SEGUIMIENTOS],
+            ['Cerrados', 'cerrado', \App\Support\IconosPestanas::ARCHIVO],
+        ])->map(fn ($o) => [$o[0], route('admin.seguimientos.index', array_filter([...$filters, 'estado' => $o[1]])), ($filters['estado'] ?? null) === $o[1], $o[2]])->all();
+    @endphp
+    <x-admin.pestanas etiqueta="Filtrar por estado" :opciones="$opcionesEstado" />
 
     @if ($seguimientos->isEmpty())
         <x-admin.tarjeta>
