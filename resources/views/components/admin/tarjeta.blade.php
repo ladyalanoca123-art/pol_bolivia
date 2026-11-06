@@ -1,7 +1,15 @@
 @props(['titulo' => null, 'descripcion' => null, 'relleno' => true, 'tono' => 'blanco'])
-{{-- Tarjeta del panel de administración. tono: blanco, ambar (avisos) o rojo (acciones delicadas). --}}
+{{--
+    Tarjeta del panel de administración. tono: blanco, ambar (avisos), rojo (acciones delicadas o alertas graves)
+    o celeste (contenido largo de lectura, p. ej. las respuestas de un cuestionario, para separarlo del resto).
+--}}
 @php
-    $fondo = ['blanco' => 'border-slate-200 bg-white', 'ambar' => 'border-amber-200 bg-amber-50', 'rojo' => 'border-red-200 bg-white'][$tono] ?? 'border-slate-200 bg-white';
+    $fondo = [
+        'blanco' => 'border-slate-200 bg-white',
+        'ambar' => 'border-amber-200 bg-amber-50',
+        'rojo' => 'border-red-200 bg-white',
+        'celeste' => 'border-sky-200 bg-sky-50/70',
+    ][$tono] ?? 'border-slate-200 bg-white';
 @endphp
 <section {{ $attributes->merge(['class' => "rounded-2xl border shadow-sm shadow-slate-200/60 {$fondo}"]) }}>
     @if ($titulo || isset($acciones))

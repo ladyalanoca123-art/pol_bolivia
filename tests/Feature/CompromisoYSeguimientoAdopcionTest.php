@@ -38,6 +38,12 @@ class CompromisoYSeguimientoAdopcionTest extends TestCase
     {
         $solicitud = $this->solicitudAprobada();
 
+        // Antes de subirla: aviso de que falta y sin botón de descarga (la ruta de descarga y la de subida comparten URL,
+        // por eso se comprueba el texto del botón).
+        $this->actingAs($this->admin)->get(route('admin.solicitudes-adopcion.show', $solicitud))->assertOk()
+            ->assertSee('Falta subir la foto del acta firmada y sellada')
+            ->assertDontSee('Descargar evidencia privada');
+
         $this->actingAs($this->admin)
             ->post(route('admin.solicitudes-adopcion.commitment-evidence.store', $solicitud), [
                 'evidencia_compromiso' => UploadedFile::fake()->image('compromiso.png', 600, 800),
@@ -49,6 +55,12 @@ class CompromisoYSeguimientoAdopcionTest extends TestCase
         $this->assertStringStartsWith('compromisos/'.$solicitud->id.'/', $solicitud->compromiso_foto_path);
         Storage::disk('local')->assertExists($solicitud->compromiso_foto_path);
         Storage::disk('public')->assertMissing($solicitud->compromiso_foto_path);
+
+        // Después: el botón verde de descarga, con el aviso de que ya está subida.
+        $this->actingAs($this->admin)->get(route('admin.solicitudes-adopcion.show', $solicitud))->assertOk()
+            ->assertSee('Descargar evidencia privada')
+            ->assertSee('El acta firmada y sellada ya está subida.')
+            ->assertDontSee('Falta subir la foto del acta firmada y sellada');
 
         $this->actingAs($this->admin)
             ->get(route('admin.solicitudes-adopcion.commitment-evidence.download', $solicitud))

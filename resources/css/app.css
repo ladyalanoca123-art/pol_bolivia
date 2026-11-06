@@ -35,16 +35,19 @@
 .panel-admin .text-sm { font-size: 0.9375rem; line-height: 1.5rem; }
 
 /*
- * Barra de desplazamiento del menú lateral del panel (layouts/admin-navigation: <nav class="menu-admin-desplazable">):
+ * Barra de desplazamiento del menú lateral del panel (layouts/admin-navigation: <nav class="menu-admin-desplazable">)
+ * y de las columnas fijas de las fichas de detalle (class="columna-fija", p. ej. la del solicitante):
  * fina (4 px) y del color del menú. Chrome y Edge usan ::-webkit-scrollbar; Firefox, scrollbar-width y scrollbar-color
  * (se declaran solo en Firefox porque en Chrome anularían el ancho de 4 px).
  */
-.menu-admin-desplazable::-webkit-scrollbar { width: 4px; }
-.menu-admin-desplazable::-webkit-scrollbar-track { background: transparent; }
+.menu-admin-desplazable::-webkit-scrollbar, .columna-fija::-webkit-scrollbar { width: 4px; }
+.menu-admin-desplazable::-webkit-scrollbar-track, .columna-fija::-webkit-scrollbar-track { background: transparent; }
 .menu-admin-desplazable::-webkit-scrollbar-thumb { background-color: rgb(147 197 253 / 0.3); border-radius: 9999px; }
+.columna-fija::-webkit-scrollbar-thumb { background-color: rgb(148 163 184 / 0.5); border-radius: 9999px; }
 .menu-admin-desplazable::-webkit-scrollbar-thumb:hover { background-color: rgb(147 197 253 / 0.5); }
 @supports (-moz-appearance: none) {
     .menu-admin-desplazable { scrollbar-width: thin; scrollbar-color: rgb(147 197 253 / 0.3) transparent; }
+    .columna-fija { scrollbar-width: thin; scrollbar-color: rgb(148 163 184 / 0.5) transparent; }
 }
 
 /*
