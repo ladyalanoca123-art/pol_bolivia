@@ -1,7 +1,7 @@
 <x-admin.pagina :titulo="$user->nombres.' '.$user->apellidos" seccion="Detalle de usuario" ancho="max-w-4xl" :volver="route('admin.usuarios.index')" volver-texto="Volver al listado">
     <x-slot name="subtitulo">
         <div class="mt-2 flex flex-wrap items-center gap-2">
-            <x-admin.insignia :tono="['administrador' => 'indigo', 'voluntario' => 'ambar'][$user->rol] ?? 'gris'" :punto="false">{{ ucfirst($user->rol) }}</x-admin.insignia>
+            <x-admin.insignia :tono="['administrador' => 'indigo', 'voluntario' => 'ambar', 'ciudadano' => 'verde'][$user->rol] ?? 'gris'" :punto="false">{{ ucfirst($user->rol) }}</x-admin.insignia>
             @if ($user->es_principal)<x-admin.insignia tono="ambar" :punto="false">Administrador principal</x-admin.insignia>@endif
             <x-admin.estado de="usuario" :valor="(bool) $user->estado" />
         </div>

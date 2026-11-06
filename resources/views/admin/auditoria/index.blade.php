@@ -38,94 +38,72 @@
     :contador="$auditorias->total().($auditorias->total() === 1 ? ' movimiento' : ' movimientos')"
     descripcion="Registro de todo lo que se crea, cambia o elimina en el sistema: quién lo hizo, cuándo y qué cambió.">
 
-    {{-- Resumen compacto --}}
-    <section aria-labelledby="titulo-resumen">
-        <h2 id="titulo-resumen" class="sr-only">Resumen de actividad</h2>
-        <dl class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            @foreach ([
-                ['Movimientos hoy', $resumen['hoy'], 'Desde las 00:00'],
-                ['Últimos 7 días', $resumen['semana'], 'Incluye hoy'],
-                ['Personas activas', $resumen['personas'], 'Hicieron cambios en 7 días'],
-                ['Eliminaciones', $resumen['eliminaciones'], 'En los últimos 7 días'],
-            ] as [$titulo, $valor, $ayuda])
-                <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                    <dd class="text-2xl font-bold leading-none {{ $titulo === 'Eliminaciones' && $valor > 0 ? 'text-red-700' : 'text-blue-950' }}">{{ $valor }}</dd>
-                    <dt class="min-w-0 text-sm leading-tight text-slate-700">{{ $titulo }}<span class="block text-xs text-slate-500">{{ $ayuda }}</span></dt>
-                </div>
-            @endforeach
-        </dl>
-    </section>
-
-    {{-- Período --}}
-    <nav aria-label="Período" class="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-        @foreach ($periodos as $texto => $desde)
-            @php $activo = $periodoActivo === $texto; @endphp
-            <a href="{{ route('admin.auditoria.index', array_filter([...collect($filtros)->except(['desde', 'hasta'])->all(), 'desde' => $desde])) }}"
-               @if ($activo) aria-current="page" @endif
-               class="inline-flex min-h-10 items-center whitespace-nowrap rounded-full border px-4 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 {{ $activo ? 'border-blue-950 bg-blue-950 text-white' : 'border-slate-300 bg-white text-blue-950 hover:border-blue-900 hover:bg-blue-50' }}">{{ $texto }}</a>
-        @endforeach
-    </nav>
-
-    {{-- Filtros --}}
-    <x-admin.tarjeta>
-        <form method="GET" action="{{ route('admin.auditoria.index') }}" aria-label="Filtrar auditoría">
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div>
-                    <label for="modelo" class="admin-etiqueta">Módulo</label>
-                    <select id="modelo" name="modelo" class="admin-campo">
-                        <option value="">Todos</option>
-                        @foreach ($modelos as $modelo)
-                            <option value="{{ $modelo }}" @selected(($filtros['modelo'] ?? null) === $modelo)>{{ P::modulo($modelo) }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label for="accion" class="admin-etiqueta">Acción</label>
-                    <select id="accion" name="accion" class="admin-campo">
-                        <option value="">Todas</option>
-                        @foreach (P::ACCIONES as $clave => [$nombre])
-                            <option value="{{ $clave }}" @selected(($filtros['accion'] ?? null) === $clave)>{{ $nombre }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label for="usuario" class="admin-etiqueta">Persona</label>
-                    <select id="usuario" name="usuario" class="admin-campo">
-                        <option value="">Todas</option>
-                        @foreach ($usuarios as $usuario)
-                            <option value="{{ $usuario->id }}" @selected((int) ($filtros['usuario'] ?? 0) === $usuario->id)>{{ $usuario->nombres }} {{ $usuario->apellidos }}</option>
-                        @endforeach
-                    </select>
-                </div>
+    {{-- Filtros en una sola fila (sin recuadros de resumen: el total va junto al título y cada día lleva su contador). --}}
+    <form method="GET" action="{{ route('admin.auditoria.index') }}" aria-label="Filtrar auditoría" class="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
+            <div class="min-w-0 flex-1">
+                <label for="modelo" class="text-[13px] font-semibold text-slate-600">Módulo</label>
+                <select id="modelo" name="modelo" class="admin-campo !mt-1 !min-h-10">
+                    <option value="">Todos</option>
+                    @foreach ($modelos as $modelo)
+                        <option value="{{ $modelo }}" @selected(($filtros['modelo'] ?? null) === $modelo)>{{ P::modulo($modelo) }}</option>
+                    @endforeach
+                </select>
             </div>
+            <div class="min-w-0 flex-1">
+                <label for="accion" class="text-[13px] font-semibold text-slate-600">Acción</label>
+                <select id="accion" name="accion" class="admin-campo !mt-1 !min-h-10">
+                    <option value="">Todas</option>
+                    @foreach (P::ACCIONES as $clave => [$nombre])
+                        <option value="{{ $clave }}" @selected(($filtros['accion'] ?? null) === $clave)>{{ $nombre }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="min-w-0 flex-1">
+                <label for="usuario" class="text-[13px] font-semibold text-slate-600">Persona</label>
+                <select id="usuario" name="usuario" class="admin-campo !mt-1 !min-h-10">
+                    <option value="">Todas</option>
+                    @foreach ($usuarios as $usuario)
+                        <option value="{{ $usuario->id }}" @selected((int) ($filtros['usuario'] ?? 0) === $usuario->id)>{{ $usuario->nombres }} {{ $usuario->apellidos }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="flex shrink-0 items-center gap-2">
+                <x-admin.boton tamano="chico">Buscar</x-admin.boton>
+                @if ($hayFiltros)<a href="{{ route('admin.auditoria.index') }}" class="admin-boton-borde !min-h-9 !px-3">Quitar filtros</a>@endif
+            </div>
+        </div>
 
-            {{-- Fechas exactas, plegadas: casi siempre bastan las pestañas de período. --}}
-            <details class="group mt-4" @if ($fechasAMano) open @endif>
-                <summary class="inline-flex cursor-pointer list-none items-center gap-1 rounded text-sm font-semibold text-blue-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+        {{-- Fechas exactas, plegadas: casi siempre bastan los botones de período. --}}
+        <div class="mt-2 flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+            <details class="group" @if ($fechasAMano) open @endif>
+                <summary class="inline-flex cursor-pointer list-none items-center gap-1 rounded text-[13px] font-semibold text-blue-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
                     Elegir fechas
                     <svg class="h-4 w-4 transition group-open:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4Z" clip-rule="evenodd"/></svg>
                 </summary>
-                <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div class="mt-2 flex flex-wrap items-end gap-3">
                     <div>
-                        <label for="desde" class="admin-etiqueta">Desde</label>
-                        <input id="desde" name="desde" type="date" value="{{ $desdeActual ?? '' }}" max="{{ $hoy }}" class="admin-campo">
+                        <label for="desde" class="text-[13px] font-semibold text-slate-600">Desde</label>
+                        <input id="desde" name="desde" type="date" value="{{ $desdeActual ?? '' }}" max="{{ $hoy }}" class="admin-campo !mt-1 !min-h-10">
                         <x-input-error class="mt-1" :messages="$errors->get('desde')" />
                     </div>
                     <div>
-                        <label for="hasta" class="admin-etiqueta">Hasta</label>
-                        <input id="hasta" name="hasta" type="date" value="{{ $hastaActual ?? '' }}" max="{{ $hoy }}" class="admin-campo">
+                        <label for="hasta" class="text-[13px] font-semibold text-slate-600">Hasta</label>
+                        <input id="hasta" name="hasta" type="date" value="{{ $hastaActual ?? '' }}" max="{{ $hoy }}" class="admin-campo !mt-1 !min-h-10">
                         <x-input-error class="mt-1" :messages="$errors->get('hasta')" />
                     </div>
                 </div>
             </details>
+            @if ($hayFiltros)<p class="text-[13px] text-slate-500">{{ $auditorias->total() }} {{ $auditorias->total() === 1 ? 'registro' : 'registros' }} con estos filtros</p>@endif
+        </div>
+    </form>
 
-            <div class="mt-4 flex flex-wrap items-center gap-3">
-                <x-admin.boton>Aplicar filtros</x-admin.boton>
-                @if ($hayFiltros)<a href="{{ route('admin.auditoria.index') }}" class="admin-boton-borde">Quitar filtros</a>@endif
-                @if ($hayFiltros)<p class="text-sm text-slate-500 sm:ms-auto">{{ $auditorias->total() }} {{ $auditorias->total() === 1 ? 'registro' : 'registros' }} con estos filtros</p>@endif
-            </div>
-        </form>
-    </x-admin.tarjeta>
+    {{-- Período: debajo de los filtros (usa el filtro «desde», sin «hasta»). --}}
+    @php
+        $iconosPeriodo = ['Hoy' => \App\Support\IconosPestanas::HOY, 'Últimos 7 días' => \App\Support\IconosPestanas::VARIOS_MESES, 'Últimos 30 días' => \App\Support\IconosPestanas::MES_ANTERIOR, 'Todo' => \App\Support\IconosPestanas::LISTA];
+        $opcionesPeriodo = collect($periodos)->map(fn ($desde, $texto) => [$texto, route('admin.auditoria.index', array_filter([...collect($filtros)->except(['desde', 'hasta'])->all(), 'desde' => $desde])), $periodoActivo === $texto, $iconosPeriodo[$texto]])->values()->all();
+    @endphp
+    <x-admin.pestanas etiqueta="Período" :opciones="$opcionesPeriodo" />
 
     {{-- Línea de tiempo por día --}}
     @if ($auditorias->isEmpty())

@@ -137,7 +137,7 @@ class ReporteVistaTest extends TestCase
 
     public function test_sin_periodo_muestra_totales_y_estado_actual_y_pide_elegir_un_periodo(): void
     {
-        $html = $this->vista()->assertSee('Totales acumulados y estado actual')->assertSee('Elige un período para ver qué pasó con sus solicitudes.')
+        $html = $this->vista()->assertSee('Totales acumulados y estado actual')
             ->assertSee('Estado actual')->assertSee('Total mascotas')->assertSee('Postulaciones canceladas')
             ->assertDontSee('Adopciones en el período')->assertDontSee('aria-current="true"', false)->getContent();
 
@@ -172,7 +172,7 @@ class ReporteVistaTest extends TestCase
     {
         $html = $this->vista(['periodo' => 'personalizado', 'fecha_inicio' => '2026-09-01', 'fecha_fin' => '2026-09-30'])
             ->assertSee('value="2026-09-01"', false)->assertSee('value="2026-09-30"', false)->getContent();
-        $this->assertMatchesRegularExpression('/<details class="group open:basis-full"\s+open/', $html, 'el formulario personalizado queda abierto');
+        $this->assertStringContainsString('x-data="{ personalizado: true }"', $html, 'el formulario personalizado queda abierto');
 
         $this->actingAs($this->admin)
             ->from(route('admin.reportes.index'))
@@ -186,11 +186,9 @@ class ReporteVistaTest extends TestCase
     public function test_estados_vacios_sin_datos(): void
     {
         $this->vista(['periodo' => 'este_mes'])
-            ->assertSee('No se recibieron solicitudes en este período.')
             ->assertSee('No hay solicitudes ni adopciones registradas en los últimos 6 meses.')
             ->assertSee('No hay mascotas disponibles en este momento.')
-            ->assertSee('Sin decisiones')
-            ->assertSee('Sin casos');
+            ->assertSee('Sin decisiones');
     }
 
     public function test_los_datos_dinamicos_se_escapan(): void

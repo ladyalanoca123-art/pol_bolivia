@@ -17,7 +17,8 @@ class FilterSolicitudesAdopcionRequest extends FormRequest
     {
         return [
             'buscar' => ['nullable', 'string', 'max:100'],
-            'estado' => ['nullable', Rule::in(array_keys(SolicitudAdopcion::ESTADOS_LEGIBLES))],
+            // Un estado concreto o «cerradas» (rechazadas, canceladas, no concretadas y cerradas juntas).
+            'estado' => ['nullable', Rule::in([...array_keys(SolicitudAdopcion::ESTADOS_LEGIBLES), 'cerradas'])],
             'nivel_alerta' => ['nullable', Rule::in(['verde', 'amarillo', 'rojo'])],
         ];
     }

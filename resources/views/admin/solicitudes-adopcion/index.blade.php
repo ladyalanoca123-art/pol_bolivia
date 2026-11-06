@@ -2,33 +2,17 @@
     $hayFiltros = collect($filters)->filter(fn ($v) => filled($v))->isNotEmpty();
     $estadoActual = $filters['estado'] ?? null;
     // Accesos rápidos a las etapas en trámite.
-    $rapidos = ['' => 'Todas', 'pendiente' => 'Recibidas', 'en_espera' => 'En evaluación', 'aprobada' => 'Reservadas', 'aceptada' => 'Concretadas'];
+    $rapidos = ['' => 'Todas', 'pendiente' => 'Recibidas', 'en_espera' => 'En evaluación', 'aprobada' => 'Reservadas', 'aceptada' => 'Concretadas', 'cerradas' => 'Cerradas'];
 @endphp
 <x-admin.pagina titulo="Solicitudes de adopción" :contador="$solicitudes->total().($solicitudes->total() === 1 ? ' solicitud' : ' solicitudes')" seccion="Adopciones" descripcion="Primero se muestran las solicitudes en trámite (recibidas, en evaluación y reservadas), ordenadas por nivel de revisión. Las alertas ayudan a priorizar; no aprueban ni rechazan.">
 
-    <nav aria-label="Filtrar por etapa" class="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-        @foreach ($rapidos as $clave => $texto)
-            @php $activo = ($estadoActual ?? '') === $clave; @endphp
-            <a href="{{ route('admin.solicitudes-adopcion.index', array_filter([...$filters, 'estado' => $clave ?: null])) }}"
-               @if ($activo) aria-current="page" @endif
-               class="inline-flex min-h-10 items-center whitespace-nowrap rounded-full border px-4 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 {{ $activo ? 'border-blue-950 bg-blue-950 text-white' : 'border-slate-400 bg-white text-blue-950 hover:border-blue-900 hover:bg-blue-50' }}">{{ $texto }}</a>
-        @endforeach
-    </nav>
-
     <x-admin.tarjeta>
-        <form method="GET" action="{{ route('admin.solicitudes-adopcion.index') }}" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="sm:col-span-2 lg:col-span-1">
+        {{-- El estado se elige con los botones de abajo (se conserva al buscar). --}}
+        <form method="GET" action="{{ route('admin.solicitudes-adopcion.index') }}" class="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]">
+            @if (filled($estadoActual))<input type="hidden" name="estado" value="{{ $estadoActual }}">@endif
+            <div>
                 <label for="buscar" class="admin-etiqueta">Buscar ciudadano o mascota</label>
                 <input id="buscar" name="buscar" type="search" class="admin-campo" value="{{ $filters['buscar'] ?? '' }}" placeholder="Nombre o apellido">
-            </div>
-            <div>
-                <label for="estado" class="admin-etiqueta">Estado</label>
-                <select id="estado" name="estado" class="admin-campo">
-                    <option value="">Todos</option>
-                    @foreach (\App\Models\SolicitudAdopcion::ESTADOS_LEGIBLES as $estado => $texto)
-                        <option value="{{ $estado }}" @selected(($filters['estado'] ?? '') === $estado)>{{ $texto }}</option>
-                    @endforeach
-                </select>
             </div>
             <div>
                 <label for="nivel_alerta" class="admin-etiqueta">Revisión</label>
@@ -40,11 +24,20 @@
                 </select>
             </div>
             <div class="flex items-end gap-3">
-                <x-admin.boton>Filtrar</x-admin.boton>
+                <x-admin.boton>Buscar</x-admin.boton>
                 @if ($hayFiltros)<a href="{{ route('admin.solicitudes-adopcion.index') }}" class="admin-boton-borde">Limpiar</a>@endif
             </div>
         </form>
     </x-admin.tarjeta>
+
+    {{-- Accesos rápidos por etapa: debajo de los filtros --}}
+    @php
+        $iconosEtapa = ['' => \App\Support\IconosPestanas::LISTA, 'pendiente' => \App\Support\IconosPestanas::BANDEJA, 'en_espera' => \App\Support\IconosPestanas::LUPA, 'aprobada' => \App\Support\IconosPestanas::MARCADOR, 'aceptada' => \App\Support\IconosPestanas::CHECK, 'cerradas' => \App\Support\IconosPestanas::ARCHIVO];
+        // Un estado cerrado concreto (p. ej. desde un enlace antiguo) marca el botón «Cerradas».
+        $botonActual = in_array($estadoActual, \App\Models\SolicitudAdopcion::ESTADOS_CERRADOS, true) ? 'cerradas' : ($estadoActual ?? '');
+        $opcionesEtapa = collect($rapidos)->map(fn ($texto, $clave) => [$texto, route('admin.solicitudes-adopcion.index', array_filter([...$filters, 'estado' => $clave ?: null])), $botonActual === (string) $clave, $iconosEtapa[$clave]])->values()->all();
+    @endphp
+    <x-admin.pestanas etiqueta="Filtrar por etapa" :opciones="$opcionesEtapa" />
 
     @if ($solicitudes->isEmpty())
         <x-admin.tarjeta>

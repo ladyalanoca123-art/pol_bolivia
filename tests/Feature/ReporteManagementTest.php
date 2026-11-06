@@ -46,7 +46,7 @@ class ReporteManagementTest extends TestCase
             ->assertSee('Total mascotas')
             ->assertSee('Mascotas disponibles')
             ->assertSee('Mascotas adoptadas')
-            ->assertSee('Solicitudes de adopción')
+            ->assertSee('Rechazadas')
             ->assertSee('Adopciones realizadas')
             ->assertSee('Postulaciones canceladas')
             ->assertSee('Seguimientos')
@@ -103,6 +103,48 @@ class ReporteManagementTest extends TestCase
 
             return $pet;
         });
+    }
+
+    public function test_each_report_category_lists_its_records_with_a_link_to_their_detail(): void
+    {
+        $administrator = User::factory()->create(['rol' => 'administrador']);
+        $available = $this->makePet($administrator);
+        $accepted = $this->makeAcceptedRequest($administrator);
+        $seguimiento = $accepted->seguimiento()->firstOrFail();
+        $postulacion = PostulacionVoluntariado::create([...\Tests\Support\CuestionarioVoluntariadoDatos::registro(), 'usuario_id' => User::factory()->create(['rol' => 'ciudadano', 'nombres' => 'Postulanteuno'])->id, 'estado' => 'pendiente']);
+
+        $ver = fn (string $categoria) => $this->actingAs($administrator)->get(route('admin.reportes.index', ['categoria' => $categoria]))->assertOk();
+
+        $ver('mascotas')->assertSee($available->nombre)->assertSee('Disponible')->assertSee(route('admin.mascotas.show', $available), false);
+        $ver('solicitudes')->assertSee('Adopción realizada')->assertSee(route('admin.solicitudes-adopcion.show', $accepted), false);
+        $ver('seguimientos')->assertSee($accepted->mascota->nombre)->assertSee('Sin asignar')->assertSee(route('admin.seguimientos.show', $seguimiento), false);
+        $ver('voluntariado')->assertSee('Postulanteuno')->assertSee('Por revisar')->assertSee(route('admin.postulaciones-voluntariado.show', $postulacion), false);
+        // Sin botones de acción: la lista de Reportes es solo para consultar.
+        $ver('solicitudes')->assertDontSee('Registrar entrega')->assertDontSee('>Revisar<', false);
+    }
+
+    public function test_report_categories_show_user_counts_by_role_and_unknown_category_falls_back_to_summary(): void
+    {
+        $administrator = User::factory()->create(['rol' => 'administrador']);
+        User::factory()->count(2)->create(['rol' => 'ciudadano']);
+        User::factory()->create(['rol' => 'ciudadano', 'estado' => false]);
+        User::factory()->create(['rol' => 'voluntario']);
+
+        $usuarios = $this->actingAs($administrator)->get(route('admin.reportes.index', ['categoria' => 'usuarios']))->assertOk()
+            ->assertSee('5 en total')->assertSee('3 ciudadanos')->assertSee('Inactivo')
+            ->assertSee('aria-current="page"', false);
+        $this->assertSame('usuarios', $usuarios->viewData('categoria'));
+        $this->assertSame(['administrador' => 1, 'voluntario' => 1, 'ciudadano' => 3], $usuarios->viewData('usuariosPorRol'));
+        $this->assertSame(5, $usuarios->viewData('registros')->total(), 'La lista de Usuarios muestra cada cuenta.');
+        $this->assertEquals(['administrador' => 1, 'voluntario' => 1, 'ciudadano' => 3], $usuarios->viewData('desglose'));
+        $this->assertSame(4, $usuarios->viewData('usuariosActivos'));
+        $this->assertNull($usuarios->viewData('usuariosNuevos'), 'Sin período no hay altas del período.');
+
+        $conPeriodo = $this->actingAs($administrator)->get(route('admin.reportes.index', ['categoria' => 'usuarios', 'periodo' => 'este_mes']))->assertOk();
+        $this->assertSame(5, $conPeriodo->viewData('usuariosNuevos'));
+        $conPeriodo->assertSee(route('admin.reportes.index', ['periodo' => 'mes_anterior', 'categoria' => 'usuarios']));
+
+        $this->assertSame('general', $this->actingAs($administrator)->get(route('admin.reportes.index', ['categoria' => 'inventada']))->assertOk()->viewData('categoria'));
     }
 
     private function requestData(): array

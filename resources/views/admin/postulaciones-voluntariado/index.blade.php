@@ -25,7 +25,7 @@
                 </select>
             </div>
             <div class="flex items-end gap-3">
-                <x-admin.boton>Filtrar</x-admin.boton>
+                <x-admin.boton>Buscar</x-admin.boton>
                 @if ($hayFiltros)<a href="{{ route('admin.postulaciones-voluntariado.index') }}" class="admin-boton-borde">Limpiar</a>@endif
             </div>
         </form>

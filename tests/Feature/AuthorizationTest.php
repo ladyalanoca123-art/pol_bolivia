@@ -20,8 +20,8 @@ class AuthorizationTest extends TestCase
             ->assertSee('Panel principal')
             // Bloques del panel operativo (resources/views/admin/dashboard.blade.php).
             ->assertSee('Solicitudes pendientes')
-            ->assertSee('Seguimientos activos')
-            ->assertSee('Mascotas disponibles')
+            ->assertSee('Seguimientos sin voluntario')
+            ->assertSee('Incidencias abiertas')
             ->assertSee('Postulaciones por revisar')
             ->assertSee('Necesitan tu atención')
             ->assertSee('Agenda de la semana')

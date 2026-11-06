@@ -1,10 +1,10 @@
-<section class="space-y-6">
+<section class="space-y-4">
     <header>
-        <h2 class="text-lg font-medium text-gray-900">
+        <h3 class="text-base font-semibold text-blue-950">
             Eliminar cuenta
-        </h2>
+        </h3>
 
-        <p class="mt-1 text-sm text-gray-600">
+        <p class="mt-1 text-sm text-slate-600">
             Tu cuenta y tus datos personales se eliminarán. Esta acción no se puede deshacer.
         </p>
     </header>

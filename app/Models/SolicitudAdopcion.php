@@ -33,6 +33,9 @@ class SolicitudAdopcion extends Model
     /** Estados en trámite. PostgreSQL limita a MAX_ACTIVAS por ciudadano (validar_limite_solicitudes_activas). */
     public const ESTADOS_ACTIVOS = ['pendiente', 'en_espera', 'aprobada'];
 
+    /** Terminadas sin adopción o cerradas (botón «Cerradas» de la lista del administrador). */
+    public const ESTADOS_CERRADOS = ['rechazada', 'cancelada', 'no_concretada', 'cerrada'];
+
     public const MAX_ACTIVAS = 2;
 
     /** Mismo texto que el error de PostgreSQL. */

@@ -38,7 +38,10 @@ class SolicitudAdopcionController extends Controller
 
         $solicitudes = SolicitudAdopcion::query()
             ->with(['solicitante', 'mascota'])
-            ->when($filters['estado'] ?? null, fn ($query, string $estado) => $query->where('estado', $estado))
+            // «cerradas» agrupa las que terminaron sin adopción o se cerraron (botón «Cerradas» de la lista).
+            ->when($filters['estado'] ?? null, fn ($query, string $estado) => $estado === 'cerradas'
+                ? $query->whereIn('estado', SolicitudAdopcion::ESTADOS_CERRADOS)
+                : $query->where('estado', $estado))
             ->when($filters['nivel_alerta'] ?? null, fn ($query, string $nivel) => $query->where('nivel_alerta', $nivel))
             ->when($filters['buscar'] ?? null, function ($query, string $buscar): void {
                 $query->where(function ($query) use ($buscar): void {

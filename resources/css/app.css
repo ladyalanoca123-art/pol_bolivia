@@ -24,6 +24,9 @@
     /* Botón de borde (Volver, Cancelar, Limpiar, Ver…): borde y texto oscuros para que se distinga sin acercarse. */
     .admin-boton-borde { @apply inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-slate-400 bg-white px-4 text-sm font-semibold text-blue-950 shadow-sm transition hover:border-blue-900 hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2; }
     .admin-ayuda { @apply mt-1 text-xs text-slate-500; }
+    /* Botón de las barras de filtro rápido (componente x-admin.pestanas): cuadrado, alto y del ancho de su celda. */
+    .admin-pestana { @apply inline-flex min-h-11 w-full min-w-0 cursor-pointer list-none items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2 text-sm font-semibold text-blue-950 shadow-sm transition hover:border-blue-900 hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-1; }
+    .admin-pestana-activa { @apply border-blue-950 bg-blue-950 text-white hover:border-blue-950 hover:bg-blue-900; }
 }
 
 /*

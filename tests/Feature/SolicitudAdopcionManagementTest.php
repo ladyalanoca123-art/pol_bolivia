@@ -31,6 +31,24 @@ class SolicitudAdopcionManagementTest extends TestCase
             ->assertSee('Solicitudes de adopción');
     }
 
+    public function test_closed_button_lists_rejected_and_cancelled_requests_together(): void
+    {
+        $administrator = User::factory()->create(['rol' => 'administrador']);
+        $pendiente = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano', 'nombres' => 'Pendienteuno']), $this->createAvailableMascota());
+        $rechazada = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano', 'nombres' => 'Rechazadados']), $this->createAvailableMascota());
+        $cancelada = $this->createSolicitud(User::factory()->create(['rol' => 'ciudadano', 'nombres' => 'Canceladatres']), $this->createAvailableMascota());
+        DB::table('solicitudes_adopcion')->where('id', $rechazada->id)->update(['estado' => 'rechazada']);
+        DB::table('solicitudes_adopcion')->where('id', $cancelada->id)->update(['estado' => 'cancelada']);
+
+        $respuesta = $this->actingAs($administrator)->get(route('admin.solicitudes-adopcion.index', ['estado' => 'cerradas']))->assertOk()
+            ->assertSee('Rechazadados')->assertSee('Canceladatres')->assertDontSee('Pendienteuno')
+            ->assertSee('Cerradas')->assertDontSee('id="estado"', false);
+        $this->assertSame(2, $respuesta->viewData('solicitudes')->total());
+        $this->assertSame('pendiente', $pendiente->refresh()->estado);
+
+        $this->actingAs($administrator)->get(route('admin.solicitudes-adopcion.index', ['estado' => 'inventado']))->assertSessionHasErrors('estado');
+    }
+
     public function test_citizen_and_volunteer_cannot_access_administrative_requests(): void
     {
         foreach (['ciudadano', 'voluntario'] as $rol) {
