@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Auditoria;
+use App\Models\FotoMascota;
+use App\Models\Mascota;
 use App\Models\User;
 use App\Support\PresentadorAuditoria;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -11,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
- * Pantalla «Auditoría» en lenguaje claro: resumen, filtros, línea de tiempo por día y detalle de cambios sin JSON.
+ * Pantalla «Auditoría» en lenguaje claro: filtros, línea de tiempo por día y detalle de cambios sin JSON.
  */
 class AuditoriaPantallaTest extends TestCase
 {
@@ -67,18 +69,15 @@ class AuditoriaPantallaTest extends TestCase
             ->assertSeeInOrder(['Activa', 'Desactivada']);
     }
 
-    public function test_un_registro_eliminado_no_enlaza_y_cuenta_en_el_resumen(): void
+    public function test_un_registro_eliminado_no_enlaza(): void
     {
         $this->registro(['usuario_id' => $this->admin->id, 'accion' => 'eliminado', 'modelo' => 'FotoMascota', 'modelo_id' => 5,
             'valores_anteriores' => ['url' => 'mascotas/5/foto.jpg', 'es_principal' => false]]);
 
-        $respuesta = $this->actingAs($this->admin)->get(route('admin.auditoria.index'))->assertOk()
+        $this->actingAs($this->admin)->get(route('admin.auditoria.index'))->assertOk()
             ->assertSee('eliminó una foto de mascota')
             ->assertSee('Valor eliminado')
             ->assertSee('Eliminación');
-
-        $this->assertSame(1, $respuesta->viewData('resumen')['eliminaciones']);
-        $this->assertSame(1, $respuesta->viewData('resumen')['hoy']);
     }
 
     public function test_filtra_por_persona_y_por_fechas(): void
@@ -120,8 +119,8 @@ class AuditoriaPantallaTest extends TestCase
     public function test_muestra_el_nombre_del_registro_en_lugar_de_su_numero(): void
     {
         $mascota = DB::transaction(function () {
-            $mascota = \App\Models\Mascota::create(['nombre' => 'Toby', 'especie' => 'perro', 'edad' => 2, 'edad_en' => 'años', 'sexo' => 'macho', 'tamano' => 'mediano', 'estado' => 'disponible', 'registrado_por' => $this->admin->id]);
-            \App\Models\FotoMascota::create(['mascota_id' => $mascota->id, 'tipo' => 'foto', 'url' => 'mascotas/toby.jpg', 'es_principal' => true, 'orden' => 1]);
+            $mascota = Mascota::create(['nombre' => 'Toby', 'especie' => 'perro', 'edad' => 2, 'edad_en' => 'años', 'sexo' => 'macho', 'tamano' => 'mediano', 'estado' => 'disponible', 'registrado_por' => $this->admin->id]);
+            FotoMascota::create(['mascota_id' => $mascota->id, 'tipo' => 'foto', 'url' => 'mascotas/toby.jpg', 'es_principal' => true, 'orden' => 1]);
 
             return $mascota;
         });

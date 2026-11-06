@@ -11,6 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\CompletaFlujoAdopcion;
 use Tests\Support\CuestionarioAdopcionDatos;
+use Tests\Support\CuestionarioVoluntariadoDatos;
 use Tests\TestCase;
 
 class ReporteManagementTest extends TestCase
@@ -111,7 +112,7 @@ class ReporteManagementTest extends TestCase
         $available = $this->makePet($administrator);
         $accepted = $this->makeAcceptedRequest($administrator);
         $seguimiento = $accepted->seguimiento()->firstOrFail();
-        $postulacion = PostulacionVoluntariado::create([...\Tests\Support\CuestionarioVoluntariadoDatos::registro(), 'usuario_id' => User::factory()->create(['rol' => 'ciudadano', 'nombres' => 'Postulanteuno'])->id, 'estado' => 'pendiente']);
+        $postulacion = PostulacionVoluntariado::create([...CuestionarioVoluntariadoDatos::registro(), 'usuario_id' => User::factory()->create(['rol' => 'ciudadano', 'nombres' => 'Postulanteuno'])->id, 'estado' => 'pendiente']);
 
         $ver = fn (string $categoria) => $this->actingAs($administrator)->get(route('admin.reportes.index', ['categoria' => $categoria]))->assertOk();
 

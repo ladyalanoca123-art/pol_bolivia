@@ -15,6 +15,7 @@ use App\Models\Voluntario;
 use App\Services\ExportadorReporte;
 use App\Services\ReporteAdministrador;
 use App\Support\PeriodoReporte;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
@@ -50,7 +51,7 @@ class ReporteController extends Controller
      * Lista de consulta de una categoría (solo lectura, 25 por página): los registros creados en el período, o todos
      * sin período. Devuelve también el desglose por estado o rol de esa misma lista, para la línea de totales.
      *
-     * @return array{0: \Illuminate\Contracts\Pagination\LengthAwarePaginator, 1: array<string, int>}
+     * @return array{0: LengthAwarePaginator, 1: array<string, int>}
      */
     private function listaDeCategoria(string $categoria, ?PeriodoReporte $periodo): array
     {

@@ -59,22 +59,6 @@ class AuditoriaController extends Controller
             'modelos' => $modelos,
             'usuarios' => $usuarios,
             'filtros' => $filtros,
-            'resumen' => $this->resumen($zona),
         ]);
-    }
-
-    /** Actividad de hoy y de los últimos 7 días (incluido hoy), sin filtros. */
-    private function resumen(string $zona): array
-    {
-        $hoy = CarbonImmutable::now($zona)->startOfDay();
-        $semana = $hoy->subDays(6);
-        $desde = fn (CarbonImmutable $fecha) => Auditoria::query()->where('created_at', '>=', $fecha->utc());
-
-        return [
-            'hoy' => $desde($hoy)->count(),
-            'semana' => $desde($semana)->count(),
-            'personas' => $desde($semana)->whereNotNull('usuario_id')->distinct()->count('usuario_id'),
-            'eliminaciones' => $desde($semana)->where('accion', 'eliminado')->count(),
-        ];
     }
 }

@@ -21,13 +21,6 @@
     $fechasPersonalizadas = $periodoReporte?->tipo === 'personalizado' ? $periodoReporte->fechas() : ['fecha_inicio' => '', 'fecha_fin' => ''];
     // La categoría se conserva al cambiar de período y el período al cambiar de categoría.
     $conCategoria = fn (array $parametros) => array_filter([...$parametros, 'categoria' => $categoria === 'general' ? null : $categoria]);
-    $iconosCategoria = [
-        'mascotas' => 'M12 20.25s-7.5-4.2-7.5-10.1A4.15 4.15 0 0 1 12 7.6a4.15 4.15 0 0 1 7.5 2.55c0 5.9-7.5 10.1-7.5 10.1Z',
-        'solicitudes' => 'M9 12h6M9 16h6M8.25 3.75h7.5l3.75 3.75v12a.75.75 0 0 1-.75.75H5.25a.75.75 0 0 1-.75-.75V4.5a.75.75 0 0 1 .75-.75h3Z',
-        'seguimientos' => 'M8.25 3v2.25M15.75 3v2.25M3.75 9h16.5M5.25 5.25h13.5a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-12a1.5 1.5 0 0 1 1.5-1.5ZM9 14.25l2.25 2.25L15 12.75',
-        'voluntariado' => 'M18 18.7a9.1 9.1 0 0 0 3.7-.5 3 3 0 0 0-4.7-2.7M18 18.7a6 6 0 0 0-12 0M12 9.75a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm6 0a2.25 2.25 0 1 0 0-4.5M6 9.75a2.25 2.25 0 1 1 0-4.5',
-        'usuarios' => 'M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.1a7.5 7.5 0 0 1 15 0',
-    ];
 @endphp
 <x-admin.pagina titulo="Reportes" seccion="Reportes y estadísticas"
     :descripcion="$conPeriodo

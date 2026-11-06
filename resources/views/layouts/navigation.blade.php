@@ -20,7 +20,7 @@
     // Color del rol, el mismo de la lista de Usuarios: ámbar el voluntario y verde el ciudadano.
     $acento = $esVoluntario ? 'bg-amber-400 text-blue-950' : 'bg-emerald-400 text-blue-950';
 @endphp
-<nav x-data="{ open: false }" class="bg-[#0d2138] text-white shadow-sm">
+<nav x-data="{ open: false }" class="border-b-4 {{ $esVoluntario ? 'border-amber-400' : 'border-emerald-400' }} bg-[#0d2138] text-white shadow-sm">
     <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <div class="flex min-w-0 items-center gap-8">
             {{-- Ciudadano: portada pública. Voluntario: su espacio. --}}
@@ -43,7 +43,7 @@
                         <span class="flex h-9 w-9 items-center justify-center rounded-full {{ $acento }} text-sm font-bold" aria-hidden="true">{{ $iniciales }}</span>
                         <span class="leading-tight">
                             <span class="block whitespace-nowrap text-sm font-semibold">{{ $usuario->nombres }} {{ $usuario->apellidos }}</span>
-                            <span class="block text-xs text-slate-300">{{ $rol }}</span>
+                            <span class="flex items-center gap-1 text-xs {{ $esVoluntario ? 'font-semibold text-amber-300' : 'text-slate-300' }}">@if ($esVoluntario)<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-7.5-10.4A4.4 4.4 0 0 1 12 8a4.4 4.4 0 0 1 7.5 2.6C19.5 16.4 12 21 12 21Z" /></svg>@endif{{ $rol }}</span>
                         </span>
                         <svg class="h-4 w-4 text-slate-300" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4Z" clip-rule="evenodd"/></svg>
                     </button>
