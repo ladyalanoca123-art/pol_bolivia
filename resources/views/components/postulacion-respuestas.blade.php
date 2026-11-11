@@ -41,10 +41,12 @@
 @endphp
 
 <div {{ $attributes }}>
-    <div data-seccion="cuestionario-v1">
+    {{-- Cada categoría en su propio bloque con franja de color; pregunta en negrita y respuesta más grande. --}}
+    <div data-seccion="cuestionario-v1" class="space-y-5">
         @foreach ($filas as $seccion => $preguntas)
-            <h4 class="mt-4 text-xs font-bold uppercase tracking-wider text-gray-500">{{ $seccion }}</h4>
-            <dl class="mt-2 divide-y divide-gray-100 border-t border-gray-100 text-sm">
+            <section class="overflow-hidden rounded-xl border border-slate-300 border-s-[6px] border-s-blue-800">
+            <h4 class="bg-blue-50 px-4 py-2.5 text-[15px] font-bold uppercase tracking-wide text-blue-950">{{ $seccion }}</h4>
+            <dl class="divide-y divide-slate-200 border-t border-slate-200 bg-white">
                 @foreach ($preguntas as [$num, $texto, $valor])
                     @php
                         if (! $esV1) {
@@ -55,12 +57,13 @@
                             $valor = 'No indicó (opcional)';
                         }
                     @endphp
-                    <div class="grid grid-cols-1 gap-1 py-2 sm:grid-cols-2">
-                        <dt class="text-gray-500"><span class="font-semibold text-blue-800">{{ $num }}.</span> {{ $texto }}</dt>
-                        <dd class="whitespace-pre-line text-gray-900">{{ filled($valor) ? $valor : $sinDato }}</dd>
+                    <div class="grid grid-cols-1 gap-1.5 px-4 py-3.5 sm:grid-cols-2 sm:gap-4">
+                        <dt class="text-[15px] font-semibold text-slate-800"><span class="font-bold text-blue-800">{{ $num }}.</span> {{ $texto }}</dt>
+                        <dd class="whitespace-pre-line text-base font-medium text-slate-950">{{ filled($valor) ? $valor : $sinDato }}</dd>
                     </div>
                 @endforeach
             </dl>
+            </section>
         @endforeach
     </div>
 
