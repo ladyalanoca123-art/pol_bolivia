@@ -188,21 +188,11 @@ class PanelAdministrador
     }
 
     /**
-     * Avisos que tienen casos, de la prioridad más alta a la más baja, listos para mostrar en la campana de la barra
-     * superior y en «Necesitan tu atención» del panel principal. Incluye las incidencias abiertas.
+     * Convierte los avisos de avisos() (y el total de incidencias abiertas) en la lista de «Necesitan tu atención» del
+     * panel principal: solo los que tienen casos, con un título corto, una explicación breve y su prioridad, de la más
+     * alta a la más baja.
      *
      * @return Collection<int, array{clave: string, prioridad: 'alta'|'media'|'baja', titulo: string, descripcion: string, total: int, accion: string, url: string}>
-     */
-    public function avisosActivos(?CarbonInterface $ahora = null): Collection
-    {
-        $ahora ??= CarbonImmutable::now();
-
-        return self::ordenarAvisos($this->avisos($ahora), $this->incidenciasAbiertas()->count());
-    }
-
-    /**
-     * Convierte los avisos de avisos() (y el total de incidencias abiertas) en la lista de avisosActivos(): solo los que
-     * tienen casos, con un título corto, una explicación breve y su prioridad.
      */
     public static function ordenarAvisos(array $avisos, int $incidenciasAbiertas): Collection
     {
