@@ -31,7 +31,7 @@
         <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
             <x-foto-mascota :mascota="$solicitud->mascota" class="h-24 w-24 rounded-2xl" />
             <div class="min-w-0 flex-1 text-sm text-slate-700">
-                <p class="text-xs text-slate-500">¿Qué sigue?</p>
+                <p class="text-sm font-semibold text-slate-600">¿Qué sigue?</p>
                 <p class="mt-1 text-base text-blue-950">{{ $mensajes[$solicitud->estado] ?? 'Consulta aquí el estado actualizado de tu solicitud.' }}</p>
                 @if ($solicitud->estado === 'aprobada' && $solicitud->numero_acta)
                     <p class="mt-2 text-xs text-slate-500">Número de acta: <span class="font-semibold">{{ $solicitud->numero_acta }}</span></p>
@@ -59,7 +59,7 @@
                       x-data x-on:submit="if (! confirm({{ Js::from('¿Quieres cancelar esta solicitud? Esta acción no se puede deshacer.') }})) $event.preventDefault()">
                     @csrf @method('PATCH')
                     <p class="text-sm text-slate-600">Puedes cancelar mientras la solicitud siga en trámite.</p>
-                    <x-admin.boton variante="peligro-suave" tamano="chico">Cancelar solicitud</x-admin.boton>
+                    <x-admin.boton variante="peligro">Cancelar solicitud</x-admin.boton>
                 </form>
             @endif
         @endcan
@@ -68,19 +68,20 @@
     <x-admin.tarjeta titulo="Tus respuestas">
         <div class="space-y-5">
             @foreach (C::SECCIONES as $seccion => $preguntas)
-                <div>
-                    <h3 class="text-sm font-semibold text-blue-950">{{ $seccion }}</h3>
-                    <dl class="mt-2 divide-y divide-slate-100 border-t border-slate-100 text-sm">
+                {{-- Igual que las respuestas de la postulación: un bloque por sección, pregunta oscura y respuesta en negrita. --}}
+                <section class="overflow-hidden rounded-xl border border-slate-300 border-s-[6px] border-s-blue-800">
+                    <h3 class="bg-blue-50 px-4 py-2.5 text-[15px] font-bold uppercase tracking-wide text-blue-950">{{ $seccion }}</h3>
+                    <dl class="divide-y divide-slate-200 border-t border-slate-200 bg-white">
                         @foreach ($preguntas as [$num, $campo, $texto, $catalogo])
                             @php $valor = C::respuestaLegible($solicitud->respuestas, $campo, $catalogo); @endphp
                             @continue($valor === null)
-                            <div class="grid grid-cols-1 gap-1 py-2 sm:grid-cols-2">
-                                <dt class="text-slate-500">{{ $num }}. {{ $texto }}</dt>
-                                <dd class="text-slate-900">{{ $valor }}</dd>
+                            <div class="grid grid-cols-1 gap-1.5 px-4 py-3.5 sm:grid-cols-2 sm:gap-4">
+                                <dt class="text-[15px] font-semibold text-slate-800"><span class="font-bold text-blue-800">{{ $num }}.</span> {{ $texto }}</dt>
+                                <dd class="text-base font-medium text-slate-950">{{ $valor }}</dd>
                             </div>
                         @endforeach
                     </dl>
-                </div>
+                </section>
             @endforeach
         </div>
     </x-admin.tarjeta>
