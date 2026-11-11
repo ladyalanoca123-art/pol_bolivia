@@ -7,12 +7,12 @@
     $ahora = now();
     $saludo = \App\Services\PanelAdministrador::saludo($ahora);
     $nombre = \Illuminate\Support\Str::of((string) $usuario->nombres)->trim()->before(' ');
-    $tarjeta = 'rounded-2xl border border-slate-200 bg-white';
-    $enlace = 'inline-flex items-center gap-1 text-sm font-semibold text-blue-800 hover:text-blue-950 hover:underline';
+    $tarjeta = 'rounded-2xl border border-slate-300/80 bg-white shadow-sm shadow-slate-200/80';
+    $enlace = 'inline-flex min-h-11 items-center gap-1 text-[15px] font-semibold text-blue-800 hover:text-blue-950 hover:underline';
     $estadosPostulacion = ['pendiente' => 'En revisión', 'aprobada' => 'Aprobada', 'rechazada' => 'No aprobada', 'cancelada' => 'Cancelada'];
 @endphp
 <x-app-layout>
-    <div class="mx-auto max-w-6xl space-y-6 px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+    <div class="mx-auto max-w-6xl space-y-8 px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
 
         {{-- Bienvenida --}}
         <section class="relative overflow-hidden rounded-3xl bg-[#0d2138] text-white">
@@ -34,7 +34,7 @@
                         : 'Sigue tus solicitudes y conoce a las mascotas que esperan un hogar.' }}
                 </p>
                 <a href="{{ $esVoluntario ? route('seguimientos.index') : route('mascotas.catalogo') }}"
-                   class="mt-5 inline-flex min-h-10 items-center rounded-full bg-amber-400 px-5 py-2 text-sm font-bold text-blue-950 hover:bg-amber-300 sm:mt-6">
+                   class="mt-5 inline-flex min-h-11 items-center rounded-full bg-amber-400 px-6 py-2 text-[15px] font-bold text-blue-950 hover:bg-amber-300 sm:mt-6">
                     {{ $esVoluntario ? 'Ver mis seguimientos' : 'Conocer mascotas' }}
                 </a>
             </div>
@@ -58,27 +58,26 @@
                 ]
                 : [
                     ['Solicitudes en trámite', $solicitudesActivas, 'de '.\App\Models\SolicitudAdopcion::MAX_ACTIVAS],
-                    ['Mascotas esperando hogar', $mascotasDisponibles, null],
                     ['Voluntariado', $postulacion ? ($estadosPostulacion[$postulacion->estado] ?? ucfirst($postulacion->estado)) : 'Sin postulación', null],
                 ];
         @endphp
-        <dl class="grid grid-cols-3 divide-x divide-slate-100 {{ $tarjeta }}">
+        <dl class="grid {{ count($resumen) === 3 ? 'grid-cols-3' : 'grid-cols-2' }} divide-x divide-slate-100 {{ $tarjeta }}">
             @foreach ($resumen as [$titulo, $valor, $extra])
-                <div class="min-w-0 px-3 py-4 sm:px-6 sm:py-5">
-                    <dt class="text-xs text-slate-500 sm:text-sm">{{ $titulo }}</dt>
+                <div class="min-w-0 px-4 py-5 sm:px-7 sm:py-6">
+                    <dt class="text-sm font-medium text-slate-600 sm:text-base">{{ $titulo }}</dt>
                     <dd class="mt-1 font-bold text-blue-950 {{ is_numeric($valor) ? 'text-2xl sm:text-3xl' : 'text-sm sm:text-lg' }}">
-                        {{ $valor }}@if ($extra) <span class="text-sm font-medium text-slate-400">{{ $extra }}</span>@endif
+                        {{ $valor }}@if ($extra) <span class="text-sm font-medium text-slate-500">{{ $extra }}</span>@endif
                     </dd>
                 </div>
             @endforeach
         </dl>
 
         @if ($esVoluntario)
-            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
                 {{-- Seguimientos activos --}}
                 <section class="min-w-0 {{ $tarjeta }}" aria-labelledby="titulo-seguimientos">
-                    <div class="flex items-center justify-between px-5 py-4 sm:px-6">
-                        <h2 id="titulo-seguimientos" class="text-base font-semibold text-blue-950">Mis seguimientos activos</h2>
+                    <div class="flex items-center justify-between px-5 py-5 sm:px-7">
+                        <h2 id="titulo-seguimientos" class="text-xl font-bold text-blue-950">Mis seguimientos activos</h2>
                         <a href="{{ route('seguimientos.index') }}" class="{{ $enlace }}">Ver todos <span aria-hidden="true">→</span></a>
                     </div>
                     @forelse ($seguimientos as $seguimiento)
@@ -87,9 +86,9 @@
                             <x-foto-mascota :mascota="$mascota" class="h-12 w-12 rounded-xl" />
                             <div class="min-w-0 flex-1">
                                 <p class="font-semibold text-blue-950">{{ $mascota->nombre }}</p>
-                                <p class="truncate text-sm text-slate-500">Familia {{ $seguimiento->solicitud->solicitante->apellidos }} · {{ $seguimiento->zona_aproximada }}</p>
+                                <p class="truncate text-sm text-slate-600">Familia {{ $seguimiento->solicitud->solicitante->apellidos }} · {{ $seguimiento->zona_aproximada }}</p>
                             </div>
-                            <p class="shrink-0 text-sm text-slate-500"><span class="font-semibold text-blue-950">{{ $seguimiento->visitas_realizadas }} de 2</span> visitas</p>
+                            <p class="shrink-0 text-sm text-slate-600"><span class="font-semibold text-blue-950">{{ $seguimiento->visitas_realizadas }} de 2</span> visitas</p>
                         </a>
                     @empty
                         <x-admin.vacio class="border-t border-slate-100" titulo="Todavía no tienes seguimientos asignados." texto="Cuando la fundación te asigne una adopción, aparecerá aquí." />
@@ -98,7 +97,7 @@
 
                 {{-- Próximas visitas --}}
                 <section class="min-w-0 {{ $tarjeta }}" aria-labelledby="titulo-visitas">
-                    <h2 id="titulo-visitas" class="px-5 py-4 text-base font-semibold text-blue-950 sm:px-6">Próximas visitas</h2>
+                    <h2 id="titulo-visitas" class="px-5 py-5 text-xl font-bold text-blue-950 sm:px-7">Próximas visitas</h2>
                     @forelse ($proximasVisitas as $visita)
                         @php($atrasada = $visita->fecha_programada->lt($ahora->copy()->startOfDay()))
                         <a href="{{ route('seguimientos.show', $visita->seguimiento) }}" class="flex items-center gap-4 border-t border-slate-100 px-5 py-4 hover:bg-slate-50 sm:px-6">
@@ -112,17 +111,17 @@
                             </div>
                         </a>
                     @empty
-                        <p class="border-t border-slate-100 px-5 py-6 text-sm text-slate-500 sm:px-6">No tienes visitas programadas.</p>
+                        <p class="border-t border-slate-100 px-5 py-6 text-sm text-slate-600 sm:px-7">No tienes visitas programadas.</p>
                     @endforelse
                 </section>
             </div>
         @else
             @php($invitarVoluntariado = ! $postulacion || $postulacion->estado === 'rechazada')
-            <div class="grid grid-cols-1 gap-6 {{ $invitarVoluntariado ? 'lg:grid-cols-3' : '' }}">
+            <div class="grid grid-cols-1 gap-8 {{ $invitarVoluntariado ? 'lg:grid-cols-3' : '' }}">
                 {{-- Mis solicitudes, cada una con «qué sigue» --}}
                 <section class="min-w-0 {{ $tarjeta }} {{ $invitarVoluntariado ? 'lg:col-span-2' : '' }}" aria-labelledby="titulo-solicitudes">
-                    <div class="flex items-center justify-between px-5 py-4 sm:px-6">
-                        <h2 id="titulo-solicitudes" class="text-base font-semibold text-blue-950">Mis solicitudes de adopción</h2>
+                    <div class="flex items-center justify-between px-5 py-5 sm:px-7">
+                        <h2 id="titulo-solicitudes" class="text-xl font-bold text-blue-950">Mis solicitudes de adopción</h2>
                         @if ($solicitudes->isNotEmpty())<a href="{{ route('solicitudes-adopcion.index') }}" class="{{ $enlace }}">Ver todas <span aria-hidden="true">→</span></a>@endif
                     </div>
                     @forelse ($solicitudes as $solicitud)
@@ -145,25 +144,25 @@
                 </section>
 
                 @if ($invitarVoluntariado)
-                    <section class="flex flex-col justify-between rounded-2xl bg-[#0d2138] p-5 text-white sm:p-6">
+                    <section class="flex flex-col justify-between rounded-2xl bg-[#0d2138] p-6 text-white sm:p-7">
                         <div>
-                            <h2 class="text-base font-semibold">¿Quieres ayudar más?</h2>
-                            <p class="mt-1 text-sm text-slate-300">Súmate como voluntario/a y acompaña a las familias que adoptan.</p>
+                            <h2 class="text-xl font-bold">¿Quieres ayudar más?</h2>
+                            <p class="mt-2 text-[15px] text-slate-200">Súmate como voluntario/a y acompaña a las familias que adoptan.</p>
                         </div>
-                        <a href="{{ route('postulaciones-voluntariado.index') }}" class="mt-5 inline-flex self-start rounded-full bg-amber-400 px-5 py-2 text-sm font-bold text-blue-950 hover:bg-amber-300">Conocer el voluntariado</a>
+                        <a href="{{ route('postulaciones-voluntariado.index') }}" class="mt-5 inline-flex min-h-11 items-center self-start rounded-full bg-amber-400 px-6 py-2 text-[15px] font-bold text-blue-950 hover:bg-amber-300">Conocer el voluntariado</a>
                     </section>
                 @endif
             </div>
 
             @unless ($invitarVoluntariado)
-                <p class="text-sm text-slate-500">Voluntariado: <a href="{{ route('postulaciones-voluntariado.index') }}" class="{{ $enlace }}">Ver mi postulación <span aria-hidden="true">→</span></a></p>
+                <p class="text-sm text-slate-600">Voluntariado: <a href="{{ route('postulaciones-voluntariado.index') }}" class="{{ $enlace }}">Ver mi postulación <span aria-hidden="true">→</span></a></p>
             @endunless
 
             {{-- Mascotas que esperan hogar --}}
             @if ($mascotas->isNotEmpty())
                 <section aria-labelledby="titulo-mascotas">
-                    <div class="mb-3 flex items-center justify-between">
-                        <h2 id="titulo-mascotas" class="text-base font-semibold text-blue-950">Esperan un hogar</h2>
+                    <div class="mb-4 flex items-center justify-between">
+                        <h2 id="titulo-mascotas" class="text-xl font-bold text-blue-950">Esperan un hogar</h2>
                         <a href="{{ route('mascotas.catalogo') }}" class="{{ $enlace }}">Ver todas <span aria-hidden="true">→</span></a>
                     </div>
                     <ul class="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
@@ -171,8 +170,8 @@
                             <li>
                                 <a href="{{ route('mascotas.public.show', $mascota) }}" class="group block">
                                     <x-foto-mascota :mascota="$mascota" class="aspect-square w-full rounded-2xl" />
-                                    <p class="mt-2 truncate text-sm font-semibold text-blue-950 group-hover:underline">{{ $mascota->nombre }}</p>
-                                    <p class="truncate text-xs text-slate-500">{{ ucfirst($mascota->especie) }} · {{ $mascota->edad_formateada }}</p>
+                                    <p class="mt-2 truncate text-base font-semibold text-blue-950 group-hover:underline">{{ $mascota->nombre }}</p>
+                                    <p class="truncate text-sm text-slate-600">{{ ucfirst($mascota->especie) }} · {{ $mascota->edad_formateada }}</p>
                                 </a>
                             </li>
                         @endforeach

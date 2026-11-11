@@ -44,8 +44,7 @@ class MiEspacioController extends Controller
         // Ciudadano: algunas mascotas que esperan hogar, para invitar a conocerlas.
         $mascotas = Mascota::query()->where('estado', 'disponible')
             ->with(['fotos' => $fotos])->latest()->limit(4)->get();
-        $mascotasDisponibles = Mascota::query()->where('estado', 'disponible')->count();
 
-        return view('mi-espacio', [...$datos, 'mascotas' => $mascotas, 'mascotasDisponibles' => $mascotasDisponibles]);
+        return view('mi-espacio', [...$datos, 'mascotas' => $mascotas]);
     }
 }

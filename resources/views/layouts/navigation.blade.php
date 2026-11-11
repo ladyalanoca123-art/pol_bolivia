@@ -14,6 +14,7 @@
         $enlaces[] = [$enlacePostulacion, 'Mi postulación', request()->routeIs('postulaciones-voluntariado.index', 'postulaciones-voluntariado.show')];
         $enlaces[] = [route('solicitudes-adopcion.index'), 'Mis solicitudes', request()->routeIs('solicitudes-adopcion.index', 'solicitudes-adopcion.show')];
     } else {
+        // Orden de los pasos: elegir la mascota → ver la solicitud → (opcional) voluntariado.
         $enlaces[] = [route('mascotas.catalogo'), 'Mascotas', request()->routeIs('mascotas.catalogo', 'mascotas.public.show', 'solicitudes-adopcion.create')];
         $enlaces[] = [route('solicitudes-adopcion.index'), 'Mis solicitudes', request()->routeIs('solicitudes-adopcion.*') && ! request()->routeIs('solicitudes-adopcion.create')];
         $enlaces[] = [route('postulaciones-voluntariado.index'), 'Voluntariado', request()->routeIs('postulaciones-voluntariado.*')];
