@@ -234,8 +234,8 @@
             {{-- Respuestas: fondo celeste, una tarjeta blanca por sección y cada respuesta en su recuadro --}}
             @php
                 $recuadro = 'min-w-0 rounded-xl bg-slate-50 p-3 ring-1 ring-inset ring-slate-200';
-                $pregunta = 'text-[13px] leading-snug text-slate-600';
-                $respuesta = 'mt-1 break-words text-[15px] font-semibold text-slate-900';
+                $pregunta = 'text-[15px] font-semibold leading-snug text-slate-800';
+                $respuesta = 'mt-1 break-words text-base font-bold text-slate-950';
                 // Alertas por sección: con alertas, de entrada se abren solo esas secciones; sin alertas, todas.
                 $alertasPorSeccion = collect(C::SECCIONES)->values()->map(fn ($preguntas) => collect($preguntas)->filter(fn ($p) => isset($alertaPorPregunta[$p[0]]))->count());
                 $abiertas = $alertasPorSeccion->map(fn (int $n) => $alertas->isEmpty() || $n > 0)->all();
