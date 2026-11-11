@@ -45,15 +45,13 @@
             <x-admin.vacio titulo="Todavía no aceptó ningún documento." texto="La cuenta es anterior a los documentos legales: se le pedirá aceptarlos la próxima vez que inicie sesión." />
         @else
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[44rem] text-left text-sm">
+                <table class="w-full min-w-[32rem] text-left text-sm">
                     <thead class="border-b border-slate-100 text-xs text-slate-500">
                         <tr>
                             <th class="px-5 py-3 font-medium sm:px-6">Documento</th>
                             <th class="px-3 py-3 font-medium">Versión</th>
                             <th class="px-3 py-3 font-medium">Fecha y hora</th>
                             <th class="px-3 py-3 font-medium">Cómo</th>
-                            <th class="px-3 py-3 font-medium">IP</th>
-                            <th class="px-5 py-3 font-medium sm:px-6">Navegador</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -63,8 +61,6 @@
                                 <td class="whitespace-nowrap px-3 py-3 text-slate-700">{{ $aceptacion->version }}</td>
                                 <td class="whitespace-nowrap px-3 py-3 text-slate-700">{{ $aceptacion->aceptado_at->format('d/m/Y H:i') }}</td>
                                 <td class="whitespace-nowrap px-3 py-3 text-slate-700">{{ $origenes[$aceptacion->origen] ?? $aceptacion->origen }}</td>
-                                <td class="px-3 py-3 font-mono text-xs text-slate-600">{{ $aceptacion->ip ?? '—' }}</td>
-                                <td class="px-5 py-3 text-xs text-slate-500 sm:px-6"><span class="block max-w-[9rem] truncate" title="{{ $aceptacion->user_agent }}">{{ $aceptacion->user_agent ?? '—' }}</span></td>
                             </tr>
                         @endforeach
                     </tbody>
