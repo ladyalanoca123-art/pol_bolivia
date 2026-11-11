@@ -46,7 +46,7 @@
                     <p class="mt-1 text-slate-600">Conócelas y encuentra a tu nuevo compañero en Cochabamba.</p>
                 </div>
                 <nav class="flex flex-wrap gap-2" aria-label="Categorías de mascotas">
-                    <a href="{{ route('mascotas.catalogo') }}" class="rounded-full bg-blue-800 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-900">🐾 Todas</a>
+                    <a href="{{ route('mascotas.catalogo') }}" class="inline-flex items-center gap-1.5 rounded-full bg-blue-800 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-900"><svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><ellipse cx="5.5" cy="10" rx="2.2" ry="2.8"/><ellipse cx="9.5" cy="5.5" rx="2.2" ry="2.8"/><ellipse cx="14.5" cy="5.5" rx="2.2" ry="2.8"/><ellipse cx="18.5" cy="10" rx="2.2" ry="2.8"/><path d="M12 11.5c-3 0-6 3.6-6 6.3 0 1.7 1.3 2.7 3 2.7 1.2 0 2-.6 3-.6s1.8.6 3 .6c1.7 0 3-1 3-2.7 0-2.7-3-6.3-6-6.3Z"/></svg> Todas</a>
                     <a href="{{ route('mascotas.catalogo', ['especie' => 'perro']) }}" class="rounded-full border border-blue-200 bg-sky-50 px-5 py-2.5 text-sm font-bold text-blue-900 transition hover:bg-sky-100">🐶 Perros</a>
                     <a href="{{ route('mascotas.catalogo', ['especie' => 'gato']) }}" class="rounded-full border border-blue-200 bg-sky-50 px-5 py-2.5 text-sm font-bold text-blue-900 transition hover:bg-sky-100">🐱 Gatos</a>
                 </nav>
@@ -55,7 +55,7 @@
                 <div class="mt-8 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
                     @foreach ($mascotas as $mascota)<x-mascota-publica-card :mascota="$mascota" />@endforeach
                     <a href="{{ route('mascotas.catalogo') }}" class="group flex min-h-[25rem] flex-col items-center justify-center rounded-2xl bg-blue-950 p-6 text-center text-white shadow-sm transition hover:-translate-y-1 hover:bg-blue-900 hover:shadow-lg sm:min-h-[24rem]">
-                        <span class="text-5xl" aria-hidden="true">🐾</span>
+                        <svg class="h-14 w-14 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><ellipse cx="5.5" cy="10" rx="2.2" ry="2.8"/><ellipse cx="9.5" cy="5.5" rx="2.2" ry="2.8"/><ellipse cx="14.5" cy="5.5" rx="2.2" ry="2.8"/><ellipse cx="18.5" cy="10" rx="2.2" ry="2.8"/><path d="M12 11.5c-3 0-6 3.6-6 6.3 0 1.7 1.3 2.7 3 2.7 1.2 0 2-.6 3-.6s1.8.6 3 .6c1.7 0 3-1 3-2.7 0-2.7-3-6.3-6-6.3Z"/></svg>
                         <h2 class="mt-5 text-2xl font-extrabold">Más mascotas esperan un hogar</h2>
                         <span class="mt-6 rounded-full bg-amber-400 px-5 py-3 text-sm font-extrabold text-blue-950">EXPLORAR CATÁLOGO</span>
                     </a>

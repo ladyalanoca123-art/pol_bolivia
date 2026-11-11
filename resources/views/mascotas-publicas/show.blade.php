@@ -70,12 +70,12 @@
                     <p class="text-sm font-bold tracking-wider text-amber-700">MASCOTA DISPONIBLE</p>
                     <h1 class="mt-1 text-4xl font-extrabold text-blue-950">{{ $mascota->nombre }}</h1>
                     <dl class="mt-6 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
-                        <div class="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"><dt class="text-xs text-slate-500">Especie</dt><dd class="mt-0.5 font-semibold text-blue-950">{{ ucfirst($mascota->especie) }}</dd></div>
-                        <div class="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"><dt class="text-xs text-slate-500">Sexo</dt><dd class="mt-0.5 font-semibold text-blue-950">{{ ucfirst($mascota->sexo) }}</dd></div>
-                        <div class="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"><dt class="text-xs text-slate-500">Edad</dt><dd class="mt-0.5 font-semibold text-blue-950">{{ $mascota->edad_formateada }}</dd></div>
-                        <div class="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"><dt class="text-xs text-slate-500">Tamaño</dt><dd class="mt-0.5 font-semibold text-blue-950">{{ ucfirst($mascota->tamano) }}</dd></div>
-                        <div class="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"><dt class="text-xs text-slate-500">Raza</dt><dd class="mt-0.5 font-semibold text-blue-950">{{ $mascota->raza }}</dd></div>
-                        <div class="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"><dt class="text-xs text-slate-500">Color</dt><dd class="mt-0.5 font-semibold text-blue-950">{{ $mascota->color }}</dd></div>
+                        <div class="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"><dt class="text-sm font-medium text-slate-600">Especie</dt><dd class="mt-0.5 text-lg font-bold text-blue-950">{{ ucfirst($mascota->especie) }}</dd></div>
+                        <div class="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"><dt class="text-sm font-medium text-slate-600">Sexo</dt><dd class="mt-0.5 text-lg font-bold text-blue-950">{{ ucfirst($mascota->sexo) }}</dd></div>
+                        <div class="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"><dt class="text-sm font-medium text-slate-600">Edad</dt><dd class="mt-0.5 text-lg font-bold text-blue-950">{{ $mascota->edad_formateada }}</dd></div>
+                        <div class="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"><dt class="text-sm font-medium text-slate-600">Tamaño</dt><dd class="mt-0.5 text-lg font-bold text-blue-950">{{ ucfirst($mascota->tamano) }}</dd></div>
+                        <div class="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"><dt class="text-sm font-medium text-slate-600">Raza</dt><dd class="mt-0.5 text-lg font-bold text-blue-950">{{ $mascota->raza }}</dd></div>
+                        <div class="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200"><dt class="text-sm font-medium text-slate-600">Color</dt><dd class="mt-0.5 text-lg font-bold text-blue-950">{{ $mascota->color }}</dd></div>
                     </dl>
                     <h2 class="mt-7 text-lg font-bold text-blue-950">Sobre {{ $mascota->nombre }}</h2>
                     <p class="mt-2 whitespace-pre-line text-stone-700">{{ $mascota->descripcion }}</p>
