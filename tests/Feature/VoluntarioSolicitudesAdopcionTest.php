@@ -80,7 +80,8 @@ class VoluntarioSolicitudesAdopcionTest extends TestCase
         $mascota = $this->mascota();
         $antes = SolicitudAdopcion::count();
 
-        $this->actingAs($voluntario)->get(route('solicitudes-adopcion.create', $mascota))->assertForbidden();
+        // El formulario no se muestra: vuelve a la ficha con el aviso (sin página de error 403).
+        $this->actingAs($voluntario)->get(route('solicitudes-adopcion.create', $mascota))->assertRedirect(route('mascotas.public.show', $mascota));
         $this->actingAs($voluntario)->post(route('solicitudes-adopcion.store', $mascota), CuestionarioAdopcionDatos::valido())->assertForbidden();
 
         $this->assertSame($antes, SolicitudAdopcion::count());

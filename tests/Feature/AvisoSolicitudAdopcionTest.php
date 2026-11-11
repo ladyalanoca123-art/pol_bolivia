@@ -93,8 +93,14 @@ class AvisoSolicitudAdopcionTest extends TestCase
         $this->assertStringNotContainsString('href="'.route('solicitudes-adopcion.create', $mascota).'"', $html);
         $this->assertStringNotContainsString('Crear cuenta', $html);
 
-        // La restricción del servidor no cambia.
-        $this->actingAs($voluntario)->get(route('solicitudes-adopcion.create', $mascota))->assertForbidden();
+        // Si llega al formulario (p. ej., al iniciar sesión desde «ENVIAR SOLICITUD»), vuelve a la ficha con el aviso abierto.
+        $this->actingAs($voluntario)->get(route('solicitudes-adopcion.create', $mascota))
+            ->assertRedirect(route('mascotas.public.show', $mascota))
+            ->assertSessionHas('abrir_aviso_adopcion', 'Canela');
+        $this->actingAs($voluntario)->get(route('mascotas.public.show', $mascota))->assertSee('x-init="nombre = ', false);
+
+        // La restricción del servidor no cambia: no puede enviar la solicitud.
+        $this->actingAs($voluntario)->post(route('solicitudes-adopcion.store', $mascota), [])->assertForbidden();
     }
 
     public function test_el_administrador_ve_el_aviso_generico(): void

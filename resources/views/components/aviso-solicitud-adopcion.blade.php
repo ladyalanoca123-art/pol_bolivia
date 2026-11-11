@@ -10,6 +10,7 @@
     $whatsapp = config('pol.redes.whatsapp');
 @endphp
 <div x-data="{ nombre: '', registro: '', inicio: '' }"
+     @if (session('abrir_aviso_adopcion')) x-init="nombre = {{ Js::from(session('abrir_aviso_adopcion')) }}; $nextTick(() => $refs.dialogo.showModal())" @endif
      x-on:abrir-aviso-adopcion.window="nombre = $event.detail.nombre; registro = $event.detail.registro ?? ''; inicio = $event.detail.inicio ?? ''; $refs.dialogo.showModal()">
     <dialog x-ref="dialogo" aria-labelledby="aviso-adopcion-titulo" aria-describedby="aviso-adopcion-texto"
             class="w-[calc(100%-2rem)] max-w-4xl overflow-hidden rounded-2xl bg-white p-0 text-slate-800 shadow-2xl backdrop:bg-blue-950/70 backdrop:backdrop-blur-sm"

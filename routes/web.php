@@ -64,10 +64,14 @@ Route::middleware('auth')->group(function () {
         ->name('profile.destroy');
 });
 
+// Sin 'role:ciudadano' a propósito: un voluntario o administrador que inició sesión desde «ENVIAR SOLICITUD»
+// vuelve a la ficha con el aviso explicativo, en vez de una página de error 403 (ver create()).
+Route::get('/mascotas/{mascota}/solicitudes-adopcion/create', [SolicitudAdopcionController::class, 'create'])
+    ->middleware(['auth', 'verified'])
+    ->name('solicitudes-adopcion.create');
+
 // 'verified': solo usuarios con el correo verificado.
 Route::middleware(['auth', 'verified', 'role:ciudadano'])->group(function () {
-    Route::get('/mascotas/{mascota}/solicitudes-adopcion/create', [SolicitudAdopcionController::class, 'create'])
-        ->name('solicitudes-adopcion.create');
 
     Route::post('/mascotas/{mascota}/solicitudes-adopcion', [SolicitudAdopcionController::class, 'store'])
         ->middleware('throttle:formularios')

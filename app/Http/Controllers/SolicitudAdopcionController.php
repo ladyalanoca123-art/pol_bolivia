@@ -20,6 +20,12 @@ class SolicitudAdopcionController extends Controller
     {
         abort_unless($mascota->estado === 'disponible', 404);
 
+        // Solo el ciudadano adopta. Las otras cuentas vuelven a la ficha y ven el aviso, no un error 403.
+        // Enviar la solicitud (store) sigue protegido por 'role:ciudadano'.
+        if (! auth()->user()->hasRole('ciudadano')) {
+            return to_route('mascotas.public.show', $mascota)->with('abrir_aviso_adopcion', $mascota->nombre);
+        }
+
         // Con el máximo de solicitudes activas no se muestra el cuestionario: no podría enviarse.
         if (auth()->user()->solicitudesAdopcion()->whereIn('estado', SolicitudAdopcion::ESTADOS_ACTIVOS)->count() >= SolicitudAdopcion::MAX_ACTIVAS) {
             return to_route('solicitudes-adopcion.index')->withErrors(['mascota' => SolicitudAdopcion::LIMITE_ALCANZADO]);
