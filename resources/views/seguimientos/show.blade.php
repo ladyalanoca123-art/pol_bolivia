@@ -128,11 +128,27 @@
                         $preguntasVisita = \App\Support\CuestionarioVisitaSeguimiento::preguntas($numeroVisita);
                         $puedeCompletarVisita = $numeroVisita === 1 || ($numeroVisita === 2 && $primeraTerminada);
                     @endphp
-                    <article class="{{ $loop->first ? '' : 'mt-6 border-t border-slate-100 pt-6' }}">
-                        <div class="flex flex-wrap items-center justify-between gap-2">
-                            <h3 class="font-semibold text-blue-950">Visita {{ $numeroVisita }} · {{ $numeroVisita === 1 ? 'Adaptación' : 'Seguimiento de salud y estabilidad' }}</h3>
-                            <x-admin.estado de="visita" :valor="$visita->estado" />
-                        </div>
+                    {{-- La visita ya terminada queda plegada en una línea; la que falta completar, abierta. --}}
+                    @php $visitaTerminada = in_array($visita->estado, $terminadas, true); @endphp
+                    <details class="group {{ $loop->first ? '' : 'mt-4' }} {{ $visita->estado === 'realizada' ? 'rounded-xl border border-emerald-200 border-s-[6px] border-s-emerald-500 bg-emerald-50/60 p-4' : ($loop->first ? '' : 'border-t border-slate-100 pt-6') }}" @unless ($visitaTerminada) open @endunless>
+                        <summary class="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+                            <span class="min-w-0">
+                                <h3 class="font-semibold text-blue-950">Visita {{ $numeroVisita }} · {{ $numeroVisita === 1 ? 'Adaptación' : 'Seguimiento de salud y estabilidad' }}</h3>
+                                @if ($visitaTerminada)<span class="block text-[13px] text-slate-500 group-open:hidden">{{ $visita->fecha_realizada ? 'Completada el '.$visita->fecha_realizada->format('d/m/Y') : 'Programada el '.$visita->fecha_programada->format('d/m/Y') }} · toca para ver el detalle</span>@endif
+                            </span>
+                            <span class="flex items-center gap-2">
+                                {{-- Visita hecha: verde y con ✓ para que se note a simple vista. --}}
+                                @if ($visita->estado === 'realizada')
+                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-[13px] font-bold text-white">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+                                        Completada
+                                    </span>
+                                @else
+                                    <x-admin.estado de="visita" :valor="$visita->estado" />
+                                @endif
+                                <svg class="h-4 w-4 text-slate-500 transition group-open:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4Z" clip-rule="evenodd"/></svg>
+                            </span>
+                        </summary>
                         <dl class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
                             <x-admin.dato etiqueta="Fecha programada">{{ $visita->fecha_programada->format('d/m/Y') }}</x-admin.dato>
                             @if ($visita->fecha_realizada)<x-admin.dato etiqueta="Fecha realizada">{{ $visita->fecha_realizada->format('d/m/Y') }}</x-admin.dato>@endif
@@ -193,14 +209,14 @@
                                         </fieldset>
                                     @endforeach
                                     <div><label class="admin-etiqueta" for="observaciones_{{ $visita->id }}">Observaciones adicionales <span class="normal-case font-normal">(opcional)</span></label><textarea id="observaciones_{{ $visita->id }}" name="observaciones" rows="3" maxlength="2000" class="admin-campo">{{ old('observaciones') }}</textarea>@error('observaciones')<p class="admin-error">{{ $message }}</p>@enderror</div>
-                                    <div><label class="admin-etiqueta" for="foto_{{ $visita->id }}">Foto de la visita <span class="normal-case font-normal">(opcional, JPG/PNG/WebP hasta 5 MB)</span></label><input id="foto_{{ $visita->id }}" type="file" name="foto" accept="image/jpeg,image/png,image/webp" class="admin-archivo">@error('foto')<p class="admin-error">{{ $message }}</p>@enderror</div>
+                                    <div><label class="admin-etiqueta flex items-center gap-2" for="foto_{{ $visita->id }}"><svg class="h-5 w-5 shrink-0 text-blue-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" /></svg>Subir foto de la visita <span class="normal-case font-normal">(opcional, JPG/PNG/WebP hasta 5 MB)</span></label><input id="foto_{{ $visita->id }}" type="file" name="foto" accept="image/jpeg,image/png,image/webp" class="admin-archivo">@error('foto')<p class="admin-error">{{ $message }}</p>@enderror</div>
                                     <x-admin.boton variante="exito">Guardar visita</x-admin.boton>
                                 </form>
                             </details>
                         @elseif ($visita->estado === 'programada' && $seguimiento->estado === 'activo')
                             <p class="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-700">La visita 2 se podrá registrar después de completar la visita 1.</p>
                         @endif
-                    </article>
+                    </details>
                 @empty
                     <p class="text-sm text-slate-500">Sin visitas programadas.</p>
                 @endforelse
@@ -232,8 +248,32 @@
             </x-admin.tarjeta>
         </div>
 
-        {{-- Lateral: contacto, fechas sugeridas y reportar --}}
+        {{-- Lateral: la mascota, contacto y reportar --}}
         <div class="min-w-0 space-y-6">
+            {{-- La mascota que se visita: foto y datos básicos, para reconocerla en la visita. --}}
+            @php
+                $mascota = $seguimiento->solicitud->mascota;
+                $fotoMascota = $mascota->fotos->firstWhere('es_principal', true) ?? $mascota->fotos->first();
+                $tamanos = ['pequeno' => 'pequeño', 'mediano' => 'mediano', 'grande' => 'grande'];
+            @endphp
+            <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                @if ($fotoMascota)
+                    <img src="{{ $fotoMascota->url_miniatura }}" alt="Foto de {{ $mascota->nombre }}" class="aspect-[4/3] w-full bg-slate-100 object-cover">
+                @else
+                    <div class="flex aspect-[4/3] w-full items-center justify-center bg-slate-100 text-5xl" aria-hidden="true">{{ $mascota->especie === 'gato' ? '🐱' : '🐶' }}</div>
+                @endif
+                <div class="p-5">
+                    <p class="text-[13px] font-semibold uppercase tracking-wide text-sky-700">La mascota que visitas</p>
+                    <h2 class="mt-0.5 text-xl font-bold text-blue-950">{{ $mascota->nombre }}</h2>
+                    <p class="mt-1 text-sm text-slate-700">
+                        {{ $mascota->especie === 'gato' ? 'Gato' : 'Perro' }} · {{ $mascota->sexo === 'hembra' ? 'hembra' : 'macho' }} · {{ $mascota->edad_formateada }} · {{ $tamanos[$mascota->tamano] ?? $mascota->tamano }}
+                    </p>
+                    @if ($mascota->raza || $mascota->color)
+                        <p class="text-sm text-slate-600">{{ collect([$mascota->raza ? 'Raza: '.$mascota->raza : null, $mascota->color ? 'Color: '.$mascota->color : null])->filter()->join(' · ') }}</p>
+                    @endif
+                </div>
+            </section>
+
             @can('contactAdopter', $seguimiento)
                 <x-admin.tarjeta titulo="Contacto para seguimiento" descripcion="Coordina únicamente asuntos relacionados con las visitas de seguimiento.">
                     <x-botones-contacto :telefono="$familia->telefono" mensaje="seguimiento" :datos="['nombre' => \App\Support\ContactoTelefonico::primerNombre($familia->nombres), 'mascota' => $seguimiento->solicitud->mascota->nombre, 'voluntario' => auth()->user()->nombres]" />

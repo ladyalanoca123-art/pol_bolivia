@@ -116,23 +116,6 @@
                     @endforelse
                 </section>
             </div>
-
-            @if ($solicitudes->isNotEmpty())
-                <section class="{{ $tarjeta }} px-5 py-4 sm:px-6">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-base font-semibold text-blue-950">Mis solicitudes de adopción</h2>
-                        <a href="{{ route('solicitudes-adopcion.index') }}" class="{{ $enlace }}">Ver todas <span aria-hidden="true">→</span></a>
-                    </div>
-                    <ul class="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                        @foreach ($solicitudes as $solicitud)
-                            <li class="flex items-center gap-2">
-                                <a href="{{ route('solicitudes-adopcion.show', $solicitud) }}" class="font-medium text-blue-900 hover:underline">{{ $solicitud->mascota->nombre }}</a>
-                                <x-admin.estado de="solicitud" :valor="$solicitud->estado" />
-                            </li>
-                        @endforeach
-                    </ul>
-                </section>
-            @endif
         @else
             @php($invitarVoluntariado = ! $postulacion || $postulacion->estado === 'rechazada')
             <div class="grid grid-cols-1 gap-6 {{ $invitarVoluntariado ? 'lg:grid-cols-3' : '' }}">

@@ -7,8 +7,11 @@
     $esVoluntario = $usuario->hasRole('voluntario');
     $enlaces = [[route('inicio'), 'Mi espacio', request()->routeIs('inicio')]];
     if ($esVoluntario) {
+        // El voluntario ya fue aprobado: «Mi postulación» abre directo esa postulación (sin pasar por la lista).
+        $aprobada = $usuario->postulacionesVoluntariado()->where('estado', 'aprobada')->latest()->value('id');
+        $enlacePostulacion = $aprobada ? route('postulaciones-voluntariado.show', $aprobada) : route('postulaciones-voluntariado.index');
         $enlaces[] = [route('seguimientos.index'), 'Mis seguimientos', request()->routeIs('seguimientos.*')];
-        $enlaces[] = [route('postulaciones-voluntariado.index'), 'Mi postulación', request()->routeIs('postulaciones-voluntariado.index', 'postulaciones-voluntariado.show')];
+        $enlaces[] = [$enlacePostulacion, 'Mi postulación', request()->routeIs('postulaciones-voluntariado.index', 'postulaciones-voluntariado.show')];
         $enlaces[] = [route('solicitudes-adopcion.index'), 'Mis solicitudes', request()->routeIs('solicitudes-adopcion.index', 'solicitudes-adopcion.show')];
     } else {
         $enlaces[] = [route('mascotas.catalogo'), 'Mascotas', request()->routeIs('mascotas.catalogo', 'mascotas.public.show', 'solicitudes-adopcion.create')];

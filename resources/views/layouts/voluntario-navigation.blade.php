@@ -5,10 +5,13 @@
 @php
     $usuario = auth()->user();
     $iniciales = mb_strtoupper(mb_substr($usuario->nombres, 0, 1).mb_substr($usuario->apellidos ?? '', 0, 1));
+    // El voluntario ya fue aprobado: «Mi postulación» abre directo esa postulación (sin pasar por la lista).
+    $aprobada = $usuario->postulacionesVoluntariado()->where('estado', 'aprobada')->latest()->value('id');
+    $enlacePostulacion = $aprobada ? route('postulaciones-voluntariado.show', $aprobada) : route('postulaciones-voluntariado.index');
     $opciones = [
         [route('inicio'), 'Mi espacio', request()->routeIs('inicio'), 'M3 11.5 12 4l9 7.5M5.5 10v9.5a.5.5 0 0 0 .5.5h4v-6h4v6h4a.5.5 0 0 0 .5-.5V10'],
         [route('seguimientos.index'), 'Mis seguimientos', request()->routeIs('seguimientos.*'), \App\Support\IconosPestanas::SEGUIMIENTOS],
-        [route('postulaciones-voluntariado.index'), 'Mi postulación', request()->routeIs('postulaciones-voluntariado.index', 'postulaciones-voluntariado.show'), \App\Support\IconosPestanas::CORAZON],
+        [$enlacePostulacion, 'Mi postulación', request()->routeIs('postulaciones-voluntariado.index', 'postulaciones-voluntariado.show'), \App\Support\IconosPestanas::CORAZON],
         [route('solicitudes-adopcion.index'), 'Mis solicitudes', request()->routeIs('solicitudes-adopcion.index', 'solicitudes-adopcion.show'), \App\Support\IconosPestanas::SOLICITUDES],
     ];
 @endphp

@@ -40,7 +40,8 @@ class SeguimientoAdopcionTest extends TestCase
         $volunteer = User::factory()->create(['rol' => 'voluntario']);
         $own->update(['voluntario_id' => $volunteer->id, 'estado' => 'activo', 'fecha_inicio' => now()]);
 
-        $this->actingAs($volunteer)->get(route('seguimientos.show', $own))->assertOk();
+        $this->actingAs($volunteer)->get(route('seguimientos.show', $own))->assertOk()
+            ->assertSee('La mascota que visitas')->assertSee($own->solicitud->mascota->nombre);
         $this->actingAs($volunteer)->get(route('seguimientos.show', $other))->assertForbidden();
         $this->actingAs(User::factory()->create(['rol' => 'ciudadano']))->get(route('seguimientos.show', $own))->assertForbidden();
     }

@@ -51,7 +51,7 @@ class SeguimientoAdopcionController extends Controller
     public function show(SeguimientoAdopcion $seguimiento): View
     {
         Gate::authorize('view', $seguimiento);
-        $seguimiento->load(['solicitud.mascota', 'solicitud.solicitante', 'visitas', 'incidencias']);
+        $seguimiento->load(['solicitud.mascota.fotos', 'solicitud.solicitante', 'visitas', 'incidencias']);
         $fechasSugeridas = $seguimiento->solicitud->entregada_at
             ? FechasSeguimientoAdopcion::sugeridas($seguimiento->solicitud->entregada_at)
             : [];
