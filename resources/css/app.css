@@ -41,6 +41,7 @@
 .panel-admin main h2.text-lg { font-size: 1.25rem; line-height: 1.75rem; font-weight: 700; }
 .panel-admin main .text-slate-500 { color: rgb(71 85 105); }
 .panel-admin main .text-slate-400 { color: rgb(100 116 139); }
+.panel-admin main .rounded-2xl.border-slate-200 { border-color: rgb(203 213 225); box-shadow: 0 1px 3px rgb(203 213 225 / 0.7); }
 
 /*
  * Pantallas del voluntario (layouts/app: <main class="panel-voluntario">). Usan las mismas tarjetas y botones que el
