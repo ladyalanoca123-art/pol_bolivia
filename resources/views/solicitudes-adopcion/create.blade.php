@@ -1,7 +1,7 @@
 @use('App\Support\CuestionarioAdopcion', 'C')
 <x-app-layout>
     @php
-        $sec = 'rounded-lg border border-gray-200 bg-white p-6 shadow-sm';
+        $sec = 'rounded-xl border border-slate-300 bg-white p-6 shadow-md shadow-slate-200/70 sm:p-8';
         $input = 'mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-700 focus:ring-blue-700';
         $fotos = $mascota->fotos->where('tipo', 'foto');
         $fotoPrincipal = $fotos->firstWhere('es_principal', true) ?? $fotos->first();
@@ -66,8 +66,8 @@
                 {{-- Sección 1 · Vivienda --}}
                 <fieldset class="{{ $sec }}">
                     <legend class="sr-only">Vivienda</legend>
-                    <p class="text-xs font-bold uppercase tracking-wider text-blue-800">Sección 1 de 6</p>
-                    <h4 class="text-lg font-semibold text-gray-900">Vivienda</h4>
+                    <p class="text-[13px] font-bold uppercase tracking-wider text-blue-800">Sección 1 de 6</p>
+                    <h4 class="text-[22px] font-bold text-blue-950">Vivienda</h4>
                     <p class="text-sm text-gray-600">Nos ayuda a conocer el lugar donde vivirá la mascota.</p>
 
                     <x-cuestionario.pregunta tema="pol" num="1" label="¿Qué tipo de vivienda tiene?" campo="tipo_vivienda">
@@ -94,8 +94,8 @@
                 {{-- Sección 2 · Hogar --}}
                 <fieldset class="{{ $sec }}">
                     <legend class="sr-only">Hogar</legend>
-                    <p class="text-xs font-bold uppercase tracking-wider text-blue-800">Sección 2 de 6</p>
-                    <h4 class="text-lg font-semibold text-gray-900">Hogar</h4>
+                    <p class="text-[13px] font-bold uppercase tracking-wider text-blue-800">Sección 2 de 6</p>
+                    <h4 class="text-[22px] font-bold text-blue-950">Hogar</h4>
                     <p class="text-sm text-gray-600">Una adopción funciona cuando la aceptan todos los que viven en la casa.</p>
 
                     <x-cuestionario.pregunta tema="pol" num="6" label="¿Cuántos adultos viven habitualmente en el hogar, incluyéndose?" campo="adultos">
@@ -139,8 +139,8 @@
                 {{-- Sección 3 · Experiencia --}}
                 <fieldset class="{{ $sec }}">
                     <legend class="sr-only">Experiencia</legend>
-                    <p class="text-xs font-bold uppercase tracking-wider text-blue-800">Sección 3 de 6</p>
-                    <h4 class="text-lg font-semibold text-gray-900">Experiencia</h4>
+                    <p class="text-[13px] font-bold uppercase tracking-wider text-blue-800">Sección 3 de 6</p>
+                    <h4 class="text-[22px] font-bold text-blue-950">Experiencia</h4>
                     <p class="text-sm text-gray-600">Qué pasó con las mascotas que tuvo antes.</p>
 
                     <x-cuestionario.pregunta tema="pol" num="12" label="¿Qué ocurrió con las mascotas que tuvo anteriormente?" campo="mascotas_anteriores">
@@ -157,8 +157,8 @@
                 {{-- Sección 4 · Rutina y cuidados --}}
                 <fieldset class="{{ $sec }}">
                     <legend class="sr-only">Rutina y cuidados</legend>
-                    <p class="text-xs font-bold uppercase tracking-wider text-blue-800">Sección 4 de 6</p>
-                    <h4 class="text-lg font-semibold text-gray-900">Rutina y cuidados</h4>
+                    <p class="text-[13px] font-bold uppercase tracking-wider text-blue-800">Sección 4 de 6</p>
+                    <h4 class="text-[22px] font-bold text-blue-950">Rutina y cuidados</h4>
                     <p class="text-sm text-gray-600">Quién cuidará a la mascota, si hay apoyo y cuánto tiempo estará sola.</p>
 
                     <x-cuestionario.pregunta tema="pol" num="14" label="¿Quién será el responsable principal de la mascota?" campo="responsable">
@@ -181,8 +181,8 @@
                 {{-- Sección 5 · Compromiso --}}
                 <fieldset class="{{ $sec }}">
                     <legend class="sr-only">Compromiso</legend>
-                    <p class="text-xs font-bold uppercase tracking-wider text-blue-800">Sección 5 de 6</p>
-                    <h4 class="text-lg font-semibold text-gray-900">Compromiso</h4>
+                    <p class="text-[13px] font-bold uppercase tracking-wider text-blue-800">Sección 5 de 6</p>
+                    <h4 class="text-[22px] font-bold text-blue-950">Compromiso</h4>
                     <p class="text-sm text-gray-600">Motivo de la adopción, vacunas y qué haría si ya no pudiera cuidarla.</p>
 
                     <x-cuestionario.pregunta tema="pol" num="18" label="¿Cuál es el principal motivo por el que desea adoptar?" campo="motivo">
@@ -210,8 +210,8 @@
                 {{-- Sección 6 · Contacto y consentimientos --}}
                 <fieldset class="{{ $sec }}">
                     <legend class="sr-only">Contacto y consentimientos</legend>
-                    <p class="text-xs font-bold uppercase tracking-wider text-blue-800">Sección 6 de 6</p>
-                    <h4 class="text-lg font-semibold text-gray-900">Contacto y consentimientos</h4>
+                    <p class="text-[13px] font-bold uppercase tracking-wider text-blue-800">Sección 6 de 6</p>
+                    <h4 class="text-[22px] font-bold text-blue-950">Contacto y consentimientos</h4>
                     <p class="text-sm text-gray-600">Datos para contactarte y coordinar las visitas de seguimiento, y compromisos obligatorios para enviar la solicitud.</p>
 
                     {{-- Dato de contacto sin número: no cuenta en el progreso ni en las alertas del cuestionario. --}}

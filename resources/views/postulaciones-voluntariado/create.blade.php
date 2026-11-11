@@ -1,7 +1,7 @@
 @use('App\Support\CuestionarioVoluntariado', 'V')
 <x-app-layout>
     @php
-        $sec = 'rounded-lg border border-gray-200 bg-white p-6 shadow-sm';
+        $sec = 'rounded-xl border border-slate-300 bg-white p-6 shadow-md shadow-slate-200/70 sm:p-8';
         $input = 'mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-700 focus:ring-blue-700';
     @endphp
 
@@ -52,8 +52,8 @@
                 {{-- Sección 1 · Motivación y experiencia --}}
                 <fieldset class="{{ $sec }}">
                     <legend class="sr-only">Motivación y experiencia</legend>
-                    <p class="text-xs font-bold uppercase tracking-wider text-blue-800">Sección 1 de 3</p>
-                    <h4 class="text-lg font-semibold text-gray-900">Motivación y experiencia</h4>
+                    <p class="text-[13px] font-bold uppercase tracking-wider text-blue-800">Sección 1 de 3</p>
+                    <h4 class="text-[22px] font-bold text-blue-950">Motivación y experiencia</h4>
                     <p class="text-sm text-gray-600">Queremos conocer por qué te interesa ayudar y qué experiencia tienes.</p>
 
                     <x-cuestionario.pregunta tema="pol" num="1" label="¿Por qué quiere ser voluntario/a?" campo="motivacion">
@@ -72,8 +72,8 @@
                 {{-- Sección 2 · Áreas y disponibilidad --}}
                 <fieldset class="{{ $sec }}">
                     <legend class="sr-only">Áreas y disponibilidad</legend>
-                    <p class="text-xs font-bold uppercase tracking-wider text-blue-800">Sección 2 de 3</p>
-                    <h4 class="text-lg font-semibold text-gray-900">Áreas y disponibilidad</h4>
+                    <p class="text-[13px] font-bold uppercase tracking-wider text-blue-800">Sección 2 de 3</p>
+                    <h4 class="text-[22px] font-bold text-blue-950">Áreas y disponibilidad</h4>
                     <p class="text-sm text-gray-600">Con esto la fundación sabe en qué puedes ayudar y cuándo llamarte.</p>
 
                     <x-cuestionario.pregunta tema="pol" num="4" label="¿En qué áreas le gustaría colaborar? (puede marcar varias)" campo="areas_interes">
@@ -96,8 +96,8 @@
                 {{-- Sección 3 · Compromiso --}}
                 <fieldset class="{{ $sec }}">
                     <legend class="sr-only">Compromiso</legend>
-                    <p class="text-xs font-bold uppercase tracking-wider text-blue-800">Sección 3 de 3</p>
-                    <h4 class="text-lg font-semibold text-gray-900">Compromiso</h4>
+                    <p class="text-[13px] font-bold uppercase tracking-wider text-blue-800">Sección 3 de 3</p>
+                    <h4 class="text-[22px] font-bold text-blue-950">Compromiso</h4>
                     <p class="text-sm text-gray-600">Confirmaciones obligatorias para enviar la postulación.</p>
 
                     <x-cuestionario.pregunta tema="pol" num="8" label="Habilidades útiles (opcional)" campo="habilidades" ayuda="Por ejemplo: fotografía, diseño, primeros auxilios, manejo de redes." data-opcional>
