@@ -52,7 +52,7 @@
                     $pendientes = $seguimiento->incidencias_pendientes_count;
                     $icono = 'h-5 w-5 shrink-0 text-slate-500';
                 @endphp
-                <li class="flex flex-col gap-4 rounded-2xl border p-3 shadow-sm transition hover:shadow-md sm:flex-row sm:flex-wrap sm:items-center xl:flex-nowrap {{ $sinVoluntario ? 'border-amber-300 bg-amber-50/70' : 'border-slate-200 bg-white hover:border-blue-200' }}">
+                <li class="flex flex-col gap-4 rounded-2xl border p-3 shadow-sm transition hover:shadow-md sm:flex-row sm:flex-wrap sm:items-center xl:flex-nowrap border-slate-200 bg-white {{ $sinVoluntario ? 'border-s-[6px] border-s-amber-400' : 'hover:border-blue-200' }}">
                     <a href="{{ route('admin.seguimientos.show', $seguimiento) }}" class="block shrink-0" tabindex="-1" aria-hidden="true">
                         @if ($foto)
                             <img src="{{ $foto->url_miniatura }}" alt="" class="aspect-[4/3] w-full rounded-xl bg-slate-100 object-cover sm:h-24 sm:w-32">
