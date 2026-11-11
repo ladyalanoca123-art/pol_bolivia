@@ -1,5 +1,5 @@
 {{--
-    Menú lateral del voluntario en computadora (celeste, para no confundirlo con el azul oscuro del administrador).
+    Menú lateral del voluntario en computadora: degradado azul claro (sin blanco, para que no encandile), de la misma familia que el azul oscuro del administrador pero sin confundirse con él.
     En pantallas chicas el voluntario usa la barra de arriba (layouts/navigation).
 --}}
 @php
@@ -15,11 +15,11 @@
         [route('solicitudes-adopcion.index'), 'Mis solicitudes', request()->routeIs('solicitudes-adopcion.index', 'solicitudes-adopcion.show'), \App\Support\IconosPestanas::SOLICITUDES],
     ];
 @endphp
-<aside class="fixed inset-y-0 start-0 z-30 hidden w-64 flex-col border-e border-sky-100 bg-gradient-to-b from-sky-50 to-white lg:flex" aria-label="Menú del voluntario">
+<aside class="fixed inset-y-0 start-0 z-30 hidden w-64 flex-col border-e border-blue-200 bg-gradient-to-b from-blue-200 via-blue-100 to-sky-200 lg:flex" aria-label="Menú del voluntario">
     {{-- Logo para fondo claro y el nombre de la sección --}}
     <a href="{{ route('inicio') }}" class="block shrink-0 px-6 pt-6" aria-label="POL-Bolivia, ir a Mi espacio">
         <img src="{{ asset('images/pol-bolivia/logos/POL_02_horizontal_web.png') }}" alt="POL-Bolivia, Hacedores de Sueños" class="h-11 w-auto">
-        <span class="mt-1 block ps-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Voluntariado</span>
+        <span class="mt-1 block ps-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-900/80">Voluntariado</span>
     </a>
 
     <div class="px-4 pt-5">
@@ -32,7 +32,7 @@
     <nav class="mt-4 flex-1 space-y-1 px-3">
         @foreach ($opciones as [$url, $texto, $activo, $icono])
             <a href="{{ $url }}" @if ($activo) aria-current="page" @endif
-               class="flex min-h-11 items-center gap-3 rounded-xl px-3 text-[15px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 {{ $activo ? 'bg-blue-950 text-white shadow-sm' : 'text-blue-950 hover:bg-sky-100' }}">
+               class="flex min-h-11 items-center gap-3 rounded-xl px-3 text-[15px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 {{ $activo ? 'bg-blue-950 text-white shadow-sm' : 'text-blue-950 hover:bg-white/70' }}">
                 <svg class="h-5 w-5 shrink-0 {{ $activo ? 'text-white' : 'text-blue-900' }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ $icono }}" /></svg>
                 {{ $texto }}
             </a>

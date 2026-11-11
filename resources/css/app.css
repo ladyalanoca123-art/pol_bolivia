@@ -38,6 +38,26 @@
 .panel-admin .text-sm { font-size: 0.9375rem; line-height: 1.5rem; }
 
 /*
+ * Pantallas del voluntario (layouts/app: <main class="panel-voluntario">). Usan las mismas tarjetas y botones que el
+ * panel del administrador; estas reglas las hacen más legibles solo aquí, sin cambiar el panel del administrador.
+ */
+.panel-voluntario .text-xs { font-size: 0.8125rem; line-height: 1.25rem; }
+.panel-voluntario .text-sm { font-size: 0.9375rem; line-height: 1.5rem; }
+/* 1. Títulos de las tarjetas más grandes */
+.panel-voluntario h2.text-lg { font-size: 1.25rem; line-height: 1.75rem; font-weight: 700; }
+/* 2. Más contraste en los textos grises */
+.panel-voluntario .text-slate-500 { color: rgb(71 85 105); }
+.panel-voluntario .text-slate-400 { color: rgb(100 116 139); }
+/* 3. Más aire entre bloques */
+.panel-voluntario .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 2rem; }
+.panel-voluntario .gap-6 { gap: 2rem; }
+/* 4. Tarjetas blancas mejor marcadas */
+.panel-voluntario .rounded-2xl.border-slate-200 { border-color: rgb(203 213 225 / 0.8); box-shadow: 0 1px 3px rgb(203 213 225 / 0.7); }
+/* 5. Botones y opciones de al menos 44 px de alto */
+.panel-voluntario .min-h-9,
+.panel-voluntario summary.rounded-full { min-height: 2.75rem; }
+
+/*
  * Barra de desplazamiento del menú lateral del panel (layouts/admin-navigation: <nav class="menu-admin-desplazable">)
  * y de las columnas fijas de las fichas de detalle (class="columna-fija", p. ej. la del solicitante):
  * fina (4 px) y del color del menú. Chrome y Edge usan ::-webkit-scrollbar; Firefox, scrollbar-width y scrollbar-color

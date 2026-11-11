@@ -81,7 +81,7 @@
                         <div class="max-w-7xl mx-auto py-5 px-4 sm:px-6 lg:px-8">{{ $header }}</div>
                     </header>
                 @endisset
-                <main class="vista-personal">{{ $slot }}</main>
+                <main class="vista-personal {{ $esVoluntario ? 'panel-voluntario' : '' }}">{{ $slot }}</main>
             </div>
         @endif
     </body>
