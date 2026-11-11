@@ -100,8 +100,8 @@
                     <h4 class="text-[22px] font-bold text-blue-950">Compromiso</h4>
                     <p class="text-sm text-gray-600">Confirmaciones obligatorias para enviar la postulación.</p>
 
-                    <x-cuestionario.pregunta tema="pol" num="8" label="Habilidades útiles (opcional)" campo="habilidades" ayuda="Por ejemplo: fotografía, diseño, primeros auxilios, manejo de redes." data-opcional>
-                        <textarea name="habilidades" id="habilidades" rows="2" maxlength="5000" class="{{ $input }}" placeholder="Ej. Sé tomar buenas fotos y manejar Instagram">{{ old('habilidades') }}</textarea>
+                    <x-cuestionario.pregunta tema="pol" num="8" label="Habilidades útiles (opcional)" campo="habilidades" ayuda="Por ejemplo: primeros auxilios, cuidado de animales, fotografía o difusión." data-opcional>
+                        <textarea name="habilidades" id="habilidades" rows="2" maxlength="5000" class="{{ $input }}" placeholder="Ej. Tengo conocimientos de primeros auxilios y experiencia en el cuidado de mascotas.">{{ old('habilidades') }}</textarea>
                     </x-cuestionario.pregunta>
 
                     <p class="pt-2 text-xs text-gray-500">Sin marcar las 2 casillas no se puede enviar la postulación.</p>
