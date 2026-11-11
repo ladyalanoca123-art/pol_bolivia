@@ -69,6 +69,12 @@ class SeguimientoAdopcion extends Model
             $pendientes[] = 'Registra la visita programada del '.$fecha->format('d/m/Y').' (realizada o «No asistió»).';
         }
 
+        // Sin las 2 visitas terminadas no hay seguimiento que cerrar (antes se podía cerrar sin ninguna visita).
+        $terminadas = $this->visitas()->whereIn('estado', ['realizada', 'no_asistio'])->count();
+        if ($terminadas < 2) {
+            $pendientes[] = "Faltan visitas: deben quedar registradas las 2 (realizada o «No asistió»). Van {$terminadas} de 2.";
+        }
+
         return $pendientes;
     }
 }

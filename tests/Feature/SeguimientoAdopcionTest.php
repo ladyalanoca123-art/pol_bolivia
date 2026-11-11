@@ -33,6 +33,54 @@ class SeguimientoAdopcionTest extends TestCase
         $this->actingAs($citizen)->patch(route('admin.seguimientos.close', $seguimiento))->assertForbidden();
     }
 
+    public function test_el_administrador_cambia_el_voluntario_y_la_visita_pendiente_pasa_al_nuevo(): void
+    {
+        [$administrator, $seguimiento] = $this->acceptedTracking();
+        $anterior = $this->activate($administrator, $seguimiento);
+        $nuevo = User::factory()->create(['rol' => 'voluntario']);
+
+        // Visita 1: «No asistió» con el voluntario anterior (queda en el historial). Visita 2: programada.
+        $this->actingAs($anterior)->post(route('seguimientos.visitas.store', $seguimiento), $this->visitData())->assertRedirect();
+        $visita1 = $seguimiento->visitas()->orderBy('id')->first();
+        $this->actingAs($anterior)->patch(route('seguimientos.visitas.no-show', [$seguimiento, $visita1]), [])->assertRedirect();
+        $this->actingAs($anterior)->post(route('seguimientos.visitas.store', $seguimiento), $this->visitData(['fecha_programada' => now()->addDays(5)->toDateString()]))->assertRedirect();
+        $visita2 = $seguimiento->visitas()->orderByDesc('id')->first();
+
+        $this->actingAs($administrator)->get(route('admin.seguimientos.show', $seguimiento))->assertSee('Cambiar voluntario');
+        $this->actingAs($administrator)->patch(route('admin.seguimientos.reassign', $seguimiento), ['voluntario_id' => $nuevo->id])
+            ->assertRedirect()->assertSessionHas('status');
+
+        $this->assertDatabaseHas('seguimientos_adopcion', ['id' => $seguimiento->id, 'voluntario_id' => $nuevo->id, 'estado' => 'activo']);
+        $this->assertSame($anterior->id, $visita1->refresh()->voluntario_id);
+        $this->assertSame($nuevo->id, $visita2->refresh()->voluntario_id);
+
+        // El nuevo voluntario trabaja el caso; el anterior ya no lo ve.
+        $this->actingAs($nuevo)->get(route('seguimientos.show', $seguimiento))->assertOk();
+        $this->actingAs($nuevo)->patch(route('seguimientos.visitas.no-show', [$seguimiento, $visita2]), [])->assertRedirect();
+        $this->assertSame('no_asistio', $visita2->refresh()->estado);
+        $this->actingAs($anterior)->get(route('seguimientos.show', $seguimiento))->assertForbidden();
+    }
+
+    public function test_cambiar_voluntario_exige_otro_voluntario_activo_que_no_sea_el_adoptante(): void
+    {
+        [$administrator, $seguimiento] = $this->acceptedTracking();
+        $actual = $this->activate($administrator, $seguimiento);
+        $adoptante = $seguimiento->solicitud->solicitante;
+        $adoptante->forceFill(['rol' => 'voluntario'])->save();
+
+        foreach ([$actual->id, $adoptante->id, User::factory()->create(['rol' => 'ciudadano'])->id] as $invalido) {
+            $this->actingAs($administrator)->patch(route('admin.seguimientos.reassign', $seguimiento), ['voluntario_id' => $invalido])
+                ->assertSessionHasErrors('voluntario_id');
+        }
+        $this->assertSame($actual->id, $seguimiento->refresh()->voluntario_id);
+
+        // Solo el administrador, y solo en un seguimiento activo.
+        $otro = User::factory()->create(['rol' => 'voluntario']);
+        $this->actingAs($actual)->patch(route('admin.seguimientos.reassign', $seguimiento), ['voluntario_id' => $otro->id])->assertForbidden();
+        [, $sinAsignar] = $this->acceptedTracking();
+        $this->actingAs($administrator)->patch(route('admin.seguimientos.reassign', $sinAsignar), ['voluntario_id' => $otro->id])->assertForbidden();
+    }
+
     public function test_assigned_volunteer_can_only_view_own_tracking_case(): void
     {
         [$administrator, $own] = $this->acceptedTracking();
@@ -155,6 +203,8 @@ class SeguimientoAdopcionTest extends TestCase
         $volunteer = $this->activate($administrator, $seguimiento);
         $visita = VisitaSeguimiento::create(['seguimiento_id' => $seguimiento->id, 'voluntario_id' => $volunteer->id, 'fecha_programada' => now()->toDateString(), 'estado' => 'programada']);
         $visita->update(['estado' => 'realizada', 'fecha_realizada' => now()]);
+        $visita2 = VisitaSeguimiento::create(['seguimiento_id' => $seguimiento->id, 'voluntario_id' => $volunteer->id, 'fecha_programada' => now()->toDateString(), 'estado' => 'programada']);
+        $visita2->update(['estado' => 'no_asistio']);
         $incidencia = Incidencia::create([...$this->incidentData(), 'seguimiento_id' => $seguimiento->id, 'reportado_por' => $volunteer->id, 'estado' => 'pendiente']);
         $incidencia->update(['estado' => 'atendida', 'comentarios_resolucion' => 'Atendida', 'atendida_por' => $administrator->id, 'atendida_at' => now()]);
 

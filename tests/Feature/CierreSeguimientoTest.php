@@ -39,7 +39,7 @@ class CierreSeguimientoTest extends TestCase
         VisitaSeguimiento::create(['seguimiento_id' => $seguimiento->id, 'voluntario_id' => $voluntario->id, 'fecha_programada' => '2026-11-12', 'estado' => 'programada']);
 
         $this->assertSame(
-            ['Atiende 1 incidencia pendiente.', 'Registra la visita programada del 12/11/2026 (realizada o «No asistió»).'],
+            ['Atiende 1 incidencia pendiente.', 'Registra la visita programada del 12/11/2026 (realizada o «No asistió»).', 'Faltan visitas: deben quedar registradas las 2 (realizada o «No asistió»). Van 0 de 2.'],
             $seguimiento->pendientesParaCerrar()
         );
 
@@ -59,7 +59,7 @@ class CierreSeguimientoTest extends TestCase
             ->from(route('admin.seguimientos.show', $seguimiento))
             ->patch(route('admin.seguimientos.close', $seguimiento))
             ->assertRedirect(route('admin.seguimientos.show', $seguimiento))
-            ->assertSessionHasErrors(['cierre' => 'Todavía no se puede cerrar: Atiende 1 incidencia pendiente.']);
+            ->assertSessionHasErrors(['cierre' => 'Todavía no se puede cerrar: Atiende 1 incidencia pendiente. Faltan visitas: deben quedar registradas las 2 (realizada o «No asistió»). Van 0 de 2.']);
 
         $this->assertSame('activo', $seguimiento->refresh()->estado);
     }
@@ -70,6 +70,10 @@ class CierreSeguimientoTest extends TestCase
         Incidencia::create(['seguimiento_id' => $seguimiento->id, 'reportado_por' => $voluntario->id, 'tipo' => 'salud', 'descripcion' => 'Revisión', 'estado' => 'atendida',
             'comentarios_resolucion' => 'Resuelto', 'atendida_por' => $voluntario->id, 'atendida_at' => now()]);
         VisitaSeguimiento::create(['seguimiento_id' => $seguimiento->id, 'voluntario_id' => $voluntario->id, 'fecha_programada' => now()->toDateString(), 'estado' => 'no_asistio']);
+
+        // Con una sola visita terminada todavía no se puede cerrar.
+        $this->assertSame(['Faltan visitas: deben quedar registradas las 2 (realizada o «No asistió»). Van 1 de 2.'], $seguimiento->pendientesParaCerrar());
+        VisitaSeguimiento::create(['seguimiento_id' => $seguimiento->id, 'voluntario_id' => $voluntario->id, 'fecha_programada' => now()->addDay()->toDateString(), 'estado' => 'no_asistio']);
 
         $this->assertSame([], $seguimiento->pendientesParaCerrar());
         $this->actingAs($this->admin)->get(route('admin.seguimientos.show', $seguimiento))->assertOk()
