@@ -17,6 +17,12 @@ class SeguimientoAdopcionPolicy
         return $this->isAdmin($user) && $seguimiento->estado === 'sin_asignar';
     }
 
+    /** Cambiar el voluntario de un caso activo: lo decide solo el administrador (aunque el voluntario no responda). */
+    public function reassign(User $user, SeguimientoAdopcion $seguimiento): bool
+    {
+        return $this->isAdmin($user) && $seguimiento->estado === 'activo';
+    }
+
     public function close(User $user, SeguimientoAdopcion $seguimiento): bool
     {
         return $this->isAdmin($user) && $seguimiento->estado === 'activo';

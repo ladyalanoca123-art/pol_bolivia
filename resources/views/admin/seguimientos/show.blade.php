@@ -254,6 +254,29 @@
                     @if ($seguimiento->zona_aproximada)<x-admin.dato etiqueta="Zona">{{ $seguimiento->zona_aproximada }}</x-admin.dato>@endif
                     @if ($seguimiento->horario_preferido)<x-admin.dato etiqueta="Horario preferido">{{ $seguimiento->horario_preferido }}</x-admin.dato>@endif
                 </dl>
+
+                {{-- Cambiar voluntario: si no puede (baja, viaje) o no responde. Las visitas hechas conservan a quien las hizo. --}}
+                @can('reassign', $seguimiento)
+                    @php $otrosVoluntarios = $voluntarios->where('id', '!=', $seguimiento->voluntario_id); @endphp
+                    <details class="group mt-4 border-t border-slate-100 pt-4" @error('voluntario_id') open @enderror>
+                        <summary class="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-full border border-slate-300 px-4 text-sm font-semibold text-blue-950 hover:bg-slate-50 group-open:bg-slate-100">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3" /></svg>
+                            Cambiar voluntario
+                        </summary>
+                        <form method="POST" action="{{ route('admin.seguimientos.reassign', $seguimiento) }}" class="mt-3 rounded-xl bg-slate-50 p-4"
+                              x-data x-on:submit="if (! confirm({{ Js::from('¿Cambiar el voluntario de este seguimiento? La visita pendiente pasará al nuevo voluntario.') }})) $event.preventDefault()">
+                            @csrf @method('PATCH')
+                            <p class="text-sm text-slate-700">Úsalo si el voluntario no puede continuar o no responde. Las visitas ya realizadas se conservan; la visita pendiente pasa al nuevo voluntario.</p>
+                            <label for="nuevo_voluntario_id" class="admin-etiqueta mt-3">Nuevo voluntario</label>
+                            <select id="nuevo_voluntario_id" name="voluntario_id" required class="admin-campo">
+                                @foreach ($otrosVoluntarios as $voluntario)<option value="{{ $voluntario->id }}" @selected(old('voluntario_id') == $voluntario->id)>{{ $voluntario->nombres }} {{ $voluntario->apellidos }}</option>@endforeach
+                            </select>
+                            @error('voluntario_id')<p class="admin-error">{{ $message }}</p>@enderror
+                            @if ($otrosVoluntarios->isEmpty())<p class="mt-2 text-sm font-semibold text-amber-900">No hay otro voluntario activo disponible.</p>@endif
+                            <x-admin.boton class="mt-3 w-full">Cambiar voluntario</x-admin.boton>
+                        </form>
+                    </details>
+                @endcan
             </x-admin.tarjeta>
 
             {{-- 3. Cierre: lista de lo que está listo (✓) y lo que falta (✗); el botón solo aparece con todo listo --}}

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\FilterSeguimientosRequest;
 use App\Http\Requests\Seguimientos\AssignVolunteerRequest;
+use App\Http\Requests\Seguimientos\ReassignVolunteerRequest;
 use App\Models\SeguimientoAdopcion;
 use App\Models\User;
 use App\Models\VisitaSeguimiento;
@@ -12,6 +13,7 @@ use App\Support\ErrorBaseDatos;
 use App\Support\FechasSeguimientoAdopcion;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -84,6 +86,23 @@ class SeguimientoAdopcionController extends Controller
         ])->save();
 
         return back()->with('status', 'El voluntario fue asignado y el seguimiento fue activado.');
+    }
+
+    /**
+     * Cambia el voluntario de un seguimiento activo. Las visitas ya hechas se quedan con quien las hizo (historial);
+     * la visita programada pasa al nuevo voluntario con la misma fecha (PostgreSQL exige que la visita sea del
+     * voluntario asignado al caso, validar_visita_seguimiento). El seguimiento sigue activo.
+     */
+    public function reassign(ReassignVolunteerRequest $request, SeguimientoAdopcion $seguimiento): RedirectResponse
+    {
+        $nuevo = $request->integer('voluntario_id');
+
+        DB::transaction(function () use ($seguimiento, $nuevo): void {
+            $seguimiento->forceFill(['voluntario_id' => $nuevo])->save();
+            $seguimiento->visitas()->where('estado', 'programada')->update(['voluntario_id' => $nuevo]);
+        });
+
+        return back()->with('status', 'El voluntario fue cambiado. El nuevo voluntario ya ve el seguimiento y su visita pendiente.');
     }
 
     public function close(SeguimientoAdopcion $seguimiento): RedirectResponse

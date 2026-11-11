@@ -197,6 +197,7 @@ Route::middleware(['auth', 'verified', 'role:administrador'])
         Route::get('/seguimientos/{seguimiento}', [AdminSeguimientoAdopcionController::class, 'show'])->name('seguimientos.show');
         Route::get('/seguimientos/{seguimiento}/visitas/{visita}/foto', [AdminSeguimientoAdopcionController::class, 'visitPhoto'])->name('seguimientos.visitas.foto');
         Route::patch('/seguimientos/{seguimiento}/asignar', [AdminSeguimientoAdopcionController::class, 'assign'])->name('seguimientos.assign');
+        Route::patch('/seguimientos/{seguimiento}/cambiar-voluntario', [AdminSeguimientoAdopcionController::class, 'reassign'])->name('seguimientos.reassign');
         Route::patch('/seguimientos/{seguimiento}/cerrar', [AdminSeguimientoAdopcionController::class, 'close'])->name('seguimientos.close');
         Route::patch('/incidencias/{incidencia}/en-proceso', [IncidenciaController::class, 'progress'])->name('incidencias.progress');
         Route::patch('/seguimientos/{seguimiento}/incidencias/{incidencia}/atender', [SeguimientoAdopcionController::class, 'attendIncident'])->name('seguimientos.incidencias.attend');
