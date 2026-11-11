@@ -36,6 +36,11 @@
  */
 .panel-admin .text-xs { font-size: 0.8125rem; line-height: 1.25rem; }
 .panel-admin .text-sm { font-size: 0.9375rem; line-height: 1.5rem; }
+/* Legibilidad del panel: títulos de tarjeta más grandes, más contraste, tarjetas que se separan del fondo y
+   botones de al menos 44 px. (El espacio entre bloques no cambia: las listas y tablas largas no se alargan.) */
+.panel-admin main h2.text-lg { font-size: 1.25rem; line-height: 1.75rem; font-weight: 700; }
+.panel-admin main .text-slate-500 { color: rgb(71 85 105); }
+.panel-admin main .text-slate-400 { color: rgb(100 116 139); }
 
 /*
  * Pantallas del voluntario (layouts/app: <main class="panel-voluntario">). Usan las mismas tarjetas y botones que el
