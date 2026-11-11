@@ -93,6 +93,27 @@
                 </div>
             </header>
 
+            {{-- Alarma: una incidencia es urgente (la mascota puede estar en peligro), va antes que todo lo demás. --}}
+            @if ($indicadores['incidenciasAbiertas'] > 0)
+                @php $primeraIncidencia = $bandeja['incidenciasAbiertas']['items']->first(); @endphp
+                <div class="flex flex-col gap-4 rounded-2xl border-2 border-red-600 bg-red-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between" role="alert">
+                    <div class="flex items-center gap-3">
+                        <span class="relative flex h-4 w-4 shrink-0" aria-hidden="true"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75"></span><span class="relative inline-flex h-4 w-4 rounded-full bg-red-600"></span></span>
+                        <div>
+                            <p class="text-lg font-bold text-red-800">🚨 {{ $indicadores['incidenciasAbiertas'] === 1 ? 'Hay 1 incidencia urgente' : 'Hay '.$indicadores['incidenciasAbiertas'].' incidencias urgentes' }}</p>
+                            <p class="text-sm text-red-900">Un voluntario reportó un problema en un seguimiento. Atiéndela cuanto antes: la mascota puede estar en peligro.</p>
+                        </div>
+                    </div>
+                    {{-- Con una sola incidencia abre su seguimiento; con varias, la pestaña «Incidencias» de abajo. --}}
+                    @if ($primeraIncidencia && $indicadores['incidenciasAbiertas'] === 1)
+                        <a href="{{ route('admin.seguimientos.show', $primeraIncidencia->seguimiento_id) }}"
+                    @else
+                        <a href="{{ route('admin.seguimientos.index', ['estado' => 'activo']) }}" x-on:click.prevent="$dispatch('abrir-pestana', 'incidencias'); document.getElementById('titulo-atencion').scrollIntoView({ behavior: 'smooth', block: 'start' })"
+                    @endif
+                       class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-red-600 px-5 text-sm font-bold text-white hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2">Atender ahora</a>
+                </div>
+            @endif
+
             {{-- Indicadores --}}
             <section aria-labelledby="titulo-indicadores">
                 <h2 id="titulo-indicadores" class="sr-only">Indicadores principales</h2>

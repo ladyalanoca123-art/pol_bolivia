@@ -36,6 +36,7 @@ return [
             'aprobada' => 'Hola :nombre, ¡tu solicitud para adoptar a :mascota fue aprobada! Coordinemos el día y lugar de la entrega.',
             'consulta' => 'Hola POL-Bolivia, quisiera hacer una consulta.',
             'consulta_mascota' => 'Hola POL-Bolivia, quisiera consultar sobre :mascota.',
+            'incidencia' => '🚨 URGENTE - Soy :voluntario, voluntario/a de POL-Bolivia. Reporté una incidencia de :tipo en el seguimiento de :mascota y necesita atención inmediata.',
             'seguimiento' => 'Hola :nombre, soy :voluntario, voluntario/a de POL-Bolivia. Quisiera coordinar la visita de seguimiento de :mascota.',
         ],
     ],

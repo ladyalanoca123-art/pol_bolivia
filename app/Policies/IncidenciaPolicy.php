@@ -24,7 +24,7 @@ class IncidenciaPolicy
             return false;
         }
 
-        return $user->hasRole('administrador')
-            || ($user->hasRole('voluntario') && $incidencia->seguimiento->voluntario_id === $user->id);
+        // Una incidencia es una urgencia: el voluntario la reporta y avisa; solo la fundación (administrador) la cierra.
+        return $user->hasRole('administrador');
     }
 }

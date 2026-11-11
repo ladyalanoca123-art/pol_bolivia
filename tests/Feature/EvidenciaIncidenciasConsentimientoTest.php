@@ -95,20 +95,30 @@ class EvidenciaIncidenciasConsentimientoTest extends TestCase
 
     // --- A. Incidencias ---
 
-    public function test_el_voluntario_atiende_una_incidencia_directamente_sin_en_proceso(): void
+    public function test_el_voluntario_avisa_urgente_y_solo_el_administrador_atiende_la_incidencia(): void
     {
         [$seguimiento, $voluntario] = $this->seguimientoActivo();
         $incidencia = Incidencia::create(['seguimiento_id' => $seguimiento->id, 'reportado_por' => $voluntario->id, 'tipo' => 'salud', 'descripcion' => 'Herida leve en la pata', 'estado' => 'pendiente']);
 
-        $this->actingAs($voluntario)->get(route('seguimientos.show', $seguimiento))->assertSee('Atender');
+        $this->actingAs($voluntario)->get(route('seguimientos.show', $seguimiento))
+            ->assertSee('Urgente · esperando a la fundación')
+            ->assertSee('Avisar urgente a la fundación por WhatsApp')
+            ->assertDontSee('name="comentarios_resolucion"', false);
 
         $this->actingAs($voluntario)
-            ->patch(route('seguimientos.incidencias.attend', [$seguimiento, $incidencia]), ['comentarios_resolucion' => 'Se llevó al veterinario, ya está bien.'])
+            ->patch(route('seguimientos.incidencias.attend', [$seguimiento, $incidencia]), ['comentarios_resolucion' => 'Intento del voluntario'])
+            ->assertForbidden();
+        $this->assertSame('pendiente', $incidencia->refresh()->estado);
+
+        $this->actingAs($this->admin)->get(route('admin.dashboard'))->assertSee('Hay 1 incidencia urgente');
+
+        $this->actingAs($this->admin)
+            ->patch(route('admin.seguimientos.incidencias.attend', [$seguimiento, $incidencia]), ['comentarios_resolucion' => 'Se llevó al veterinario, ya está bien.'])
             ->assertRedirect();
 
         $incidencia->refresh();
         $this->assertSame('atendida', $incidencia->estado);
-        $this->assertSame($voluntario->id, $incidencia->atendida_por);
+        $this->assertSame($this->admin->id, $incidencia->atendida_por);
         $this->assertNotNull($incidencia->atendida_at);
     }
 
@@ -121,8 +131,8 @@ class EvidenciaIncidenciasConsentimientoTest extends TestCase
         $this->actingAs($this->admin)->patch(route('admin.incidencias.progress', $incidencia))->assertRedirect();
         $this->assertSame('en_proceso', $incidencia->refresh()->estado);
 
-        $this->actingAs($voluntario)
-            ->patch(route('seguimientos.incidencias.attend', [$seguimiento, $incidencia]), ['comentarios_resolucion' => 'Orientación brindada.'])
+        $this->actingAs($this->admin)
+            ->patch(route('admin.seguimientos.incidencias.attend', [$seguimiento, $incidencia]), ['comentarios_resolucion' => 'Orientación brindada.'])
             ->assertRedirect();
         $this->assertSame('atendida', $incidencia->refresh()->estado);
     }

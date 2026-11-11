@@ -224,10 +224,21 @@
 
             <x-admin.tarjeta titulo="Incidencias">
                 @forelse ($seguimiento->incidencias as $incidencia)
-                    <article class="{{ $loop->first ? '' : 'mt-4 border-t border-slate-100 pt-4' }}">
+                    @php
+                        $tipoIncidencia = $tiposIncidencia[$incidencia->tipo] ?? ucfirst(str_replace('_', ' ', $incidencia->tipo));
+                        $incidenciaAbierta = $incidencia->estado !== 'atendida';
+                    @endphp
+                    <article class="{{ $loop->first ? '' : 'mt-4' }} {{ $incidenciaAbierta ? 'rounded-xl border border-red-200 border-s-[6px] border-s-red-600 bg-red-50 p-4' : ($loop->first ? '' : 'border-t border-slate-100 pt-4') }}">
                         <div class="flex flex-wrap items-center justify-between gap-2">
-                            <p class="text-sm font-semibold text-blue-950">{{ $tiposIncidencia[$incidencia->tipo] ?? ucfirst(str_replace('_', ' ', $incidencia->tipo)) }}</p>
-                            <x-admin.estado de="incidencia" :valor="$incidencia->estado" />
+                            <p class="text-sm font-semibold text-blue-950">{{ $tipoIncidencia }}</p>
+                            @if ($incidenciaAbierta)
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-[13px] font-bold text-white">
+                                    <span class="relative flex h-2.5 w-2.5" aria-hidden="true"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span><span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-white"></span></span>
+                                    Urgente · esperando a la fundación
+                                </span>
+                            @else
+                                <x-admin.estado de="incidencia" :valor="$incidencia->estado" />
+                            @endif
                         </div>
                         <p class="mt-1 text-sm text-slate-700">{{ $incidencia->descripcion }}</p>
                         @if ($incidencia->comentarios_resolucion)<p class="mt-2 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900"><span class="font-semibold">Resolución:</span> {{ $incidencia->comentarios_resolucion }}</p>@endif
@@ -241,6 +252,23 @@
                                 <x-admin.boton variante="exito" tamano="chico">Atender</x-admin.boton>
                             </form>
                         @endcan
+                        {{-- El voluntario no cierra la incidencia: avisa de inmediato a la fundación, que es quien decide. --}}
+                        @if ($incidenciaAbierta && ! auth()->user()->hasRole('administrador'))
+                            @php
+                                $avisoFundacion = \App\Support\ContactoTelefonico::whatsapp(config('pol.whatsapp.consultas'), 'incidencia', [
+                                    'voluntario' => auth()->user()->nombres.' '.auth()->user()->apellidos,
+                                    'tipo' => mb_strtolower($tipoIncidencia),
+                                    'mascota' => $seguimiento->solicitud->mascota->nombre,
+                                ]);
+                            @endphp
+                            <p class="mt-3 text-sm text-red-900">La fundación revisará el caso y lo cerrará. Si la mascota corre peligro, avisa ahora mismo.</p>
+                            @if ($avisoFundacion)
+                                <a href="{{ $avisoFundacion }}" target="_blank" rel="noopener" class="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full bg-red-600 px-5 text-sm font-bold text-white shadow-sm hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2">
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v3.75m0 3.75h.008M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /></svg>
+                                    Avisar urgente a la fundación por WhatsApp
+                                </a>
+                            @endif
+                        @endif
                     </article>
                 @empty
                     <p class="text-sm text-slate-500">Sin incidencias.</p>
