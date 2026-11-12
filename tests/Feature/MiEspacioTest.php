@@ -31,7 +31,7 @@ class MiEspacioTest extends TestCase
         $this->admin = User::factory()->create(['rol' => 'administrador']);
     }
 
-    public function test_el_ciudadano_ve_sus_solicitudes_y_mascotas_que_esperan_hogar(): void
+    public function test_el_ciudadano_ve_sus_solicitudes_sin_la_galeria_de_mascotas(): void
     {
         $ciudadano = User::factory()->create(['rol' => 'ciudadano', 'nombres' => 'Rosa Elena', 'telefono' => '71234567']);
         $solicitada = $this->mascota('Firulais');
@@ -43,7 +43,7 @@ class MiEspacioTest extends TestCase
             ->assertSee('Mis solicitudes de adopción')
             ->assertSee('Firulais')->assertSee('Recibida')
             ->assertSee('Solicitudes en trámite')
-            ->assertSee('Esperan un hogar')->assertSee('Pelusa')
+            ->assertDontSee('Esperan un hogar')->assertDontSee('Pelusa')
             ->assertSee('¿Quieres ayudar más?')
             ->assertSee('La fundación revisará tu solicitud y te escribirá por WhatsApp.')
             ->assertDontSee('Falta tu teléfono')

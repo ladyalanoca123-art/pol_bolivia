@@ -157,27 +157,6 @@
             @unless ($invitarVoluntariado)
                 <p class="text-sm text-slate-600">Voluntariado: <a href="{{ route('postulaciones-voluntariado.index') }}" class="{{ $enlace }}">Ver mi postulación <span aria-hidden="true">→</span></a></p>
             @endunless
-
-            {{-- Mascotas que esperan hogar --}}
-            @if ($mascotas->isNotEmpty())
-                <section aria-labelledby="titulo-mascotas">
-                    <div class="mb-4 flex items-center justify-between">
-                        <h2 id="titulo-mascotas" class="text-xl font-bold text-blue-950">Esperan un hogar</h2>
-                        <a href="{{ route('mascotas.catalogo') }}" class="{{ $enlace }}">Ver todas <span aria-hidden="true">→</span></a>
-                    </div>
-                    <ul class="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-                        @foreach ($mascotas as $mascota)
-                            <li>
-                                <a href="{{ route('mascotas.public.show', $mascota) }}" class="group block">
-                                    <x-foto-mascota :mascota="$mascota" class="aspect-square w-full rounded-2xl" />
-                                    <p class="mt-2 truncate text-base font-semibold text-blue-950 group-hover:underline">{{ $mascota->nombre }}</p>
-                                    <p class="truncate text-sm text-slate-600">{{ ucfirst($mascota->especie) }} · {{ $mascota->edad_formateada }}</p>
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
-                </section>
-            @endif
         @endif
     </div>
 </x-app-layout>

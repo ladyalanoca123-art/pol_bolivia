@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Mascota;
 use App\Models\SolicitudAdopcion;
 use App\Models\VisitaSeguimiento;
 use Illuminate\View\View;
@@ -41,10 +40,6 @@ class MiEspacioController extends Controller
             return view('mi-espacio', [...$datos, 'seguimientos' => $seguimientos, 'proximasVisitas' => $proximasVisitas]);
         }
 
-        // Ciudadano: algunas mascotas que esperan hogar, para invitar a conocerlas.
-        $mascotas = Mascota::query()->where('estado', 'disponible')
-            ->with(['fotos' => $fotos])->latest()->limit(4)->get();
-
-        return view('mi-espacio', [...$datos, 'mascotas' => $mascotas]);
+        return view('mi-espacio', $datos);
     }
 }
