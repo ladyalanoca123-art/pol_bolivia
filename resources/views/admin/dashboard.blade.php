@@ -382,10 +382,31 @@
                     </div>
 
                     @if ($agenda['items']->isEmpty())
-                        <div class="mt-5 flex flex-col items-center rounded-xl bg-slate-50 px-4 py-8 text-center">
-                            <svg class="h-10 w-10 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v2.25M15.75 3v2.25M3.75 9h16.5M5.25 5.25h13.5a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-12a1.5 1.5 0 0 1 1.5-1.5Z" /></svg>
-                            <p class="mt-3 text-[15px] text-slate-600">No hay visitas programadas para los próximos 7 días.</p>
-                        </div>
+                        <p class="mt-5 rounded-xl bg-slate-50 px-4 py-3 text-[15px] text-slate-600">No hay visitas esta semana.</p>
+                        {{-- Sin visitas en estos días: se muestra la siguiente, para que la tarjeta siempre informe algo. --}}
+                        @if ($proxima = $agenda['proxima'])
+                            @php $mascotaProxima = $proxima->seguimiento?->solicitud?->mascota; @endphp
+                            <div class="mt-4">
+                                <p class="text-sm font-semibold uppercase tracking-wide text-slate-500">Próxima visita</p>
+                                <div class="mt-2 flex gap-3">
+                                    <span class="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-slate-100 text-blue-950">
+                                        <span class="text-xs font-semibold uppercase leading-none">{{ str_replace('.', '', $proxima->fecha_programada->isoFormat('MMM')) }}</span>
+                                        <span class="text-lg font-bold leading-tight">{{ $proxima->fecha_programada->format('j') }}</span>
+                                        <span class="sr-only">{{ $proxima->fecha_programada->translatedFormat('l j \d\e F') }}</span>
+                                    </span>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-[15px]">
+                                            <a href="{{ route('admin.seguimientos.show', $proxima->seguimiento_id) }}" class="font-semibold text-blue-950 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">Visita a {{ $mascotaProxima?->nombre ?? 'mascota no disponible' }}</a>
+                                            <span class="ms-1 {{ $insignia }} bg-slate-100 text-slate-700 ring-slate-200">En {{ $cantidad((int) round(now()->startOfDay()->diffInDays($proxima->fecha_programada->copy()->startOfDay())), 'día', 'días') }}</span>
+                                        </p>
+                                        <p class="text-sm text-slate-600">Adoptante: {{ $nombre($proxima->seguimiento?->solicitud?->solicitante) }}</p>
+                                        <p class="text-sm text-slate-600">A cargo de {{ $nombre($proxima->voluntario) }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        @else
+                            <p class="mt-3 text-sm text-slate-500">Tampoco hay visitas programadas más adelante.</p>
+                        @endif
                     @else
                         <ul class="mt-5 space-y-4">
                             @foreach ($agenda['items'] as $visita)

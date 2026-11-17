@@ -346,6 +346,30 @@ class PanelPrincipalTest extends TestCase
         $this->assertTrue($primera->relationLoaded('voluntario'));
         $this->assertTrue($primera->seguimiento->solicitud->relationLoaded('mascota'));
         $this->assertTrue($primera->seguimiento->solicitud->relationLoaded('solicitante'));
+        $this->assertNull($agenda['proxima'], 'con visitas en la semana no se busca la próxima');
+    }
+
+    public function test_sin_visitas_en_la_semana_la_agenda_muestra_la_proxima(): void
+    {
+        $this->actingAs($this->admin)->get(route('admin.dashboard'))->assertOk()
+            ->assertSee('No hay visitas esta semana.')->assertSee('Tampoco hay visitas programadas más adelante.');
+
+        // Máximo 2 visitas por seguimiento (trigger): se usan dos seguimientos.
+        [$seguimiento, $voluntario] = $this->seguimientoActivo();
+        $this->visita($seguimiento, $voluntario, $this->ahora->addDays(20));
+        $this->visita($seguimiento, $voluntario, $this->ahora->addDays(10));
+        [$otro, $otroVoluntario] = $this->seguimientoActivo();
+        $this->visita($otro, $otroVoluntario, $this->ahora->subDays(3)); // vencida: va en «Visitas atrasadas»
+
+        $agenda = $this->panel()['agenda'];
+        $this->assertSame(0, $agenda['total']);
+        $this->assertSame('2026-10-24', $agenda['proxima']->fecha_programada->toDateString());
+        $this->assertTrue($agenda['proxima']->seguimiento->solicitud->relationLoaded('mascota'));
+
+        $this->actingAs($this->admin)->get(route('admin.dashboard'))->assertOk()
+            ->assertSee('Próxima visita')->assertSee('En 10 días')
+            ->assertSee($agenda['proxima']->seguimiento->solicitud->mascota->nombre)
+            ->assertSee('Visitas atrasadas');
     }
 
     // ---------- Actividad reciente ----------

@@ -273,26 +273,36 @@ class PanelAdministrador
 
     /**
      * Visitas programadas desde hoy hasta hoy + agenda_dias (ambos incluidos). Solo hay fecha, sin hora.
+     * Si no hay ninguna en esos días, «proxima» trae la siguiente visita programada (o null), para que la
+     * tarjeta siempre diga algo útil. Las visitas ya vencidas van en el aviso «Visitas atrasadas».
      *
-     * @return array{items: Collection, total: int, desde: string, hasta: string}
+     * @return array{items: Collection, total: int, desde: string, hasta: string, proxima: VisitaSeguimiento|null}
      */
     public function agenda(CarbonInterface $ahora): array
     {
         $desde = $ahora->toDateString();
         $hasta = $ahora->addDays((int) config('pol.panel.agenda_dias'))->toDateString();
+        $relaciones = [
+            'voluntario:id,nombres,apellidos',
+            'seguimiento:id,solicitud_id,zona_aproximada',
+            'seguimiento.solicitud:id,mascota_id,solicitante_id',
+            'seguimiento.solicitud.mascota:id,nombre,especie',
+            'seguimiento.solicitud.solicitante:id,nombres,apellidos',
+        ];
 
         $consulta = VisitaSeguimiento::query()->where('estado', 'programada')
             ->whereBetween('fecha_programada', [$desde, $hasta])
-            ->with([
-                'voluntario:id,nombres,apellidos',
-                'seguimiento:id,solicitud_id,zona_aproximada',
-                'seguimiento.solicitud:id,mascota_id,solicitante_id',
-                'seguimiento.solicitud.mascota:id,nombre,especie',
-                'seguimiento.solicitud.solicitante:id,nombres,apellidos',
-            ])
+            ->with($relaciones)
             ->orderBy('fecha_programada')->orderBy('id');
+        $semana = $this->lista($consulta);
 
-        return [...$this->lista($consulta), 'desde' => $desde, 'hasta' => $hasta];
+        $proxima = $semana['total'] > 0 ? null : VisitaSeguimiento::query()->where('estado', 'programada')
+            ->where('fecha_programada', '>', $hasta)
+            ->with($relaciones)
+            ->orderBy('fecha_programada')->orderBy('id')
+            ->first();
+
+        return [...$semana, 'desde' => $desde, 'hasta' => $hasta, 'proxima' => $proxima];
     }
 
     /**
