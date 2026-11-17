@@ -272,6 +272,113 @@ class ReporteAdministrador
     }
 
     /**
+     * Lo que el administrador debe revisar pronto (estado actual, sin período). Cada lista trae su total y
+     * como máximo $limite filas, de las más antiguas a las más recientes. Los días se cuentan en La Paz
+     * con la fecha de PHP (no con now() de PostgreSQL), igual que esperanMasTiempo().
+     *
+     * @return array<string, array{total: int, filas: array<int, array<string, mixed>>}>
+     */
+    public function atencion(int $limite = 5): array
+    {
+        $hoy = CarbonImmutable::now(PeriodoReporte::ZONA)->toDateString();
+        $dias = fn (string $columna) => "(?::date - ({$columna} at time zone '".PeriodoReporte::ZONA."')::date)";
+        $persona = "trim(u.nombres || ' ' || coalesce(u.apellidos, ''))";
+
+        $lista = function (string $from, string $where, string $columnas, string $orden, array $enlaces = []) use ($limite): array {
+            $total = (int) DB::selectOne("select count(*) as total from {$from} where {$where}")->total;
+            $filas = $total === 0 ? [] : array_map(fn ($f) => (array) $f, DB::select("select {$columnas} from {$from} where {$where} order by {$orden} limit {$limite}", $enlaces));
+
+            return ['total' => $total, 'filas' => $filas];
+        };
+
+        $esperan = $this->esperanMasTiempo($limite);
+
+        return [
+            'solicitudes_por_evaluar' => $lista(
+                'solicitudes_adopcion s join usuarios u on u.id = s.solicitante_id join mascotas m on m.id = s.mascota_id',
+                "s.estado in ('pendiente', 'en_espera')",
+                "{$persona} as solicitante, m.nombre as mascota, s.estado, {$dias('s.created_at')} as dias",
+                's.created_at, s.id', [$hoy]),
+            'reservadas_sin_acta' => $lista(
+                'solicitudes_adopcion s join usuarios u on u.id = s.solicitante_id join mascotas m on m.id = s.mascota_id',
+                "s.estado = 'aprobada' and s.compromiso_foto_path is null",
+                "{$persona} as solicitante, m.nombre as mascota, s.numero_acta, {$dias('coalesce(s.aprobada_at, s.updated_at)')} as dias",
+                'coalesce(s.aprobada_at, s.updated_at), s.id', [$hoy]),
+            'seguimientos_sin_voluntario' => $lista(
+                'seguimientos_adopcion g join solicitudes_adopcion s on s.id = g.solicitud_id join usuarios u on u.id = s.solicitante_id join mascotas m on m.id = s.mascota_id',
+                "g.estado = 'sin_asignar'",
+                "m.nombre as mascota, {$persona} as adoptante, {$dias('g.created_at')} as dias",
+                'g.created_at, g.id', [$hoy]),
+            'visitas_vencidas' => $lista(
+                'visitas_seguimiento v join seguimientos_adopcion g on g.id = v.seguimiento_id join solicitudes_adopcion s on s.id = g.solicitud_id join mascotas m on m.id = s.mascota_id left join usuarios u on u.id = v.voluntario_id',
+                "v.estado = 'programada' and v.fecha_programada < '{$hoy}'::date",
+                "m.nombre as mascota, {$persona} as voluntario, v.fecha_programada, (?::date - v.fecha_programada) as dias",
+                'v.fecha_programada, v.id', [$hoy]),
+            'incidencias_pendientes' => $lista(
+                'incidencias i join seguimientos_adopcion g on g.id = i.seguimiento_id join solicitudes_adopcion s on s.id = g.solicitud_id join mascotas m on m.id = s.mascota_id',
+                "i.estado in ('pendiente', 'en_proceso')",
+                "m.nombre as mascota, i.tipo, i.estado, {$dias('i.created_at')} as dias",
+                'i.created_at, i.id', [$hoy]),
+            'esperan_hogar' => [
+                'total' => (int) DB::table('mascotas')->where('estado', 'disponible')->count(),
+                'filas' => $esperan->map(fn (array $e) => ['mascota' => $e['mascota']->nombre, 'especie' => $e['mascota']->especie, 'dias' => $e['dias']])->all(),
+            ],
+        ];
+    }
+
+    /**
+     * Registros para las hojas de consulta del Excel. Solicitudes, seguimientos e incidencias: los creados en
+     * el período (todos sin período). Mascotas y voluntarios: el estado actual completo (son inventario).
+     * Solo nombres: sin teléfonos, correos, documentos ni direcciones.
+     *
+     * @return array<string, array<int, array<string, mixed>>>
+     */
+    public function registros(?PeriodoReporte $periodo): array
+    {
+        $hoy = CarbonImmutable::now(PeriodoReporte::ZONA)->toDateString();
+        $zona = PeriodoReporte::ZONA;
+        $persona = fn (string $alias) => "trim({$alias}.nombres || ' ' || coalesce({$alias}.apellidos, ''))";
+        $fecha = fn (string $columna) => "({$columna} at time zone '{$zona}')::date";
+        [$filtro, $enlaces] = $periodo === null ? ['', []] : [' and %s >= ?::timestamptz and %s < ?::timestamptz', self::limites($periodo)];
+        $enPeriodo = fn (string $columna) => $filtro === '' ? '' : sprintf($filtro, $columna, $columna);
+        $filas = fn (string $sql, array $params = []) => array_map(fn ($f) => (array) $f, DB::select($sql, $params));
+
+        return [
+            'mascotas' => $filas(
+                "select m.nombre, m.especie, m.sexo, m.tamano, m.edad, m.edad_en, m.estado, {$fecha('m.created_at')} as registrada,
+                        case when m.estado = 'disponible' then (?::date - {$fecha('m.created_at')}) end as dias_esperando
+                 from mascotas m order by case m.estado when 'disponible' then 1 when 'reservada' then 2 else 3 end, m.created_at, m.id", [$hoy]),
+            'solicitudes' => $filas(
+                "select s.id, s.numero_acta, {$persona('u')} as solicitante, m.nombre as mascota, s.estado, s.nivel_alerta,
+                        {$fecha('s.created_at')} as fecha_solicitud, {$fecha('s.resuelta_at')} as fecha_resolucion,
+                        {$fecha('s.entregada_at')} as fecha_entrega, s.compromiso_foto_path is not null as tiene_foto_acta
+                 from solicitudes_adopcion s join usuarios u on u.id = s.solicitante_id join mascotas m on m.id = s.mascota_id
+                 where true".$enPeriodo('s.created_at').' order by s.created_at, s.id', $enlaces),
+            'seguimientos' => $filas(
+                "select m.nombre as mascota, {$persona('a')} as adoptante, case when v.id is null then null else {$persona('v')} end as voluntario,
+                        g.estado, {$fecha('g.fecha_inicio')} as fecha_inicio,
+                        (select count(*) from visitas_seguimiento x where x.seguimiento_id = g.id and x.estado in ('realizada', 'no_asistio')) as visitas_terminadas,
+                        (select min(x.fecha_programada) from visitas_seguimiento x where x.seguimiento_id = g.id and x.estado = 'programada') as proxima_visita,
+                        (select count(*) from incidencias i where i.seguimiento_id = g.id and i.estado in ('pendiente', 'en_proceso')) as incidencias_pendientes
+                 from seguimientos_adopcion g join solicitudes_adopcion s on s.id = g.solicitud_id join usuarios a on a.id = s.solicitante_id
+                 join mascotas m on m.id = s.mascota_id left join usuarios v on v.id = g.voluntario_id
+                 where true".$enPeriodo('g.created_at').' order by g.created_at, g.id', $enlaces),
+            'incidencias' => $filas(
+                "select m.nombre as mascota, i.tipo, i.estado, {$fecha('i.created_at')} as fecha_reporte,
+                        {$persona('r')} as reportado_por, case when t.id is null then null else {$persona('t')} end as atendido_por,
+                        {$fecha('i.atendida_at')} as fecha_atencion
+                 from incidencias i join seguimientos_adopcion g on g.id = i.seguimiento_id join solicitudes_adopcion s on s.id = g.solicitud_id
+                 join mascotas m on m.id = s.mascota_id join usuarios r on r.id = i.reportado_por left join usuarios t on t.id = i.atendida_por
+                 where true".$enPeriodo('i.created_at').' order by i.created_at, i.id', $enlaces),
+            'voluntarios' => $filas(
+                "select {$persona('u')} as nombre, o.estado, {$fecha('coalesce(p.revisado_at, o.created_at)')} as fecha_aprobacion, o.postulacion_id,
+                        (select count(*) from seguimientos_adopcion g where g.voluntario_id = u.id and g.estado = 'activo') as seguimientos_activos
+                 from voluntarios o join usuarios u on u.id = o.usuario_id left join postulaciones_voluntariado p on p.id = o.postulacion_id
+                 order by case o.estado when 'activo' then 1 else 2 end, u.nombres, o.id"),
+        ];
+    }
+
+    /**
      * Variación frente al período anterior. El porcentaje solo se calcula si el anterior no es cero.
      *
      * @return array{tipo: 'aumento'|'disminucion'|'igual'|'nuevo', diferencia: int, porcentaje: float|null}

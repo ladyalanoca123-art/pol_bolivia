@@ -68,18 +68,52 @@ class ReporteExportacionTest extends TestCase
         }
     }
 
-    public function test_el_contenido_del_pdf_muestra_el_periodo_los_indicadores_y_los_estados_vacios(): void
+    public function test_el_pdf_es_un_informe_corto_con_periodo_estado_actual_y_atencion(): void
     {
         $this->escenario();
         $s = app(ExportadorReporte::class)->secciones($this->datosDePantalla(['periodo' => 'este_mes']));
         $html = view('admin.reportes.pdf', ['s' => $s])->render();
 
+        $this->assertStringContainsString('Reporte administrativo POL-Bolivia', $html);
         $this->assertStringContainsString('Período:</strong> Este mes (1 al 14 de octubre de 2026)', $html);
         $this->assertStringContainsString('Comparado con el período anterior: 1 al 14 de septiembre de 2026', $html);
-        $this->assertMatchesRegularExpression('/<td>Adopciones completadas<\/td><td class="num">2<\/td><td class="num">1<\/td><td>Aumento<\/td><td class="num">100,0 %<\/td>/', $html);
-        $this->assertStringContainsString('<td>Visitas de seguimiento cumplidas</td><td class="num">Sin casos</td>', $html);
+        // Las dos etiquetas separan lo del período de lo actual.
+        $this->assertStringContainsString(ExportadorReporte::ETIQUETA_PERIODO, $html);
+        $this->assertStringContainsString(ExportadorReporte::ETIQUETA_ACTUAL, $html);
+        $this->assertEquals(['Adopciones concretadas', 2, 1], $s['periodoKpis'][1]);
+        $this->assertMatchesRegularExpression('/Visitas de seguimiento cumplidas<\/div>\s*<div class="valor">Sin casos/', $html);
+        // Requiere atención: la solicitud recibida el 10/10 espera 4 días; la reservada no tiene acta.
+        $atencion = collect($s['atencion'])->keyBy('clave');
+        $this->assertSame(1, $atencion['solicitudes_por_evaluar']['total']);
+        $this->assertSame('Recibida', $atencion['solicitudes_por_evaluar']['filas'][0][2]);
+        $this->assertSame(4, $atencion['solicitudes_por_evaluar']['filas'][0][3]);
+        $this->assertSame(1, $atencion['reservadas_sin_acta']['total']);
+        $this->assertSame(0, $atencion['visitas_vencidas']['total']);
+        $this->assertStringContainsString('Reservadas sin foto del acta firmada', $html);
+        $this->assertStringContainsString('Nada pendiente.', $html);
+        // Sin notas técnicas para el administrador.
+        $this->assertStringNotContainsString('aprobada_at', $html);
+        $this->assertStringNotContainsString('resuelta_at', $html);
         $this->assertStringNotContainsString('<script', $html);
         $this->assertStringNotContainsString('http', preg_replace('/<!DOCTYPE[^>]*>/', '', $html), 'sin recursos externos');
+    }
+
+    public function test_el_periodo_hoy_se_compara_con_ayer(): void
+    {
+        $hoy = PeriodoReporte::crear('hoy');
+        $this->assertSame('Hoy (14 de octubre de 2026)', $hoy->etiqueta());
+        $this->assertSame('13 de octubre de 2026', $hoy->anterior()->rango());
+        $this->assertSame(1, $hoy->dias());
+
+        $this->solicitud('pendiente', '2026-10-14 08:00:00-04');
+        $this->solicitud('pendiente', '2026-10-13 08:00:00-04');
+        $pantalla = $this->datosDePantalla(['periodo' => 'hoy']);
+        $this->assertSame(['actual' => 1, 'anterior' => 1], array_intersect_key($pantalla['indicadoresPeriodo']['solicitudes_recibidas'], ['actual' => 0, 'anterior' => 0]));
+
+        $pdf = $this->actingAs($this->admin)->get(route('admin.reportes.pdf', ['periodo' => 'hoy']));
+        $this->assertSame('attachment; filename=reporte-pol-bolivia_2026-10-14.pdf', $pdf->headers->get('Content-Disposition'));
+        $this->actingAs($this->admin)->get(route('admin.reportes.index'))->assertOk()
+            ->assertSee(route('admin.reportes.index', ['periodo' => 'hoy']), false)->assertSee('Hoy');
     }
 
     // ---------- Excel ----------
@@ -96,43 +130,57 @@ class ReporteExportacionTest extends TestCase
         $libro = $this->leerExcel($respuesta->streamedContent());
 
         $this->assertSame(ExportadorReporte::HOJAS, $libro->getSheetNames());
-        $indicadores = $libro->getSheetByName('Indicadores');
-        $this->assertSame('Reporte de POL-Bolivia · Indicadores', $indicadores->getCell('A1')->getValue());
-        $this->assertSame('Período: Este mes (1 al 14 de octubre de 2026)', $indicadores->getCell('A3')->getValue());
-        $this->assertSame(['Indicador', 'Período', 'Período anterior', 'Tendencia', 'Variación'], $indicadores->rangeToArray('A6:E6')[0]);
-        $this->assertSame(['Mes', 'Solicitudes recibidas', 'Adopciones'], $libro->getSheetByName('Evolución mensual')->rangeToArray('A6:C6')[0]);
-        $this->assertSame(['Grupo', 'Concepto', 'Cantidad'], $libro->getSheetByName('Estado actual')->rangeToArray('A6:C6')[0]);
-        $this->assertSame('0.0%', $indicadores->getStyle('E7')->getNumberFormat()->getFormatCode());
+        $this->assertSame('Reporte administrativo POL-Bolivia · Resumen', $libro->getSheetByName('Resumen')->getCell('A1')->getValue());
+        $solicitudes = $libro->getSheetByName('Solicitudes');
+        $this->assertSame(['N.º', 'N.º de acta', 'Solicitante', 'Mascota', 'Estado', 'Revisión', 'Fecha de solicitud', 'Fecha de resolución', 'Fecha de entrega', 'Foto del acta'], $solicitudes->rangeToArray('A5:J5')[0]);
+        // Filtros y encabezado fijo en cada hoja de consulta.
+        foreach (['Mascotas', 'Solicitudes'] as $nombre) {
+            $this->assertStringStartsWith('A5:', $libro->getSheetByName($nombre)->getAutoFilter()->getRange(), $nombre);
+            $this->assertSame('A6', $libro->getSheetByName($nombre)->getFreezePane(), $nombre);
+        }
+        $this->assertSame('dd/mm/yyyy', $solicitudes->getStyle('G6')->getNumberFormat()->getFormatCode());
     }
 
-    public function test_el_excel_coincide_con_los_datos_de_la_pantalla(): void
+    public function test_el_excel_coincide_con_los_datos_de_la_pantalla_y_lista_los_registros(): void
     {
         $this->escenario();
         $pantalla = $this->datosDePantalla(['periodo' => 'este_mes']);
 
         $libro = $this->leerExcel($this->actingAs($this->admin)->get(route('admin.reportes.excel', ['periodo' => 'este_mes']))->streamedContent());
 
-        $filas = $libro->getSheetByName('Indicadores')->rangeToArray('A7:C21', null, true, false);
-        foreach (array_values(ExportadorReporte::INDICADORES) as $n => $etiqueta) {
-            $clave = array_keys(ExportadorReporte::INDICADORES)[$n];
-            $this->assertEquals([$etiqueta, $pantalla['indicadoresPeriodo'][$clave]['actual'], $pantalla['indicadoresPeriodo'][$clave]['anterior']], $filas[$n], $etiqueta);
-        }
-        $gestion = $libro->getSheetByName('Gestión');
-        $this->assertSame('Adopciones concretadas / (concretadas + rechazadas)', $gestion->getCell('A7')->getValue());
-        $this->assertEqualsWithDelta($pantalla['gestion']['tasa_aprobacion']['actual'] / 100, $gestion->getCell('B7')->getValue(), 0.0001);
-        $estado = collect($libro->getSheetByName('Estado actual')->rangeToArray('A7:C34', null, true, false))->filter(fn ($f) => $f[0] !== null);
-        $this->assertEquals($pantalla['totalMascotas'], $estado->firstWhere(1, 'Total mascotas')[2]);
-        $this->assertEquals($pantalla['solicitudesPorEstado']['aceptada'], $estado->first(fn ($f) => $f[0] === 'Solicitudes de adopción' && $f[1] === 'Adopciones concretadas')[2]);
-        $this->assertEquals($pantalla['solicitudesPorEstado']['aprobada'], $estado->first(fn ($f) => $f[0] === 'Solicitudes de adopción' && $f[1] === 'Reservadas (entrega pendiente)')[2]);
-        $this->assertEquals($pantalla['solicitudesPorEstado']['no_concretada'], $estado->first(fn ($f) => $f[0] === 'Solicitudes de adopción' && $f[1] === 'Entregas no concretadas')[2]);
-        $this->assertSame(1, $pantalla['solicitudesPorEstado']['aprobada']);
-        $this->assertSame(1, $pantalla['solicitudesPorEstado']['no_concretada']);
-        $this->assertSame(1, $pantalla['mascotasPorEstado']['reservada']);
-        $this->assertEquals($pantalla['mascotasPorEstado']['reservada'], $estado->first(fn ($f) => $f[0] === 'Mascotas' && $f[1] === 'Mascotas reservadas')[2]);
-        $this->assertEquals($pantalla['disponibles']['total'], array_sum(array_column($libro->getSheetByName('Mascotas disponibles')->rangeToArray('B7:B8', null, true, false), 0)));
+        $resumen = collect($libro->getSheetByName('Resumen')->toArray(null, true, false))->keyBy(0);
+        $this->assertEquals($pantalla['indicadoresPeriodo']['solicitudes_recibidas']['actual'], $resumen['Solicitudes recibidas'][1]);
+        $this->assertEquals($pantalla['indicadoresPeriodo']['adopciones_completadas']['actual'], $resumen['Adopciones concretadas'][1]);
+        $this->assertEquals($pantalla['mascotasPorEstado']['disponible'], $resumen['Mascotas disponibles'][1]);
+        $this->assertEquals(1, $resumen['Reservadas sin foto del acta firmada'][1]);
+
+        // Solicitudes creadas en el período (5 del 1 al 14 de octubre) y todas las mascotas (inventario).
+        $solicitudes = array_filter($libro->getSheetByName('Solicitudes')->rangeToArray('A6:J20', null, true, false), fn ($f) => $f[0] !== null);
+        $this->assertCount(5, $solicitudes);
+        $this->assertEqualsCanonicalizing(['Adopción concretada', 'Rechazada', 'Recibida', 'Reservada', 'Entrega no concretada'], array_column($solicitudes, 4));
+        $this->assertSame(['No'], array_values(array_column(array_filter($solicitudes, fn ($f) => $f[4] === 'Reservada'), 9)));
+        $mascotas = array_filter($libro->getSheetByName('Mascotas')->rangeToArray('A6:H30', null, true, false), fn ($f) => $f[0] !== null);
+        $this->assertCount($pantalla['totalMascotas'], $mascotas);
+        $bruno = collect($mascotas)->firstWhere(0, 'Bruno');
+        $this->assertSame(['Bruno', 'Perro', 'Hembra', 'Grande', '2 años', 'Disponible'], array_slice($bruno, 0, 6));
+        $this->assertSame(142, (int) $bruno[7], 'días desde el 25/05');
     }
 
-    public function test_registros_aceptados_sin_fecha_se_informan_en_pantalla_pdf_y_excel_sin_fecha_inventada(): void
+    public function test_el_excel_no_incluye_datos_de_contacto(): void
+    {
+        $ciudadano = User::factory()->create(['rol' => 'ciudadano', 'email' => 'privado@ejemplo.test', 'telefono' => '71234567']);
+        $solicitud = SolicitudAdopcion::create([...CuestionarioAdopcionDatos::registro(), 'solicitante_id' => $ciudadano->id, 'mascota_id' => $this->mascota()->id, 'estado' => 'pendiente']);
+
+        $libro = $this->leerExcel($this->actingAs($this->admin)->get(route('admin.reportes.excel'))->streamedContent());
+        $todo = json_encode(array_map(fn ($h) => $h->toArray(), $libro->getAllSheets()));
+
+        $this->assertStringContainsString($ciudadano->nombres, $todo);
+        $this->assertStringNotContainsString('privado@ejemplo.test', $todo);
+        $this->assertStringNotContainsString('71234567', $todo);
+        $this->assertNotNull($solicitud->id);
+    }
+
+    public function test_registros_aceptados_sin_fecha_se_informan_en_pantalla_sin_fecha_inventada(): void
     {
         $this->escenario();
         $this->solicitud('aceptada', '2025-03-02 12:00:00-04');
@@ -143,24 +191,21 @@ class ReporteExportacionTest extends TestCase
         $this->assertSame(4, $pantalla['totalAdopciones']);
         $this->assertSame(1, $pantalla['adopcionesSinFechaResolucion']);
         $this->actingAs($this->admin)->get(route('admin.reportes.index'))
-            ->assertOk()->assertSee('1 adopción aceptada sin fecha de resolución verificable');
-
-        $secciones = app(ExportadorReporte::class)->secciones($pantalla);
-        $pdfHtml = view('admin.reportes.pdf', ['s' => $secciones])->render();
-        $this->assertStringContainsString('1 adopción aceptada carece de fecha de resolución verificable', $pdfHtml);
+            ->assertOk()->assertSee('1 adopción antigua no tiene fecha registrada')->assertDontSee('verificable');
 
         $libro = $this->leerExcel($this->actingAs($this->admin)->get(route('admin.reportes.excel'))->streamedContent());
-        $this->assertStringContainsString('1 adopción aceptada carece de fecha de resolución verificable', $libro->getSheetByName('Evolución mensual')->getCell('A15')->getValue());
+        $fila = collect($libro->getSheetByName('Solicitudes')->toArray(null, true, false))->firstWhere(0, $sinFecha->id);
+        $this->assertNull($fila[7], 'sin fecha de resolución inventada');
     }
 
     public function test_los_dos_formatos_respetan_el_periodo_solicitado(): void
     {
         $this->escenario();
-        $resumen = fn (array $p) => $this->leerExcel($this->actingAs($this->admin)->get(route('admin.reportes.excel', $p))->streamedContent())->getSheetByName('Resumen')->rangeToArray('A7:C7', null, true, false)[0];
+        $resumen = fn (array $p) => collect($this->leerExcel($this->actingAs($this->admin)->get(route('admin.reportes.excel', $p))->streamedContent())->getSheetByName('Resumen')->toArray(null, true, false))->firstWhere(0, 'Adopciones concretadas');
 
-        $this->assertEquals(['Adopciones realizadas', 2, 1], $resumen(['periodo' => 'este_mes']));
-        $this->assertEquals(['Adopciones realizadas', 1, 0], $resumen(['periodo' => 'mes_anterior']));
-        $this->assertEquals(['Adopciones realizadas', 3, 0], $resumen(['periodo' => 'personalizado', 'fecha_inicio' => '2026-09-01', 'fecha_fin' => '2026-10-14']));
+        $this->assertEquals(['Adopciones concretadas', 2, 1], array_slice($resumen(['periodo' => 'este_mes']), 0, 3));
+        $this->assertEquals(['Adopciones concretadas', 1, 0], array_slice($resumen(['periodo' => 'mes_anterior']), 0, 3));
+        $this->assertEquals(['Adopciones concretadas', 3, 0], array_slice($resumen(['periodo' => 'personalizado', 'fecha_inicio' => '2026-09-01', 'fecha_fin' => '2026-10-14']), 0, 3));
 
         $pdf = $this->actingAs($this->admin)->get(route('admin.reportes.pdf', ['periodo' => 'personalizado', 'fecha_inicio' => '2026-09-01', 'fecha_fin' => '2026-09-30']));
         $this->assertSame('attachment; filename=reporte-pol-bolivia_2026-09-01_a_2026-09-30.pdf', $pdf->headers->get('Content-Disposition'));
@@ -200,23 +245,23 @@ class ReporteExportacionTest extends TestCase
             $this->assertPdfValido($this->actingAs($this->admin)->get(route('admin.reportes.pdf', $parametros))->assertOk()->getContent());
             $libro = $this->leerExcel($this->actingAs($this->admin)->get(route('admin.reportes.excel', $parametros))->assertOk()->streamedContent());
             $this->assertSame(ExportadorReporte::HOJAS, $libro->getSheetNames());
-            $this->assertStringContainsString('No hay mascotas disponibles en este momento.', implode(' ', array_map(fn ($f) => (string) $f[0], $libro->getSheetByName('Mascotas disponibles')->toArray())));
+            $this->assertSame('No hay mascotas registradas.', $libro->getSheetByName('Mascotas')->getCell('A6')->getValue());
+            $this->assertSame('No hay incidencias en este período.', $libro->getSheetByName('Incidencias')->getCell('A6')->getValue());
         }
 
         $sinPeriodo = $this->leerExcel($this->actingAs($this->admin)->get(route('admin.reportes.excel'))->streamedContent());
-        $this->assertSame('Elige un período en la pantalla de reportes para obtener estos indicadores.', $sinPeriodo->getSheetByName('Indicadores')->getCell('A6')->getValue());
+        $this->assertContains('Elige un período en la pantalla de reportes para comparar con el período anterior.', array_merge(...$sinPeriodo->getSheetByName('Resumen')->toArray()));
         $this->assertStringContainsString('reporte-pol-bolivia_acumulado_2026-10-14.pdf', $this->actingAs($this->admin)->get(route('admin.reportes.pdf'))->headers->get('Content-Disposition'));
 
         $conPeriodo = $this->leerExcel($this->actingAs($this->admin)->get(route('admin.reportes.excel', ['periodo' => 'este_mes']))->streamedContent());
-        $this->assertSame('Sin casos', $conPeriodo->getSheetByName('Gestión')->getCell('B7')->getValue());
-        $this->assertContains('No se recibieron solicitudes en este período.', array_merge(...$conPeriodo->getSheetByName('Gestión')->toArray()));
+        $this->assertSame('Sin casos', collect($conPeriodo->getSheetByName('Resumen')->toArray())->firstWhere(0, 'Visitas de seguimiento cumplidas')[1]);
     }
 
     public function test_los_textos_se_exportan_como_texto_y_no_como_formulas(): void
     {
         $this->mascota(['nombre' => '=HYPERLINK("http://ejemplo.test","clic")'], '2026-05-01 10:00:00-04');
 
-        $hoja = $this->leerExcel($this->actingAs($this->admin)->get(route('admin.reportes.excel'))->streamedContent())->getSheetByName('Mascotas disponibles');
+        $hoja = $this->leerExcel($this->actingAs($this->admin)->get(route('admin.reportes.excel'))->streamedContent())->getSheetByName('Mascotas');
         $celda = collect(range(1, 30))->map(fn ($f) => $hoja->getCell("A{$f}"))->first(fn ($c) => str_starts_with((string) $c->getValue(), '=HYPERLINK'));
 
         $this->assertNotNull($celda);

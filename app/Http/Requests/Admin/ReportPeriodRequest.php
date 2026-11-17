@@ -11,7 +11,7 @@ use Illuminate\Validation\Validator;
 /**
  * Período de consulta de Reportes (App\Support\PeriodoReporte).
  *
- * - periodo: este_mes, mes_anterior, ultimos_3_meses, este_anio o personalizado.
+ * - periodo: hoy, este_mes, mes_anterior, ultimos_3_meses, este_anio o personalizado.
  * - fecha_inicio / fecha_fin (AAAA-MM-DD): obligatorias en personalizado; en los demás períodos se ignoran.
  * - Compatibilidad: si solo llegan fechas (formulario anterior), el período es personalizado.
  * - Sin parámetros no hay período (la vista actual muestra los totales sin filtro).

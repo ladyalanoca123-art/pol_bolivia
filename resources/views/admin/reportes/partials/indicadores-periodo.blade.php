@@ -15,7 +15,7 @@
     <h3 id="titulo-indicadores" class="text-base font-semibold text-blue-950">Resultados del período</h3>
     <dl class="mt-2 divide-y divide-slate-100 text-sm">
         <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 py-2">
-            <dt class="text-slate-700">Adopciones realizadas</dt>
+            <dt class="text-slate-700">Adopciones concretadas</dt>
             <dd class="flex items-baseline gap-3"><span class="text-[13px] text-slate-500"><x-reportes.variacion :indicador="$i['adopciones_completadas']" /></span><span class="min-w-[3rem] text-right text-lg font-bold text-blue-950">{{ $i['adopciones_completadas']['actual'] }}</span></dd>
         </div>
         <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 py-2">

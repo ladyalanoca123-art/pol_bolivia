@@ -40,7 +40,7 @@
 
     {{-- Período: botones cuadrados que llenan el ancho; «Personalizado» abre las fechas debajo. --}}
     @php
-        $iconosPeriodo = ['este_mes' => \App\Support\IconosPestanas::HOY, 'mes_anterior' => \App\Support\IconosPestanas::MES_ANTERIOR, 'ultimos_3_meses' => \App\Support\IconosPestanas::VARIOS_MESES, 'este_anio' => \App\Support\IconosPestanas::ANIO];
+        $iconosPeriodo = ['hoy' => \App\Support\IconosPestanas::HOY, 'este_mes' => \App\Support\IconosPestanas::MES,'mes_anterior' => \App\Support\IconosPestanas::MES_ANTERIOR, 'ultimos_3_meses' => \App\Support\IconosPestanas::VARIOS_MESES, 'este_anio' => \App\Support\IconosPestanas::ANIO];
         $opcionesPeriodo = collect(\App\Support\PeriodoReporte::TIPOS)->except('personalizado')
             ->map(fn ($nombre, $clave) => [$nombre, route('admin.reportes.index', $conCategoria(['periodo' => $clave])), $periodoReporte?->tipo === $clave, $iconosPeriodo[$clave] ?? \App\Support\IconosPestanas::HOY])
             ->values()->all();
@@ -108,14 +108,14 @@
                     ['Perros', $mascotasPorEspecie['perro'], 'gris'], ['Gatos', $mascotasPorEspecie['gato'], 'gris'],
                 ]],
                 ['solicitudes', 'Solicitudes', [
-                    ['Pendientes', $solicitudesPorEstado['pendiente'], 'ambar'], ['En evaluación', $solicitudesPorEstado['en_espera'], 'azul'],
-                    ['Reservadas (entrega pendiente)', $solicitudesPorEstado['aprobada'], 'indigo'], ['Adopciones realizadas', $solicitudesPorEstado['aceptada'], 'verde'],
+                    ['Recibidas', $solicitudesPorEstado['pendiente'], 'ambar'], ['En evaluación', $solicitudesPorEstado['en_espera'], 'azul'],
+                    ['Reservadas (entrega pendiente)', $solicitudesPorEstado['aprobada'], 'indigo'], ['Adopciones concretadas', $solicitudesPorEstado['aceptada'], 'verde'],
                     ['Rechazadas', $solicitudesPorEstado['rechazada'], 'rojo'], ['Entregas no concretadas', $solicitudesPorEstado['no_concretada'], 'rojo'],
                     ['Canceladas', $solicitudesPorEstado['cancelada'], 'gris'], ['Cerradas al adoptarse la mascota', $solicitudesPorEstado['cerrada'], 'gris'],
                 ]],
                 ['seguimientos', 'Seguimientos', [
-                    ['Sin asignar', $seguimientosPorEstado['sin_asignar'], 'ambar'], ['Activos', $seguimientosPorEstado['activo'], 'azul'], ['Cerrados', $seguimientosPorEstado['cerrado'], 'gris'],
-                    ['Visitas programadas', $visitasPorEstado['programada'], 'azul'], ['Visitas realizadas', $visitasPorEstado['realizada'], 'verde'], ['Visitas sin asistencia', $visitasPorEstado['no_asistio'], 'ambar'],
+                    ['Sin voluntario', $seguimientosPorEstado['sin_asignar'], 'ambar'], ['Activos', $seguimientosPorEstado['activo'], 'azul'], ['Cerrados', $seguimientosPorEstado['cerrado'], 'gris'],
+                    ['Visitas programadas', $visitasPorEstado['programada'], 'azul'], ['Visitas realizadas', $visitasPorEstado['realizada'], 'verde'], ['Visitas «No asistió»', $visitasPorEstado['no_asistio'], 'ambar'],
                 ]],
                 ['seguimientos', 'Incidencias', [
                     ['Pendientes', $incidenciasPorEstado['pendiente'], 'rojo'], ['En proceso', $incidenciasPorEstado['en_proceso'], 'ambar'], ['Atendidas', $incidenciasPorEstado['atendida'], 'verde'],

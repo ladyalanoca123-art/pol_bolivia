@@ -14,6 +14,7 @@ use InvalidArgumentException;
  * del día siguiente al último. Así no se pierde ningún registro de las 23:59:59.999… del último día.
  *
  * Períodos (con «hoy» en La Paz):
+ *  - hoy: solo el día de hoy (cierre del día).
  *  - este_mes: del día 1 del mes actual a hoy.
  *  - mes_anterior: el mes calendario anterior completo.
  *  - ultimos_3_meses: los 3 meses móviles que terminan hoy (del día siguiente a «hoy − 3 meses» a hoy;
@@ -28,13 +29,15 @@ use InvalidArgumentException;
  *  - mes_anterior: el mes calendario completo anterior (28 a 31 días, según el mes).
  *  - este_anio: el mismo tramo del año anterior (1 de enero al mismo día y mes); el 29 de febrero se
  *    compara hasta el 28 de febrero del año anterior.
- *  - ultimos_3_meses y personalizado: el mismo número de días inmediatamente anterior, sin hueco.
+ *  - hoy, ultimos_3_meses y personalizado: el mismo número de días inmediatamente anterior, sin hueco
+ *    (hoy se compara con ayer).
  */
 final class PeriodoReporte
 {
     public const ZONA = 'America/La_Paz';
 
     public const TIPOS = [
+        'hoy' => 'Hoy',
         'este_mes' => 'Este mes',
         'mes_anterior' => 'Mes anterior',
         'ultimos_3_meses' => 'Últimos 3 meses',
@@ -63,6 +66,7 @@ final class PeriodoReporte
         $hoy = CarbonImmutable::instance($ahora ?? CarbonImmutable::now())->setTimezone(self::ZONA)->startOfDay();
 
         [$inicio, $ultimoDia] = match ($tipo) {
+            'hoy' => [$hoy, $hoy],
             'este_mes' => [$hoy->startOfMonth(), $hoy],
             'mes_anterior' => [$hoy->subMonthNoOverflow()->startOfMonth(), $hoy->subMonthNoOverflow()->endOfMonth()->startOfDay()],
             'ultimos_3_meses' => [$hoy->subMonthsNoOverflow(3)->addDay(), $hoy],

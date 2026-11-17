@@ -2,10 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Mascota;
+use App\Models\SolicitudAdopcion;
 use App\Support\PeriodoReporte;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Shared\Date as FechaExcel;
@@ -17,47 +18,50 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Exportaciones PDF y Excel del reporte administrativo.
+ * Exportaciones del reporte administrativo.
  *
- * Recibe los mismos datos que la pantalla de Reportes (ReporteController::datos(), calculados por
- * ReporteAdministrador) y los organiza una sola vez en secciones; el PDF y el Excel presentan esas
- * secciones, por lo que ambos coinciden entre sí y con la pantalla. No consulta la base de datos.
+ *  - PDF: informe corto para decidir. Responde «¿cómo está la fundación y qué requiere atención?».
+ *  - Excel: el mismo resumen y hojas de consulta con los registros, para buscar y filtrar.
+ *
+ * Ambos separan la «Información del período seleccionado» del «Estado actual al generar el reporte».
+ * Recibe los datos de ReporteController::datos() (calculados por ReporteAdministrador); no consulta la base.
  */
 class ExportadorReporte
 {
-    public const INDICADORES = [
-        'solicitudes_recibidas' => 'Solicitudes recibidas',
-        'adopciones_completadas' => 'Adopciones completadas',
-        'solicitudes_rechazadas' => 'Solicitudes rechazadas',
-        'solicitudes_canceladas' => 'Solicitudes canceladas',
-        'solicitudes_no_concretadas' => 'Entregas no concretadas',
-        'solicitudes_cerradas' => 'Solicitudes cerradas al adoptarse la mascota',
-        'mascotas_registradas' => 'Mascotas registradas',
-        'postulaciones_recibidas' => 'Postulaciones recibidas',
-        'postulaciones_aprobadas' => 'Postulaciones aprobadas',
-        'postulaciones_rechazadas' => 'Postulaciones rechazadas',
-        'seguimientos_iniciados' => 'Seguimientos iniciados',
-        'seguimientos_cerrados' => 'Seguimientos cerrados',
-        'visitas_realizadas' => 'Visitas realizadas',
-        'incidencias_reportadas' => 'Incidencias reportadas',
-        'incidencias_atendidas' => 'Incidencias atendidas',
-    ];
+    public const HOJAS = ['Resumen', 'Mascotas', 'Solicitudes', 'Seguimientos', 'Incidencias', 'Voluntariado'];
 
-    /** indicador de gestión => [etiqueta, unidad] */
+    public const ETIQUETA_PERIODO = 'Información del período seleccionado';
+
+    public const ETIQUETA_ACTUAL = 'Estado actual al generar el reporte';
+
+    /** Indicadores de gestión que se muestran: clave de ReporteAdministrador::gestion() => [etiqueta, unidad]. */
     public const GESTION = [
-        'tasa_aprobacion' => ['Adopciones concretadas / (concretadas + rechazadas)', 'porcentaje'],
-        'tiempo_respuesta' => ['Tiempo promedio hasta decisión administrativa', 'dias'],
+        'tiempo_respuesta' => ['Tiempo promedio de respuesta a una solicitud', 'dias'],
         'dias_hasta_adopcion' => ['Días promedio hasta la adopción', 'dias'],
-        'atencion_incidencias' => ['Atención de incidencias', 'dias'],
-        'revision_postulaciones' => ['Revisión de postulaciones', 'dias'],
         'visitas_cumplidas' => ['Visitas de seguimiento cumplidas', 'porcentaje'],
     ];
 
-    public const TENDENCIAS = ['aumento' => 'Aumento', 'disminucion' => 'Disminución', 'igual' => 'Sin cambios', 'nuevo' => 'Nuevo'];
+    /** Bloques de «Requiere atención»: clave de ReporteAdministrador::atencion() => [título, ayuda, columnas]. */
+    public const ATENCION = [
+        'solicitudes_por_evaluar' => ['Solicitudes por evaluar', 'Recibidas o en evaluación, de la más antigua a la más reciente.', ['Solicitante', 'Mascota', 'Etapa', 'Días esperando']],
+        'reservadas_sin_acta' => ['Reservadas sin foto del acta firmada', 'Falta subir el acta firmada antes de registrar la entrega.', ['Solicitante', 'Mascota', 'N.º de acta', 'Días reservada']],
+        'seguimientos_sin_voluntario' => ['Seguimientos sin voluntario', 'Adopciones concretadas que aún no tienen voluntario asignado.', ['Mascota', 'Adoptante', 'Días sin voluntario']],
+        'visitas_vencidas' => ['Visitas vencidas', 'Visitas programadas cuya fecha ya pasó y no se registraron.', ['Mascota', 'Voluntario', 'Fecha programada', 'Días de atraso']],
+        'incidencias_pendientes' => ['Incidencias pendientes', 'Reportadas en los seguimientos y aún no atendidas.', ['Mascota', 'Tipo', 'Estado', 'Días abierta']],
+        'esperan_hogar' => ['Mascotas que esperan hogar hace más tiempo', 'Mascotas disponibles, desde su registro.', ['Mascota', 'Especie', 'Días esperando']],
+    ];
 
-    public const HOJAS = ['Resumen', 'Indicadores', 'Gestión', 'Evolución mensual', 'Mascotas disponibles', 'Estado actual'];
+    private const TIPOS_INCIDENCIA = ['salud' => 'Salud', 'maltrato' => 'Maltrato', 'perdida_contacto' => 'Pérdida de contacto', 'otro' => 'Otro'];
 
-    private const SIN_PERIODO = 'Elige un período en la pantalla de reportes para obtener estos indicadores.';
+    private const ESTADOS_INCIDENCIA = ['pendiente' => 'Pendiente', 'en_proceso' => 'En proceso', 'atendida' => 'Atendida'];
+
+    private const ESTADOS_SEGUIMIENTO = ['sin_asignar' => 'Sin voluntario', 'activo' => 'Activo', 'cerrado' => 'Cerrado'];
+
+    private const ESPECIES = ['perro' => 'Perro', 'gato' => 'Gato'];
+
+    private const SEXOS = ['macho' => 'Macho', 'hembra' => 'Hembra'];
+
+    private const TAMANOS = ['pequeno' => 'Pequeño', 'mediano' => 'Mediano', 'grande' => 'Grande'];
 
     /** Secciones del reporte, comunes al PDF y al Excel. */
     public function secciones(array $datos): array
@@ -65,73 +69,52 @@ class ExportadorReporte
         /** @var PeriodoReporte|null $periodo */
         $periodo = $datos['periodoReporte'];
         $i = $datos['indicadoresPeriodo'];
-        $tamanos = ['pequeno' => 'Pequeño', 'mediano' => 'Mediano', 'grande' => 'Grande'];
+        $s = $datos['solicitudesPorEstado'];
+        $inc = $datos['incidenciasPorEstado'];
 
         return [
-            'titulo' => 'Reporte de POL-Bolivia',
+            'titulo' => 'Reporte administrativo POL-Bolivia',
             'generado' => $datos['generadoEn']->copy()->setTimezone(PeriodoReporte::ZONA)->format('d/m/Y H:i').' (hora de Bolivia)',
-            'periodo' => $periodo ? $periodo->etiqueta() : 'Sin período: totales acumulados y estado actual',
+            'periodo' => $periodo ? $periodo->etiqueta() : 'Sin período: totales acumulados',
             'comparacion' => $periodo ? 'Comparado con el período anterior: '.$datos['periodoAnterior']->rango() : null,
-            'sinPeriodo' => self::SIN_PERIODO,
-            'adopcionesSinFechaResolucion' => $datos['adopcionesSinFechaResolucion'],
-            'notaTiempoRespuesta' => 'Tiempo entre creación y decisión administrativa. Se excluyen aceptadas históricas sin aprobada_at porque resuelta_at puede corresponder a la entrega.',
-            'resumen' => $periodo
+            'conPeriodo' => $periodo !== null,
+            'periodoKpis' => $periodo
                 ? [
-                    ['Adopciones realizadas', $i['adopciones_completadas']['actual'], $i['adopciones_completadas']['anterior']],
                     ['Solicitudes recibidas', $i['solicitudes_recibidas']['actual'], $i['solicitudes_recibidas']['anterior']],
+                    ['Adopciones concretadas', $i['adopciones_completadas']['actual'], $i['adopciones_completadas']['anterior']],
                 ]
                 : [
-                    ['Adopciones realizadas (total acumulado)', $datos['totalAdopciones'], null],
-                    ['Solicitudes de adopción (total acumulado)', $datos['totalSolicitudes'], null],
-                    ['Mascotas disponibles (estado actual)', $datos['mascotasPorEstado']['disponible'], null],
-                    ['Seguimientos activos (estado actual)', $datos['seguimientosPorEstado']['activo'], null],
+                    ['Solicitudes recibidas (total histórico)', $datos['totalSolicitudes'], null],
+                    ['Adopciones concretadas (total histórico)', $datos['totalAdopciones'], null],
                 ],
-            'indicadores' => $i === null ? null : collect(self::INDICADORES)->map(fn (string $etiqueta, string $clave) => [
-                'etiqueta' => $etiqueta,
-                'actual' => $i[$clave]['actual'],
-                'anterior' => $i[$clave]['anterior'],
-                'tendencia' => self::TENDENCIAS[$i[$clave]['variacion']['tipo']],
-                'porcentaje' => $i[$clave]['variacion']['porcentaje'],
-            ])->values()->all(),
+            'actualKpis' => [
+                ['Solicitudes por evaluar', $s['pendiente'] + $s['en_espera']],
+                ['Mascotas disponibles', $datos['mascotasPorEstado']['disponible']],
+                ['Seguimientos activos', $datos['seguimientosPorEstado']['activo']],
+                ['Incidencias pendientes', $inc['pendiente'] + $inc['en_proceso']],
+                ['Voluntarios activos', $datos['voluntariosPorEstado']['activo']],
+            ],
             'gestion' => $datos['gestion'] === null ? null : collect(self::GESTION)->map(fn (array $g, string $clave) => [
                 'etiqueta' => $g[0],
                 'unidad' => $g[1],
                 'actual' => $datos['gestion'][$clave]['actual'],
                 'anterior' => $datos['gestion'][$clave]['anterior'],
             ])->values()->all(),
-            'seguimientosSinVoluntario' => $datos['seguimientosPorEstado']['sin_asignar'],
-            'embudo' => $datos['embudo'] === null ? null : [
-                'recibidas' => $datos['embudo']['recibidas'],
-                'porcentajeAdopcion' => $datos['embudo']['porcentaje_adopcion'],
-                'etapas' => collect(['recibidas' => 'Solicitudes recibidas', 'evaluadas' => 'Evaluadas por el equipo', 'aceptadas' => 'Adopciones concretadas', 'seguimiento_cerrado' => 'Seguimiento cerrado'])
-                    ->map(fn (string $etiqueta, string $clave) => [$etiqueta, $datos['embudo'][$clave], $datos['embudo']['recibidas'] > 0 ? round($datos['embudo'][$clave] / $datos['embudo']['recibidas'] * 100, 1) : null])
-                    ->values()->all(),
+            'situacion' => [
+                'Mascotas' => ['Disponibles' => $datos['mascotasPorEstado']['disponible'], 'Reservadas' => $datos['mascotasPorEstado']['reservada'], 'Adoptadas' => $datos['mascotasPorEstado']['adoptada']],
+                'Solicitudes' => ['Recibidas' => $s['pendiente'], 'En evaluación' => $s['en_espera'], 'Reservadas' => $s['aprobada'], 'Concretadas' => $s['aceptada'], 'Rechazadas' => $s['rechazada'], 'Canceladas' => $s['cancelada'], 'Entregas no concretadas' => $s['no_concretada'], 'Cerradas al adoptarse la mascota' => $s['cerrada']],
+                'Seguimientos' => ['Sin voluntario' => $datos['seguimientosPorEstado']['sin_asignar'], 'Activos' => $datos['seguimientosPorEstado']['activo'], 'Cerrados' => $datos['seguimientosPorEstado']['cerrado']],
+                'Incidencias' => ['Pendientes' => $inc['pendiente'], 'En proceso' => $inc['en_proceso'], 'Atendidas' => $inc['atendida']],
+                'Voluntariado' => ['Voluntarios activos' => $datos['voluntariosPorEstado']['activo'], 'Voluntarios inactivos' => $datos['voluntariosPorEstado']['inactivo'], 'Postulaciones pendientes' => $datos['postulacionesPorEstado']['pendiente']],
             ],
-            'evolucion' => array_map(fn (array $m) => [
-                Str::ucfirst(Carbon::parse($m['mes'].'-01')->translatedFormat('F Y')).($m['en_curso'] ? ' (en curso)' : ''),
-                $m['solicitudes'],
-                $m['adopciones'],
-            ], $datos['evolucionMensual']),
-            'disponibles' => [
-                'total' => $datos['disponibles']['total'],
-                'especie' => ['Perros' => $datos['disponibles']['especie']['perro'], 'Gatos' => $datos['disponibles']['especie']['gato']],
-                'tamano' => collect($tamanos)->mapWithKeys(fn ($etiqueta, $clave) => [$etiqueta => $datos['disponibles']['tamano'][$clave] ?? 0])->all(),
-            ],
-            'espera' => $datos['esperanMasTiempo']->map(fn (array $e) => [
-                'nombre' => $e['mascota']->nombre,
-                'especie' => $e['mascota']->especie === 'gato' ? 'Gato' : 'Perro',
-                'tamano' => $tamanos[$e['mascota']->tamano] ?? $e['mascota']->tamano,
-                'edad' => $e['mascota']->edad.' '.($e['mascota']->edad_en === 'meses' ? ($e['mascota']->edad === 1 ? 'mes' : 'meses') : ($e['mascota']->edad === 1 ? 'año' : 'años')),
-                'registrada' => $e['mascota']->created_at->copy()->setTimezone(PeriodoReporte::ZONA),
-                'dias' => $e['dias'],
-            ])->all(),
-            'estado' => [
-                'Mascotas' => ['Total mascotas' => $datos['totalMascotas'], 'Mascotas disponibles' => $datos['mascotasPorEstado']['disponible'], 'Mascotas reservadas' => $datos['mascotasPorEstado']['reservada'], 'Mascotas adoptadas' => $datos['mascotasPorEstado']['adoptada'], 'Perros' => $datos['mascotasPorEspecie']['perro'], 'Gatos' => $datos['mascotasPorEspecie']['gato']],
-                'Solicitudes de adopción' => ['Pendientes' => $datos['solicitudesPorEstado']['pendiente'], 'En evaluación' => $datos['solicitudesPorEstado']['en_espera'], 'Reservadas (entrega pendiente)' => $datos['solicitudesPorEstado']['aprobada'], 'Adopciones concretadas' => $datos['solicitudesPorEstado']['aceptada'], 'Rechazadas' => $datos['solicitudesPorEstado']['rechazada'], 'Canceladas' => $datos['solicitudesPorEstado']['cancelada'], 'Cerradas al adoptarse la mascota' => $datos['solicitudesPorEstado']['cerrada'], 'Entregas no concretadas' => $datos['solicitudesPorEstado']['no_concretada']],
-                'Seguimientos' => ['Sin asignar' => $datos['seguimientosPorEstado']['sin_asignar'], 'Activos' => $datos['seguimientosPorEstado']['activo'], 'Cerrados' => $datos['seguimientosPorEstado']['cerrado']],
-                'Incidencias' => ['Pendientes' => $datos['incidenciasPorEstado']['pendiente'], 'En proceso' => $datos['incidenciasPorEstado']['en_proceso'], 'Atendidas' => $datos['incidenciasPorEstado']['atendida']],
-                'Voluntariado' => ['Voluntarios activos' => $datos['voluntariosPorEstado']['activo'], 'Voluntarios inactivos' => $datos['voluntariosPorEstado']['inactivo'], 'Postulaciones pendientes' => $datos['postulacionesPorEstado']['pendiente'], 'Postulaciones aprobadas' => $datos['postulacionesPorEstado']['aprobada'], 'Postulaciones rechazadas' => $datos['postulacionesPorEstado']['rechazada'], 'Postulaciones canceladas' => $datos['postulacionesPorEstado']['cancelada']],
-            ],
+            'atencion' => collect(self::ATENCION)->map(fn (array $a, string $clave) => [
+                'clave' => $clave,
+                'titulo' => $a[0],
+                'ayuda' => $a[1],
+                'columnas' => $a[2],
+                'total' => $datos['atencion'][$clave]['total'],
+                'filas' => array_map(fn (array $f) => $this->filaAtencion($clave, $f), $datos['atencion'][$clave]['filas']),
+            ])->values()->all(),
         ];
     }
 
@@ -140,7 +123,7 @@ class ExportadorReporte
     {
         $periodo = $datos['periodoReporte'];
         $tramo = $periodo
-            ? $periodo->inicio->format('Y-m-d').'_a_'.$periodo->ultimoDia()->format('Y-m-d')
+            ? $periodo->inicio->format('Y-m-d').($periodo->dias() > 1 ? '_a_'.$periodo->ultimoDia()->format('Y-m-d') : '')
             : 'acumulado_'.$datos['generadoEn']->copy()->setTimezone(PeriodoReporte::ZONA)->format('Y-m-d');
 
         return 'reporte-pol-bolivia_'.$tramo.'.'.preg_replace('/[^a-z]/', '', $extension);
@@ -148,7 +131,9 @@ class ExportadorReporte
 
     public function pdf(array $datos): Response
     {
-        return Pdf::loadView('admin.reportes.pdf', ['s' => $this->secciones($datos)])
+        $logo = 'data:image/png;base64,'.base64_encode((string) file_get_contents(public_path('images/pol-bolivia/logos/POL_02_horizontal_web.png')));
+
+        return Pdf::loadView('admin.reportes.pdf', ['s' => $this->secciones($datos), 'logo' => $logo])
             ->setPaper('a4', 'portrait')
             ->setOption(['defaultFont' => 'DejaVu Sans', 'isFontSubsettingEnabled' => true, 'isRemoteEnabled' => false, 'isPhpEnabled' => false, 'isJavascriptEnabled' => false])
             ->download($this->nombreArchivo($datos, 'pdf'));
@@ -167,96 +152,56 @@ class ExportadorReporte
         ]);
     }
 
-    /** Libro de Excel con una hoja por sección (HOJAS). */
+    /** Libro de Excel: Resumen y una hoja de consulta por tema (HOJAS). */
     public function libro(array $datos): Spreadsheet
     {
         $s = $this->secciones($datos);
+        $r = $datos['registros'] ?? ['mascotas' => [], 'solicitudes' => [], 'seguimientos' => [], 'incidencias' => [], 'voluntarios' => []];
         $libro = new Spreadsheet;
         $libro->getProperties()->setCreator('POL-Bolivia')->setTitle($s['titulo'])->setSubject($s['periodo']);
         $libro->removeSheetByIndex(0);
 
-        // Resumen
-        $hoja = $this->hoja($libro, 'Resumen', $s);
-        $fila = $this->tabla($hoja, 6, ['Indicador', 'Período', 'Período anterior', 'Unidad'], array_map(fn ($r) => [$r[0], $r[1], $r[2] ?? ($s['comparacion'] ? 0 : '—'), 'Cantidad'], $s['resumen']));
-        if ($s['gestion'] !== null) {
-            $fila++;
-            foreach ([0, 1] as $g) {
-                $fila = $this->filaGestion($hoja, $fila, $s['gestion'][$g], true);
-            }
-        }
+        $this->hojaResumen($libro, $s);
 
-        // Indicadores del período
-        $hoja = $this->hoja($libro, 'Indicadores', $s);
-        if ($s['indicadores'] === null) {
-            $this->texto($hoja, 'A6', $s['sinPeriodo']);
-        } else {
-            $fin = $this->tabla($hoja, 6, ['Indicador', 'Período', 'Período anterior', 'Tendencia', 'Variación'], array_map(fn ($r) => [$r['etiqueta'], $r['actual'], $r['anterior'], $r['tendencia'], $r['porcentaje'] === null ? null : $r['porcentaje'] / 100], $s['indicadores']));
-            $hoja->getStyle("E7:E{$fin}")->getNumberFormat()->setFormatCode('0.0%');
-            $this->texto($hoja, 'A'.($fin + 2), 'Variación: solo se calcula si el período anterior no es cero.');
-        }
+        $alcancePeriodo = self::ETIQUETA_PERIODO.': '.$s['periodo'].' (registros creados en el período).';
+        $alcanceActual = self::ETIQUETA_ACTUAL.' (todos los registros).';
 
-        // Gestión y embudo
-        $hoja = $this->hoja($libro, 'Gestión', $s);
-        if ($s['gestion'] === null) {
-            $this->texto($hoja, 'A6', $s['sinPeriodo']);
-        } else {
-            $this->encabezados($hoja, 6, ['Indicador', 'Período', 'Período anterior', 'Unidad']);
-            $fila = 7;
-            foreach ($s['gestion'] as $g) {
-                $fila = $this->filaGestion($hoja, $fila, $g, true);
-            }
-            $this->texto($hoja, "A{$fila}", $s['notaTiempoRespuesta']);
-            $fila += 2;
-            $hoja->setCellValueExplicit("A{$fila}", 'Seguimientos sin voluntario (estado actual)', DataType::TYPE_STRING);
-            $hoja->setCellValue("B{$fila}", $s['seguimientosSinVoluntario']);
-            $fila += 2;
-            $this->texto($hoja, "A{$fila}", 'Embudo de adopción: estado actual de las solicitudes recibidas en el período');
-            $hoja->getStyle("A{$fila}")->getFont()->setBold(true);
-            if ($s['embudo']['recibidas'] === 0) {
-                $this->texto($hoja, 'A'.($fila + 1), 'No se recibieron solicitudes en este período.');
-            } else {
-                $fin = $this->tabla($hoja, $fila + 1, ['Etapa', 'Solicitudes', '% de las recibidas'], array_map(fn ($e) => [$e[0], $e[1], $e[2] / 100], $s['embudo']['etapas']));
-                $hoja->getStyle('C'.($fila + 2).":C{$fin}")->getNumberFormat()->setFormatCode('0.0%');
-            }
-        }
+        $this->hojaRegistros($libro, 'Mascotas', $s, $alcanceActual,
+            ['Nombre', 'Especie', 'Sexo', 'Tamaño', 'Edad', 'Estado', 'Fecha de registro', 'Días esperando hogar'],
+            array_map(fn ($m) => [
+                $m['nombre'], self::ESPECIES[$m['especie']] ?? $m['especie'], self::SEXOS[$m['sexo']] ?? $m['sexo'], self::TAMANOS[$m['tamano']] ?? $m['tamano'],
+                $this->edad((int) $m['edad'], (string) $m['edad_en']), Mascota::ESTADOS_LEGIBLES[$m['estado']] ?? $m['estado'], $m['registrada'], $m['dias_esperando'] === null ? null : (int) $m['dias_esperando'],
+            ], $r['mascotas']), [6], 'No hay mascotas registradas.');
 
-        // Evolución mensual
-        $hoja = $this->hoja($libro, 'Evolución mensual', $s);
-        $this->tabla($hoja, 6, ['Mes', 'Solicitudes recibidas', 'Adopciones'], $s['evolucion']);
-        $this->texto($hoja, 'A14', 'Últimos 6 meses. Solicitudes por fecha de envío; adopciones concretadas por fecha de resolución.');
-        $cantidadSinFecha = $s['adopcionesSinFechaResolucion'];
-        $descripcionSinFecha = $cantidadSinFecha === 1 ? '1 adopción aceptada carece' : $cantidadSinFecha.' adopciones aceptadas carecen';
-        $this->texto($hoja, 'A15', 'En el estado actual, '.$descripcionSinFecha.' de fecha de resolución verificable y no aparece en la serie; no se asigna una fecha.');
+        $this->hojaRegistros($libro, 'Solicitudes', $s, $alcancePeriodo,
+            ['N.º', 'N.º de acta', 'Solicitante', 'Mascota', 'Estado', 'Revisión', 'Fecha de solicitud', 'Fecha de resolución', 'Fecha de entrega', 'Foto del acta'],
+            array_map(fn ($f) => [
+                (int) $f['id'], $f['numero_acta'] ?? '—', $f['solicitante'], $f['mascota'], SolicitudAdopcion::ESTADOS_LEGIBLES[$f['estado']] ?? $f['estado'],
+                SolicitudAdopcion::NIVELES_ALERTA[$f['nivel_alerta']] ?? '—', $f['fecha_solicitud'], $f['fecha_resolucion'], $f['fecha_entrega'],
+                in_array($f['estado'], ['aprobada', 'aceptada'], true) ? ($f['tiene_foto_acta'] ? 'Sí' : 'No') : '—',
+            ], $r['solicitudes']), [6, 7, 8], 'No hay solicitudes en este período.');
 
-        // Mascotas disponibles
-        $hoja = $this->hoja($libro, 'Mascotas disponibles', $s);
-        $this->texto($hoja, 'A5', 'Estado actual: '.$s['disponibles']['total'].' '.($s['disponibles']['total'] === 1 ? 'mascota disponible' : 'mascotas disponibles').'.');
-        $fila = $this->tabla($hoja, 6, ['Especie', 'Mascotas'], array_map(null, array_keys($s['disponibles']['especie']), array_values($s['disponibles']['especie'])));
-        $fila = $this->tabla($hoja, $fila + 2, ['Tamaño', 'Mascotas'], array_map(null, array_keys($s['disponibles']['tamano']), array_values($s['disponibles']['tamano'])));
-        $fila += 2;
-        $this->texto($hoja, "A{$fila}", 'Esperan hogar hace más tiempo');
-        $hoja->getStyle("A{$fila}")->getFont()->setBold(true);
-        if ($s['espera'] === []) {
-            $this->texto($hoja, 'A'.($fila + 1), 'No hay mascotas disponibles en este momento.');
-        } else {
-            $fin = $this->tabla($hoja, $fila + 1, ['Nombre', 'Especie', 'Tamaño', 'Edad', 'Registrada el', 'Días de espera'], array_map(fn ($e) => [$e['nombre'], $e['especie'], $e['tamano'], $e['edad'], FechaExcel::PHPToExcel($e['registrada']->format('Y-m-d')), $e['dias']], $s['espera']));
-            $hoja->getStyle('E'.($fila + 2).":E{$fin}")->getNumberFormat()->setFormatCode('dd/mm/yyyy');
-        }
+        $this->hojaRegistros($libro, 'Seguimientos', $s, $alcancePeriodo,
+            ['Mascota', 'Adoptante', 'Voluntario', 'Estado', 'Fecha de inicio', 'Visitas terminadas (de 2)', 'Próxima visita', 'Visita vencida', 'Incidencias pendientes'],
+            array_map(fn ($f) => [
+                $f['mascota'], $f['adoptante'], $f['voluntario'] ?? 'Sin asignar', self::ESTADOS_SEGUIMIENTO[$f['estado']] ?? $f['estado'], $f['fecha_inicio'],
+                (int) $f['visitas_terminadas'], $f['proxima_visita'], $f['proxima_visita'] === null ? '—' : ($f['proxima_visita'] < $this->hoy() ? 'Sí' : 'No'), (int) $f['incidencias_pendientes'],
+            ], $r['seguimientos']), [4, 6], 'No hay seguimientos en este período.');
 
-        // Estado actual
-        $hoja = $this->hoja($libro, 'Estado actual', $s);
-        $filas = [];
-        foreach ($s['estado'] as $grupo => $conceptos) {
-            foreach ($conceptos as $concepto => $cantidad) {
-                $filas[] = [$grupo, $concepto, $cantidad];
-            }
-        }
-        $this->tabla($hoja, 6, ['Grupo', 'Concepto', 'Cantidad'], $filas);
+        $this->hojaRegistros($libro, 'Incidencias', $s, $alcancePeriodo,
+            ['Mascota', 'Tipo', 'Estado', 'Fecha de reporte', 'Reportada por', 'Atendida por', 'Fecha de atención'],
+            array_map(fn ($f) => [
+                $f['mascota'], self::TIPOS_INCIDENCIA[$f['tipo']] ?? $f['tipo'], self::ESTADOS_INCIDENCIA[$f['estado']] ?? $f['estado'], $f['fecha_reporte'],
+                $f['reportado_por'], $f['atendido_por'] ?? '—', $f['fecha_atencion'],
+            ], $r['incidencias']), [3, 6], 'No hay incidencias en este período.');
+
+        $this->hojaRegistros($libro, 'Voluntariado', $s, $alcanceActual,
+            ['Nombre', 'Estado', 'Fecha de aprobación', 'Postulación N.º', 'Seguimientos activos'],
+            array_map(fn ($f) => [
+                $f['nombre'], $f['estado'] === 'activo' ? 'Activo' : 'Inactivo', $f['fecha_aprobacion'], $f['postulacion_id'] === null ? '—' : (int) $f['postulacion_id'], (int) $f['seguimientos_activos'],
+            ], $r['voluntarios']), [2], 'No hay voluntarios registrados.');
 
         foreach ($libro->getAllSheets() as $h) {
-            foreach (range('A', 'F') as $columna) {
-                $h->getColumnDimension($columna)->setAutoSize(true);
-            }
             $h->setSelectedCell('A1');
         }
         $libro->setActiveSheetIndex(0);
@@ -264,19 +209,138 @@ class ExportadorReporte
         return $libro;
     }
 
-    private function hoja(Spreadsheet $libro, string $nombre, array $s): Worksheet
+    private function hojaResumen(Spreadsheet $libro, array $s): void
+    {
+        $hoja = $libro->createSheet()->setTitle('Resumen');
+        $this->encabezadoHoja($hoja, $s, 'Resumen', $s['periodo'].($s['comparacion'] ? ' · '.$s['comparacion'] : ''));
+
+        $fila = 6;
+        $this->titulo($hoja, "A{$fila}", self::ETIQUETA_PERIODO);
+        $fila++;
+        if ($s['conPeriodo']) {
+            $this->encabezados($hoja, $fila, ['Indicador', 'Período', 'Período anterior']);
+            foreach ($s['periodoKpis'] as [$etiqueta, $actual, $anterior]) {
+                $fila++;
+                $this->texto($hoja, "A{$fila}", $etiqueta);
+                $hoja->setCellValue("B{$fila}", $actual);
+                $hoja->setCellValue("C{$fila}", $anterior);
+            }
+            foreach ($s['gestion'] as $g) {
+                $fila++;
+                $this->texto($hoja, "A{$fila}", $g['etiqueta']);
+                foreach (['B' => $g['actual'], 'C' => $g['anterior']] as $columna => $valor) {
+                    if ($valor === null) {
+                        $this->texto($hoja, "{$columna}{$fila}", 'Sin casos');
+                    } else {
+                        $hoja->setCellValue("{$columna}{$fila}", $g['unidad'] === 'porcentaje' ? $valor / 100 : $valor);
+                        $hoja->getStyle("{$columna}{$fila}")->getNumberFormat()->setFormatCode($g['unidad'] === 'porcentaje' ? '0.0%' : '0.0" días"');
+                    }
+                }
+            }
+        } else {
+            $this->encabezados($hoja, $fila, ['Indicador', 'Cantidad']);
+            foreach ($s['periodoKpis'] as [$etiqueta, $valor]) {
+                $fila++;
+                $this->texto($hoja, "A{$fila}", $etiqueta);
+                $hoja->setCellValue("B{$fila}", $valor);
+            }
+            $fila++;
+            $this->texto($hoja, "A{$fila}", 'Elige un período en la pantalla de reportes para comparar con el período anterior.');
+        }
+
+        $fila += 2;
+        $this->titulo($hoja, "A{$fila}", self::ETIQUETA_ACTUAL);
+        $fila = $this->tabla($hoja, $fila + 1, ['Indicador', 'Cantidad'], $s['actualKpis']);
+
+        $fila += 2;
+        $this->titulo($hoja, "A{$fila}", 'Requiere atención (estado actual)');
+        $fila = $this->tabla($hoja, $fila + 1, ['Asunto', 'Cantidad'], array_map(fn ($a) => [$a['titulo'], $a['total']], $s['atencion']));
+
+        $fila += 2;
+        $this->titulo($hoja, "A{$fila}", 'Situación actual por estado');
+        $filas = [];
+        foreach ($s['situacion'] as $grupo => $conceptos) {
+            foreach ($conceptos as $concepto => $cantidad) {
+                $filas[] = [$grupo, $concepto, $cantidad];
+            }
+        }
+        $this->tabla($hoja, $fila + 1, ['Grupo', 'Concepto', 'Cantidad'], $filas);
+
+        foreach (['A' => 52, 'B' => 18, 'C' => 18] as $columna => $ancho) {
+            $hoja->getColumnDimension($columna)->setWidth($ancho);
+        }
+    }
+
+    /**
+     * Hoja de consulta: encabezado, tabla con filtros y encabezado fijo. $fechas: índices (base 0) de las
+     * columnas con fecha AAAA-MM-DD, que se guardan como fecha de Excel (dd/mm/aaaa).
+     */
+    private function hojaRegistros(Spreadsheet $libro, string $nombre, array $s, string $alcance, array $encabezados, array $filas, array $fechas, string $vacio): void
     {
         $hoja = $libro->createSheet()->setTitle($nombre);
+        $this->encabezadoHoja($hoja, $s, $nombre, $alcance);
+        $this->encabezados($hoja, 5, $encabezados);
+        $ultimaColumna = Coordinate::stringFromColumnIndex(count($encabezados));
+
+        if ($filas === []) {
+            $this->texto($hoja, 'A6', $vacio);
+        } else {
+            $fila = 5;
+            foreach ($filas as $datos) {
+                $fila++;
+                foreach (array_values($datos) as $c => $valor) {
+                    $celda = Coordinate::stringFromColumnIndex($c + 1).$fila;
+                    if (in_array($c, $fechas, true) && is_string($valor) && $valor !== '') {
+                        $hoja->setCellValue($celda, FechaExcel::PHPToExcel(substr($valor, 0, 10)));
+                        $hoja->getStyle($celda)->getNumberFormat()->setFormatCode('dd/mm/yyyy');
+                    } elseif (is_string($valor)) {
+                        $this->texto($hoja, $celda, $valor);
+                    } else {
+                        $hoja->setCellValue($celda, $valor);
+                    }
+                }
+            }
+            $hoja->setAutoFilter("A5:{$ultimaColumna}{$fila}");
+        }
+        $hoja->freezePane('A6');
+
+        foreach (range(1, count($encabezados)) as $c) {
+            $hoja->getColumnDimension(Coordinate::stringFromColumnIndex($c))->setAutoSize(true);
+        }
+    }
+
+    private function encabezadoHoja(Worksheet $hoja, array $s, string $nombre, string $alcance): void
+    {
         $this->texto($hoja, 'A1', $s['titulo'].' · '.$nombre);
         $hoja->getStyle('A1')->getFont()->setBold(true)->setSize(14)->getColor()->setRGB('172554');
         $this->texto($hoja, 'A2', 'Generado: '.$s['generado']);
-        $this->texto($hoja, 'A3', 'Período: '.$s['periodo']);
-        if ($s['comparacion']) {
-            $this->texto($hoja, 'A4', $s['comparacion']);
-        }
-        $hoja->getStyle('A2:A4')->getFont()->getColor()->setRGB('475569');
+        $this->texto($hoja, 'A3', $alcance);
+        $hoja->getStyle('A2:A3')->getFont()->getColor()->setRGB('475569');
+    }
 
-        return $hoja;
+    /** Fila de «Requiere atención» lista para mostrar (textos legibles, sin datos personales de contacto). */
+    private function filaAtencion(string $clave, array $f): array
+    {
+        $dias = (int) $f['dias'];
+
+        return match ($clave) {
+            'solicitudes_por_evaluar' => [$f['solicitante'], $f['mascota'], SolicitudAdopcion::ESTADOS_LEGIBLES[$f['estado']] ?? $f['estado'], $dias],
+            'reservadas_sin_acta' => [$f['solicitante'], $f['mascota'], $f['numero_acta'] ?? '—', $dias],
+            'seguimientos_sin_voluntario' => [$f['mascota'], $f['adoptante'], $dias],
+            'visitas_vencidas' => [$f['mascota'], $f['voluntario'] ?: 'Sin asignar', Carbon::parse($f['fecha_programada'])->format('d/m/Y'), $dias],
+            'incidencias_pendientes' => [$f['mascota'], self::TIPOS_INCIDENCIA[$f['tipo']] ?? $f['tipo'], self::ESTADOS_INCIDENCIA[$f['estado']] ?? $f['estado'], $dias],
+            'esperan_hogar' => [$f['mascota'], self::ESPECIES[$f['especie']] ?? $f['especie'], $dias],
+        };
+    }
+
+    private function edad(int $edad, string $unidad): string
+    {
+        return $edad.' '.($unidad === 'meses' ? ($edad === 1 ? 'mes' : 'meses') : ($edad === 1 ? 'año' : 'años'));
+    }
+
+    private function hoy(): string
+    {
+        return Carbon::now(PeriodoReporte::ZONA)->toDateString();
     }
 
     /** Escribe una tabla (encabezados y filas) y devuelve la última fila escrita. */
@@ -304,22 +368,10 @@ class ExportadorReporte
         $hoja->getStyle($rango)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('172554');
     }
 
-    private function filaGestion(Worksheet $hoja, int $fila, array $g, bool $conUnidad = false): int
+    private function titulo(Worksheet $hoja, string $celda, string $valor): void
     {
-        $this->texto($hoja, "A{$fila}", $g['etiqueta']);
-        foreach (['B' => $g['actual'], 'C' => $g['anterior']] as $columna => $valor) {
-            if ($valor === null) {
-                $this->texto($hoja, "{$columna}{$fila}", 'Sin casos');
-            } else {
-                $hoja->setCellValue("{$columna}{$fila}", $g['unidad'] === 'porcentaje' ? $valor / 100 : $valor);
-                $hoja->getStyle("{$columna}{$fila}")->getNumberFormat()->setFormatCode($g['unidad'] === 'porcentaje' ? '0.0%' : '0.0');
-            }
-        }
-        if ($conUnidad) {
-            $this->texto($hoja, "D{$fila}", $g['unidad'] === 'porcentaje' ? 'Porcentaje' : 'Días');
-        }
-
-        return $fila + 1;
+        $this->texto($hoja, $celda, $valor);
+        $hoja->getStyle($celda)->getFont()->setBold(true)->setSize(12)->getColor()->setRGB('B45309');
     }
 
     /** Texto siempre como texto: un valor que empiece por «=» nunca se interpreta como fórmula. */

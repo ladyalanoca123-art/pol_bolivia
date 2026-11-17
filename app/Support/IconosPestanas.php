@@ -44,6 +44,8 @@ class IconosPestanas
 
     public const HOY = self::CALENDARIO.'M8.5 13h3v3h-3z';
 
+    public const MES = self::CALENDARIO.'M8 13h8M8 17h5';
+
     public const MES_ANTERIOR = self::CALENDARIO.'M10 15h4';
 
     public const VARIOS_MESES = self::CALENDARIO.'M9 17v-2m3 2v-4m3 4v-3';

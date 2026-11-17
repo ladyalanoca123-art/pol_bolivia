@@ -53,7 +53,7 @@
                         </div>
                     </details>
                     <div class="mt-3 flex flex-col gap-1 border-t border-slate-100 pt-3 text-xs text-slate-500 sm:flex-row sm:justify-between">
-                        <p>* Mes en curso. Adopciones concretadas por fecha de resolución; solicitudes por fecha de envío.@if ($adopcionesSinFechaResolucion > 0) El total acumulado incluye {{ $adopcionesSinFechaResolucion }} {{ $adopcionesSinFechaResolucion === 1 ? 'adopción aceptada sin fecha de resolución verificable' : 'adopciones aceptadas sin fecha de resolución verificable' }} que no aparece{{ $adopcionesSinFechaResolucion === 1 ? '' : 'n' }} en la serie mensual; no se les asigna una fecha.@endif</p>
+                        <p>* Mes en curso. Adopciones concretadas por fecha de resolución; solicitudes por fecha de envío.@if ($adopcionesSinFechaResolucion > 0) {{ $adopcionesSinFechaResolucion === 1 ? '1 adopción antigua no tiene fecha registrada' : $adopcionesSinFechaResolucion.' adopciones antiguas no tienen fecha registrada' }}, por eso no {{ $adopcionesSinFechaResolucion === 1 ? 'aparece' : 'aparecen' }} en el gráfico (sí cuenta en el total).@endif</p>
                         @if ($conPeriodo)
                             <p class="font-medium text-slate-700">Adopciones en el período: {{ $totalAdopciones }}</p>
                         @endif

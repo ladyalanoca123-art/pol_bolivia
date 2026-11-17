@@ -48,7 +48,7 @@ class ReporteManagementTest extends TestCase
             ->assertSee('Mascotas disponibles')
             ->assertSee('Mascotas adoptadas')
             ->assertSee('Rechazadas')
-            ->assertSee('Adopciones realizadas')
+            ->assertSee('Adopciones concretadas')->assertDontSee('Adopciones realizadas')
             ->assertSee('Postulaciones canceladas')
             ->assertSee('Seguimientos')
             ->assertSee('Incidencias')

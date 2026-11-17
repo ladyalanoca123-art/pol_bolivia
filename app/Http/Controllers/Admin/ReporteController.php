@@ -100,10 +100,15 @@ class ReporteController extends Controller
         return $exportador->pdf($this->datos($request, $reportes));
     }
 
-    /** Descarga en Excel (.xlsx) de los mismos datos que muestra la pantalla para el período solicitado. */
+    /**
+     * Descarga en Excel (.xlsx): el mismo resumen que el PDF más las hojas de consulta con los registros
+     * del período (solicitudes, seguimientos, incidencias) y el estado actual (mascotas, voluntarios).
+     */
     public function excel(ReportPeriodRequest $request, ReporteAdministrador $reportes, ExportadorReporte $exportador): StreamedResponse
     {
-        return $exportador->excel($this->datos($request, $reportes));
+        $datos = $this->datos($request, $reportes);
+
+        return $exportador->excel([...$datos, 'registros' => $reportes->registros($datos['periodoReporte'])]);
     }
 
     /** Datos del reporte para un período validado: los comparten la pantalla y las exportaciones. */
@@ -159,6 +164,8 @@ class ReporteController extends Controller
             'evolucionMensual' => $reportes->evolucionMensual(),
             'disponibles' => $reportes->mascotasDisponibles(),
             'esperanMasTiempo' => $reportes->esperanMasTiempo(),
+            // Lo que requiere atención (estado actual): lo usan el PDF y el Excel.
+            'atencion' => $reportes->atencion(),
             'mascotasPorEstado' => $mascotasPorEstado,
             'mascotasPorEspecie' => $mascotasPorEspecie,
             'solicitudesPorEstado' => $solicitudesPorEstado,
