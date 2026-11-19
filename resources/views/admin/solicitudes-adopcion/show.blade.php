@@ -49,8 +49,8 @@
         </div>
     @endif
 
-    {{-- Etapas: franja azul con el avance (completada ✓ verde, actual en ámbar, pendiente tenue) --}}
-    <section class="rounded-2xl bg-gradient-to-r from-blue-950 to-blue-900 px-4 py-5 shadow-sm sm:px-6">
+    {{-- Etapas: franja clara con el avance (completada ✓ verde, actual en ámbar, pendiente tenue) --}}
+    <section class="rounded-2xl border border-slate-200 bg-white px-4 py-5 shadow-sm sm:px-6">
         <h2 class="sr-only">Etapas de la solicitud</h2>
         <ol class="grid grid-cols-2 gap-x-3 gap-y-5 lg:grid-cols-4" aria-label="Etapas de la solicitud">
             @foreach ($etapas as $i => [$titulo, $texto])
@@ -58,10 +58,10 @@
                     $completada = $i < $paso || ($i === 4 && $solicitud->estado === 'aceptada');
                     $actual = ! $completada && $i === $paso;
                     $circulo = match (true) {
-                        $completada => 'bg-emerald-400 text-blue-950',
-                        $actual && $etapaFinalSinAdopcion => 'bg-orange-300 text-blue-950 ring-4 ring-orange-300/30',
-                        $actual => 'bg-amber-400 text-blue-950 ring-4 ring-amber-400/30',
-                        default => 'border-2 border-white/30 text-blue-200',
+                        $completada => 'bg-emerald-600 text-white',
+                        $actual && $etapaFinalSinAdopcion => 'bg-orange-400 text-blue-950 ring-4 ring-orange-200',
+                        $actual => 'bg-amber-400 text-blue-950 ring-4 ring-amber-200',
+                        default => 'border-2 border-slate-300 text-slate-400',
                     };
                 @endphp
                 <li class="flex items-start gap-3" @if ($actual) aria-current="step" @endif>
@@ -75,8 +75,8 @@
                     <span class="min-w-0">
                         {{-- El número va en el círculo (o un ✓): el lector de pantalla recibe «3 · Reservada» completo. --}}
                         <span class="sr-only">{{ $i }} · {{ $titulo }}</span>
-                        <span class="block text-[15px] font-semibold leading-tight {{ $completada || $actual ? 'text-white' : 'text-blue-200' }}" aria-hidden="true">{{ $titulo }}</span>
-                        <span class="mt-0.5 block text-sm {{ $actual ? 'text-amber-200' : 'text-blue-200' }}">
+                        <span class="block text-[15px] font-semibold leading-tight {{ $completada || $actual ? 'text-blue-950' : 'text-slate-500' }}" aria-hidden="true">{{ $titulo }}</span>
+                        <span class="mt-0.5 block text-sm {{ $actual ? 'font-semibold text-amber-700' : 'text-slate-500' }}">
                             {{ $actual ? ($etapaFinalSinAdopcion ? 'Se detuvo aquí' : 'Etapa actual') : $texto }}
                         </span>
                         <span class="sr-only">{{ $completada ? '(completada)' : ($actual ? '' : '(pendiente)') }}</span>
@@ -107,12 +107,6 @@
                                 @csrf @method('PATCH')
                                 <h3 class="text-[15px] font-semibold text-blue-950">Pasar a evaluación</h3>
                                 <p class="admin-ayuda">La mascota seguirá disponible durante la evaluación.</p>
-                                <details class="mt-2" @if (filled(old('comentarios_admin')) || $errors->has('comentarios_admin')) open @endif>
-                                    <summary class="inline-flex cursor-pointer list-none items-center gap-1 rounded text-sm font-semibold text-blue-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">+ Agregar comentario (opcional)</summary>
-                                    <label for="comentarios-evaluar" class="sr-only">Comentario interno</label>
-                                    <textarea id="comentarios-evaluar" name="comentarios_admin" rows="2" maxlength="1000" class="admin-campo" placeholder="Comentario interno (queda en el historial)">{{ old('comentarios_admin') }}</textarea>
-                                    <x-input-error class="mt-1" :messages="$errors->get('comentarios_admin')" />
-                                </details>
                                 <x-admin.boton class="mt-3">Pasar a evaluación</x-admin.boton>
                             </form>
                         @endcan
@@ -128,12 +122,6 @@
                                 @csrf @method('PATCH')
                                 <h3 class="text-sm font-semibold text-emerald-950">Aprobar y reservar</h3>
                                 <p class="admin-ayuda">Cuando ya hablaste con el solicitante por teléfono o WhatsApp, aprueba para reservar la mascota. La fecha se registra recién en la entrega.</p>
-                                <details class="mt-2" @if (filled(old('comentarios_admin')) || $errors->has('comentarios_admin')) open @endif>
-                                    <summary class="inline-flex cursor-pointer list-none items-center gap-1 rounded text-sm font-semibold text-blue-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">+ Agregar comentario (opcional)</summary>
-                                    <label for="comentarios-aprobar" class="sr-only">Comentario para el equipo</label>
-                                    <textarea id="comentarios-aprobar" name="comentarios_admin" rows="2" maxlength="1000" class="admin-campo" placeholder="Ej. Hablé por WhatsApp: vive en casa con patio y toda la familia está de acuerdo.">{{ old('comentarios_admin') }}</textarea>
-                                    <p class="admin-ayuda">Queda en el historial con tu nombre y la fecha, para que los demás administradores sepan por qué se aprobó.</p>
-                                </details>
                                 <x-admin.boton variante="exito" class="mt-3">Aprobar solicitud</x-admin.boton>
                             </form>
                         @endcan
@@ -150,12 +138,6 @@
                                     <input id="fecha-entrega-real" name="fecha_entrega" type="date" min="{{ $solicitud->aprobada_at?->timezone('America/La_Paz')->toDateString() }}" max="{{ now('America/La_Paz')->toDateString() }}" required value="{{ old('fecha_entrega') }}" class="admin-campo">
                                     <x-input-error class="mt-1" :messages="$errors->get('fecha_entrega')" />
                                 </div>
-                                <details class="mt-3" @if (filled(old('comentarios_admin')) || $errors->has('comentarios_admin')) open @endif>
-                                    <summary class="inline-flex cursor-pointer list-none items-center gap-1 rounded text-sm font-semibold text-blue-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">+ Agregar comentario (opcional)</summary>
-                                    <label for="comentarios-entrega" class="sr-only">Comentario interno</label>
-                                    <textarea id="comentarios-entrega" name="comentarios_admin" rows="2" maxlength="1000" class="admin-campo" placeholder="Comentario interno (queda en el historial)">{{ old('comentarios_admin') }}</textarea>
-                                    <x-input-error class="mt-1" :messages="$errors->get('comentarios_admin')" />
-                                </details>
                                 <label class="mt-4 flex items-start gap-2 rounded-lg bg-white p-3 text-sm text-slate-800 ring-1 ring-emerald-200"><input type="checkbox" name="compromiso_firmado" value="1" required @checked(old('compromiso_firmado')) class="mt-0.5 rounded border-slate-300 text-blue-900 focus:ring-blue-900"><span>Confirmo que el adoptante firmó el compromiso de adopción.</span></label>
                                 <x-input-error class="mt-1" :messages="$errors->get('compromiso_firmado')" />
                                 <x-admin.boton variante="exito" class="mt-3">Registrar entrega y finalizar adopción</x-admin.boton>
