@@ -22,6 +22,12 @@ class Mascota extends Model
         'adoptada' => 'Adoptada',
     ];
 
+    /**
+     * Días en el sistema desde los que una mascota disponible y sin solicitudes en trámite se promociona
+     * en la fila «Te esperan hace más tiempo» del catálogo público.
+     */
+    public const DIAS_ESPERANDO_HOGAR = 45;
+
     protected $fillable = [
         'nombre', 'especie', 'raza', 'edad', 'edad_en', 'sexo',
         'color', 'tamano', 'descripcion', 'estado',

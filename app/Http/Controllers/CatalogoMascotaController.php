@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Mascota;
+use App\Models\SolicitudAdopcion;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -11,9 +12,11 @@ class CatalogoMascotaController extends Controller
 {
     public function home(): View
     {
-        $mascotas = $this->mascotasDisponibles()->limit(7)->get();
+        $esperanHogar = $this->esperanHogar();
+        // Las de la fila de arriba no se repiten en la cuadrícula.
+        $mascotas = $this->mascotasDisponibles()->whereNotIn('id', $esperanHogar->modelKeys())->limit(7)->get();
 
-        return view('welcome', compact('mascotas'));
+        return view('welcome', compact('mascotas', 'esperanHogar'));
     }
 
     public function index(Request $request): View
@@ -21,9 +24,28 @@ class CatalogoMascotaController extends Controller
         $especie = $request->query('especie');
         $especie = in_array($especie, ['perro', 'gato'], true) ? $especie : null;
 
-        $mascotas = $this->mascotasDisponibles($especie)->paginate(12)->withQueryString();
+        $esperanHogar = $this->esperanHogar($especie);
+        $mascotas = $this->mascotasDisponibles($especie)
+            ->whereNotIn('id', $esperanHogar->modelKeys())
+            ->paginate(12)->withQueryString();
 
-        return view('mascotas-publicas.index', compact('mascotas', 'especie'));
+        return view('mascotas-publicas.index', compact('mascotas', 'especie', 'esperanHogar'));
+    }
+
+    /**
+     * Mascotas disponibles que llevan DIAS_ESPERANDO_HOGAR días o más en el sistema y no tienen ninguna
+     * solicitud en trámite: se promocionan en una fila aparte, primero las que más esperan.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, Mascota>
+     */
+    private function esperanHogar(?string $especie = null)
+    {
+        return $this->mascotasDisponibles($especie)
+            ->where('created_at', '<=', now()->subDays(Mascota::DIAS_ESPERANDO_HOGAR))
+            ->whereDoesntHave('solicitudesAdopcion', fn ($query) => $query->whereIn('estado', SolicitudAdopcion::ESTADOS_ACTIVOS))
+            ->reorder()->orderBy('created_at')->orderBy('id')
+            ->limit(12)
+            ->get();
     }
 
     public function show(Mascota $mascota): View

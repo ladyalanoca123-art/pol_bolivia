@@ -24,6 +24,9 @@
                 </nav>
             </header>
 
+            @if ($mascotas->onFirstPage())
+                <x-fila-esperan-hogar :mascotas="$esperanHogar" class="mt-5" />
+            @endif
             @if ($mascotas->isNotEmpty())
                 <div class="mt-5 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
                     @foreach ($mascotas as $mascota)
@@ -31,7 +34,7 @@
                     @endforeach
                 </div>
                 <div class="mt-10">{{ $mascotas->links() }}</div>
-            @else
+            @elseif ($esperanHogar->isEmpty())
                 <p class="mt-8 rounded-xl bg-white p-6 text-stone-600 ring-1 ring-stone-200">Actualmente no hay mascotas disponibles para adopción.</p>
             @endif
         </div>

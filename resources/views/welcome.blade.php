@@ -51,6 +51,7 @@
                     <a href="{{ route('mascotas.catalogo', ['especie' => 'gato']) }}" class="rounded-full border border-blue-200 bg-sky-50 px-5 py-2.5 text-sm font-bold text-blue-900 transition hover:bg-sky-100">🐱 Gatos</a>
                 </nav>
             </div>
+            <x-fila-esperan-hogar :mascotas="$esperanHogar" class="mt-8" />
             @if ($mascotas->isNotEmpty())
                 <div class="mt-8 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
                     @foreach ($mascotas as $mascota)<x-mascota-publica-card :mascota="$mascota" />@endforeach
@@ -60,7 +61,7 @@
                         <span class="mt-6 rounded-full bg-amber-400 px-5 py-3 text-sm font-extrabold text-blue-950">EXPLORAR CATÁLOGO</span>
                     </a>
                 </div>
-            @else
+            @elseif ($esperanHogar->isEmpty())
                 <p class="mt-8 rounded-xl bg-white p-6 text-stone-600 ring-1 ring-stone-200">Actualmente no hay mascotas disponibles para adopción.</p>
             @endif
         </div>
