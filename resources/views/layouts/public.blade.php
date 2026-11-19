@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'POL-Bolivia')</title>
     @include('partials.favicon')
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=caveat:600&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="flex min-h-screen flex-col bg-stone-50 font-sans text-stone-800 antialiased">
@@ -97,7 +95,7 @@
                             <li class="flex items-center gap-2.5">{!! $iconoPie('M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.6 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.6 3.6a1 1 0 0 1-.25 1z') !!} +{{ substr($telefonoPie, 0, 3) }} {{ substr($telefonoPie, 3, 4) }} {{ substr($telefonoPie, 7) }}</li>
                         @endif
                     </ul>
-                    <p class="mt-6 flex origin-left -rotate-6 items-center gap-2 font-['Caveat'] text-3xl leading-none text-white/90" aria-hidden="true">Adopta, no compres {!! $iconoPie($corazon, 'h-6 w-6 text-sky-300') !!}</p>
+                    <p class="mt-6 flex origin-left -rotate-6 items-center gap-2 text-2xl font-semibold italic leading-none tracking-wide text-white/90" aria-hidden="true">Adopta, no compres {!! $iconoPie($corazon, 'h-6 w-6 text-sky-300') !!}</p>
                 </div>
 
                 <nav aria-label="Enlaces rápidos">

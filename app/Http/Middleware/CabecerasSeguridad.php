@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
  * Agrega cabeceras HTTP de seguridad a todas las respuestas web.
  *
  * - Content-Security-Policy: solo permite scripts propios (con nonce),
- *   estilos/fuentes propios y de fonts.bunny.net. Bloquea scripts inyectados.
+ *   estilos y fuentes propios (sin servicios externos). Bloquea scripts inyectados.
  * - X-Frame-Options / frame-ancestors: impide meter el sitio en un iframe (clickjacking).
  * - X-Content-Type-Options: el navegador no "adivina" tipos de archivo.
  * - Referrer-Policy y Permissions-Policy: limitan datos y permisos del navegador.
@@ -48,8 +48,8 @@ class CabecerasSeguridad
         return implode('; ', [
             "default-src 'self'",
             "script-src 'self' 'nonce-{$nonce}' 'unsafe-eval' {$vite}",
-            "style-src 'self' 'unsafe-inline' https://fonts.bunny.net {$vite}",
-            "font-src 'self' https://fonts.bunny.net data:",
+            "style-src 'self' 'unsafe-inline' {$vite}",
+            "font-src 'self' data:",
             "img-src 'self' data: blob:",
             "connect-src 'self' {$vite} {$viteWs}",
             "object-src 'none'",
