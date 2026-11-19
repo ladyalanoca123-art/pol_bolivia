@@ -49,8 +49,8 @@
         </div>
     @endif
 
-    {{-- Etapas: franja clara con el avance (completada ✓ verde, actual en ámbar, pendiente tenue) --}}
-    <section class="rounded-2xl border border-slate-200 bg-white px-4 py-5 shadow-sm sm:px-6">
+    {{-- Etapas: franja azul pastel con el avance (completada ✓ verde, actual en ámbar, pendiente tenue) --}}
+    <section class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-5 shadow-sm sm:px-6">
         <h2 class="sr-only">Etapas de la solicitud</h2>
         <ol class="grid grid-cols-2 gap-x-3 gap-y-5 lg:grid-cols-4" aria-label="Etapas de la solicitud">
             @foreach ($etapas as $i => [$titulo, $texto])
