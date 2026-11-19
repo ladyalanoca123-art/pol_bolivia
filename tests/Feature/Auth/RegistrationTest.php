@@ -78,4 +78,24 @@ class RegistrationTest extends TestCase
             'acepta_privacidad' => '1',
         ])->assertRedirect($intended);
     }
+
+    public function test_los_nombres_se_guardan_con_mayuscula_inicial(): void
+    {
+        $this->post(route('register'), [
+            'nombres' => 'jose  carlos',
+            'apellidos' => 'COPA de la cruz',
+            'email' => 'jose.copa@example.com',
+            'telefono' => '70000001',
+            'password' => 'ClaveSegura123',
+            'password_confirmation' => 'ClaveSegura123',
+            'acepta_terminos' => '1',
+            'acepta_privacidad' => '1',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('usuarios', ['email' => 'jose.copa@example.com', 'nombres' => 'Jose Carlos', 'apellidos' => 'Copa de la Cruz']);
+
+        // También cuando se guarda por otro camino (panel del administrador, modelo directo).
+        $usuario = \App\Models\User::factory()->create(['nombres' => 'daniela', 'apellidos' => 'flores mendoza']);
+        $this->assertSame(['Daniela', 'Flores Mendoza'], [$usuario->fresh()->nombres, $usuario->fresh()->apellidos]);
+    }
 }

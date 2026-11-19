@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Models\Concerns\RegistraAuditoria;
 use App\Notifications\RestablecerContrasenaNotification;
+use App\Support\NombrePropio;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -38,6 +40,17 @@ class User extends Authenticatable
             // Administrador principal (una sola cuenta): lo protege PostgreSQL (trigger_proteger_administrador_principal).
             'es_principal' => 'boolean',
         ];
+    }
+
+    /** Nombres y apellidos siempre con mayúscula inicial, se guarden desde donde se guarden. */
+    protected function nombres(): Attribute
+    {
+        return Attribute::make(set: fn (?string $valor) => NombrePropio::formatear($valor));
+    }
+
+    protected function apellidos(): Attribute
+    {
+        return Attribute::make(set: fn (?string $valor) => NombrePropio::formatear($valor));
     }
 
     public function getEmailForPasswordReset(): string

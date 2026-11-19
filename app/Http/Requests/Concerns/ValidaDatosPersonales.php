@@ -19,7 +19,7 @@ trait ValidaDatosPersonales
     /** Letras Unicode (con tildes y ñ), espacios, apóstrofes, guiones y puntos; debe empezar por una letra. */
     private const PATRON_NOMBRE = "/^\\pL[\\pL\\pM '’.\\-]*$/u";
 
-    /** Quita espacios sobrantes de los nombres, pasa el correo a minúsculas y normaliza el teléfono. */
+    /** Nombres con mayúscula inicial y sin espacios sobrantes, correo en minúsculas y teléfono normalizado. */
     protected function normalizarDatosPersonales(): void
     {
         $this->merge([
@@ -86,9 +86,9 @@ trait ValidaDatosPersonales
         return ['telefono' => 'teléfono'];
     }
 
-    /** Quita espacios externos y colapsa los repetidos, sin alterar el resto del nombre. */
+    /** Quita los espacios sobrantes y pone mayúscula inicial (App\Support\NombrePropio; el modelo User hace lo mismo al guardar). */
     private function normalizarNombre(mixed $valor): mixed
     {
-        return is_string($valor) ? preg_replace('/\s+/u', ' ', trim($valor)) : $valor;
+        return is_string($valor) ? \App\Support\NombrePropio::formatear($valor) : $valor;
     }
 }
