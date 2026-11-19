@@ -23,38 +23,38 @@
 <meta charset="utf-8">
 <title>Acta de adopción {{ $solicitud->numero_acta }}</title>
 <style>
-    @page { margin: 1.2cm 1.8cm 1.3cm; }
-    body { font-family: "DejaVu Sans", sans-serif; color: #222; font-size: 8.8pt; line-height: 1.32; }
+    @page { margin: 0.9cm 1.5cm 1.2cm; }
+    body { font-family: "DejaVu Sans", sans-serif; color: #222; font-size: 10pt; line-height: 1.2; }
     table { border-collapse: collapse; width: 100%; }
 
     .membrete td { vertical-align: bottom; }
-    .membrete .logo { width: 140px; }
-    .membrete .der { text-align: right; font-size: 8pt; color: #555; line-height: 1.5; }
-    .membrete .numero { font-size: 11pt; font-weight: bold; color: #1d3f66; }
-    .regla { border-bottom: 1.5px solid #1d3f66; margin: 6px 0 10px; }
+    .membrete .logo { width: 160px; }
+    .membrete .der { text-align: right; font-size: 10pt; color: #555; line-height: 1.5; }
+    .membrete .numero { font-size: 13pt; font-weight: bold; color: #1d3f66; }
+    .regla { border-bottom: 1.5px solid #1d3f66; margin: 4px 0 7px; }
 
-    h1 { font-size: 15pt; font-weight: bold; color: #1d3f66; margin: 0 0 4px; }
+    h1 { font-size: 18pt; font-weight: bold; color: #1d3f66; margin: 0 0 4px; }
     .intro { margin: 0 0 6px; color: #333; }
 
-    h2 { font-size: 8.5pt; font-weight: bold; color: #1d3f66; text-transform: uppercase; letter-spacing: .6px; margin: 10px 0 3px; padding-bottom: 2px; border-bottom: .5px solid #b8c4d2; }
+    h2 { font-size: 10pt; font-weight: bold; color: #1d3f66; text-transform: uppercase; letter-spacing: .6px; margin: 9px 0 3px; padding-bottom: 2px; border-bottom: .5px solid #b8c4d2; }
 
-    .datos td { padding: 1.6px 0; vertical-align: top; }
-    .datos .et { width: 16%; color: #666; }
-    .datos .val { width: 34%; padding-right: 14px; }
-    .llenar { display: inline-block; border-bottom: .6px solid #444; width: 150px; }
+    .datos td { padding: 1px 0; vertical-align: top; }
+    .datos .et { width: 17%; color: #666; }
+    .datos .val { width: 33%; padding-right: 12px; }
+    .llenar { display: inline-block; border-bottom: .7px solid #444; width: 170px; }
     .llenar.corta { width: 40px; }
 
     ol { margin: 0; padding-left: 16px; }
     ol li { margin-bottom: 2px; padding-left: 3px; }
     .nota { margin: 6px 0 0; }
 
-    .firmas { margin-top: 40px; page-break-inside: avoid; }
-    .firmas td { vertical-align: bottom; text-align: center; font-size: 8pt; color: #444; }
+    .firmas { margin-top: 30px; page-break-inside: avoid; }
+    .firmas td { vertical-align: bottom; text-align: center; font-size: 10pt; color: #444; }
     .firmas .linea { border-top: .7px solid #222; padding-top: 4px; }
-    .firmas .quien { font-size: 8.5pt; color: #222; font-weight: bold; }
-    .sello { border: .7px dashed #999; height: 70px; width: 100px; margin: 0 auto 4px; }
+    .firmas .quien { font-size: 11pt; color: #222; font-weight: bold; }
+    .sello { border: .7px dashed #999; height: 62px; width: 100px; margin: 0 auto 4px; }
 
-    .pie { position: fixed; bottom: -0.75cm; left: 0; right: 0; text-align: center; font-size: 7pt; color: #888; }
+    .pie { position: fixed; bottom: -0.8cm; left: 0; right: 0; text-align: center; font-size: 9pt; color: #888; }
 </style>
 </head>
 <body>
@@ -78,11 +78,14 @@
             <td class="et">C.I.</td><td class="val"><span class="llenar">&nbsp;</span></td>
         </tr>
         <tr>
-            <td class="et">Teléfono</td><td class="val">{{ $adoptante->telefono ?: '—' }}</td>
-            <td class="et">Zona</td><td class="val">{{ $solicitud->zona_aproximada }}</td>
+            <td class="et">Teléfono</td><td class="val" colspan="3">{{ $adoptante->telefono ?: '—' }}</td>
+        </tr>
+        {{-- La zona ocupa toda la fila: suele ser larga y en media columna partía el acta en dos hojas. --}}
+        <tr>
+            <td class="et">Zona</td><td class="val" colspan="3">{{ $solicitud->zona_aproximada }}</td>
         </tr>
         <tr>
-            <td class="et">Dirección</td><td class="val" colspan="3"><span class="llenar" style="width: 360px;">&nbsp;</span></td>
+            <td class="et">Dirección</td><td class="val" colspan="3"><span class="llenar" style="width: 420px;">&nbsp;</span></td>
         </tr>
     </table>
 
