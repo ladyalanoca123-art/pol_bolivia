@@ -45,9 +45,12 @@ class SolicitudAdopcionController extends Controller
                 'seguimiento:id,solicitud_id,estado',
             ])
             // «cerradas» agrupa las que terminaron sin adopción o se cerraron (botón «Cerradas» de la lista).
-            ->when($filters['estado'] ?? null, fn ($query, string $estado) => $estado === 'cerradas'
-                ? $query->whereIn('estado', SolicitudAdopcion::ESTADOS_CERRADOS)
-                : $query->where('estado', $estado))
+            // «hoy» (botón «Hoy») no es un estado: son las recibidas hoy (hora de Bolivia), en cualquier etapa.
+            ->when($filters['estado'] ?? null, fn ($query, string $estado) => match ($estado) {
+                'cerradas' => $query->whereIn('estado', SolicitudAdopcion::ESTADOS_CERRADOS),
+                'hoy' => $this->recibidasHoy($query),
+                default => $query->where('estado', $estado),
+            })
             ->when($filters['nivel_alerta'] ?? null, fn ($query, string $nivel) => $query->where('nivel_alerta', $nivel))
             ->when($filters['buscar'] ?? null, function ($query, string $buscar): void {
                 $query->where(function ($query) use ($buscar): void {
@@ -57,11 +60,14 @@ class SolicitudAdopcionController extends Controller
                         ->orWhereHas('mascota', fn ($query) => $query->where('nombre', 'ilike', "%{$buscar}%"));
                 });
             })
-            // Primero las que están en trámite (recibidas, en evaluación y reservadas); dentro de ellas, rojas,
-            // amarillas y verdes. Expresiones fijas, sin datos del usuario.
+            // Primero las que están en trámite (recibidas, en evaluación y reservadas); dentro de ellas, las más
+            // aptas primero (verdes, amarillas, rojas) y, en cada color, la más antigua (quien envió antes espera
+            // menos). Las finalizadas van después, la más reciente primero. Expresiones fijas, sin datos del usuario.
             ->orderByRaw("CASE WHEN estado IN ('pendiente', 'en_espera', 'aprobada') THEN 0 ELSE 1 END")
-            ->orderByRaw("CASE nivel_alerta WHEN 'rojo' THEN 0 WHEN 'amarillo' THEN 1 WHEN 'verde' THEN 2 ELSE 3 END")
+            ->orderByRaw("CASE WHEN estado IN ('pendiente', 'en_espera', 'aprobada') THEN CASE nivel_alerta WHEN 'verde' THEN 0 WHEN 'amarillo' THEN 1 WHEN 'rojo' THEN 2 ELSE 3 END ELSE 0 END")
+            ->orderByRaw("CASE WHEN estado IN ('pendiente', 'en_espera', 'aprobada') THEN created_at END ASC")
             ->latest()
+            ->orderByDesc('id')
             ->paginate(15)
             ->withQueryString();
 
@@ -74,7 +80,17 @@ class SolicitudAdopcionController extends Controller
             ->pluck('total', 'mascota_id')
             ->map(fn ($total) => (int) $total);
 
-        return view('admin.solicitudes-adopcion.index', compact('solicitudes', 'filters', 'enTramitePorMascota'));
+        // Para el botón «Hoy (N)»: cuántas llegaron hoy, en cualquier etapa.
+        $recibidasHoy = $this->recibidasHoy(SolicitudAdopcion::query())->count();
+
+        return view('admin.solicitudes-adopcion.index', compact('solicitudes', 'filters', 'enTramitePorMascota', 'recibidasHoy'));
+    }
+
+    /** Solicitudes creadas hoy según la hora de Bolivia. */
+    private function recibidasHoy($query)
+    {
+        // PostgreSQL compara el día en la zona de Bolivia, sin depender de la zona de la sesión. Expresión fija.
+        return $query->whereRaw("(created_at AT TIME ZONE 'America/La_Paz')::date = (CURRENT_TIMESTAMP AT TIME ZONE 'America/La_Paz')::date");
     }
 
     public function show(SolicitudAdopcion $solicitud): View

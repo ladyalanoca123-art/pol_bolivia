@@ -2,9 +2,9 @@
     $hayFiltros = collect($filters)->filter(fn ($v) => filled($v))->isNotEmpty();
     $estadoActual = $filters['estado'] ?? null;
     // Accesos rápidos a las etapas en trámite.
-    $rapidos = ['' => 'Todas', 'pendiente' => 'Recibidas', 'en_espera' => 'En evaluación', 'aprobada' => 'Reservadas', 'aceptada' => 'Concretadas', 'cerradas' => 'Cerradas'];
+    $rapidos = ['' => 'Todas', 'hoy' => 'Hoy ('.$recibidasHoy.')', 'pendiente' => 'Recibidas', 'en_espera' => 'En evaluación', 'aprobada' => 'Reservadas', 'aceptada' => 'Concretadas', 'cerradas' => 'Cerradas'];
 @endphp
-<x-admin.pagina titulo="Solicitudes de adopción" :contador="$solicitudes->total().($solicitudes->total() === 1 ? ' solicitud' : ' solicitudes')" seccion="Adopciones" descripcion="Primero se muestran las solicitudes en trámite (recibidas, en evaluación y reservadas), ordenadas por nivel de revisión. Las alertas ayudan a priorizar; no aprueban ni rechazan.">
+<x-admin.pagina titulo="Solicitudes de adopción" :contador="$solicitudes->total().($solicitudes->total() === 1 ? ' solicitud' : ' solicitudes')" seccion="Adopciones" descripcion="Primero se muestran las solicitudes en trámite: las más aptas (sin observaciones) arriba y, en cada color, la más antigua primero. Las alertas ayudan a priorizar; no aprueban ni rechazan.">
 
     <x-admin.tarjeta>
         {{-- El estado se elige con los botones de abajo (se conserva al buscar). --}}
@@ -32,7 +32,7 @@
 
     {{-- Accesos rápidos por etapa: debajo de los filtros --}}
     @php
-        $iconosEtapa = ['' => \App\Support\IconosPestanas::LISTA, 'pendiente' => \App\Support\IconosPestanas::BANDEJA, 'en_espera' => \App\Support\IconosPestanas::LUPA, 'aprobada' => \App\Support\IconosPestanas::MARCADOR, 'aceptada' => \App\Support\IconosPestanas::CHECK, 'cerradas' => \App\Support\IconosPestanas::ARCHIVO];
+        $iconosEtapa = ['' => \App\Support\IconosPestanas::LISTA, 'hoy' => \App\Support\IconosPestanas::HOY, 'pendiente' => \App\Support\IconosPestanas::BANDEJA, 'en_espera' => \App\Support\IconosPestanas::LUPA, 'aprobada' => \App\Support\IconosPestanas::MARCADOR, 'aceptada' => \App\Support\IconosPestanas::CHECK, 'cerradas' => \App\Support\IconosPestanas::ARCHIVO];
         // Un estado cerrado concreto (p. ej. desde un enlace antiguo) marca el botón «Cerradas».
         $botonActual = in_array($estadoActual, \App\Models\SolicitudAdopcion::ESTADOS_CERRADOS, true) ? 'cerradas' : ($estadoActual ?? '');
         $opcionesEtapa = collect($rapidos)->map(fn ($texto, $clave) => [$texto, route('admin.solicitudes-adopcion.index', array_filter([...$filters, 'estado' => $clave ?: null])), $botonActual === (string) $clave, $iconosEtapa[$clave]])->values()->all();
@@ -41,7 +41,7 @@
 
     @if ($solicitudes->isEmpty())
         <x-admin.tarjeta>
-            <x-admin.vacio titulo="No se encontraron solicitudes." :texto="$hayFiltros ? 'Prueba con otro estado o búsqueda.' : 'Cuando un ciudadano envíe una solicitud, aparecerá aquí.'" />
+            <x-admin.vacio :titulo="$estadoActual === 'hoy' ? 'Hoy no llegaron solicitudes.' : 'No se encontraron solicitudes.'" :texto="$estadoActual === 'hoy' ? 'Las que lleguen hoy aparecerán aquí.' : ($hayFiltros ? 'Prueba con otro estado o búsqueda.' : 'Cuando un ciudadano envíe una solicitud, aparecerá aquí.')" />
         </x-admin.tarjeta>
     @else
         @php

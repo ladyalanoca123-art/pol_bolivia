@@ -73,6 +73,39 @@ class SolicitudesPorMascotaYPrecargaTest extends TestCase
             ->assertDontSee('solicitudes por Nina');
     }
 
+    public function test_la_lista_pone_primero_las_mas_aptas_y_en_cada_color_la_mas_antigua(): void
+    {
+        $bongo = $this->mascota('Bongo');
+        $this->solicitud($bongo, 'Rita Roja', 'rojo', '2026-11-01 10:00:00-04');
+        $this->solicitud($bongo, 'Vera Nueva', 'verde', '2026-11-05 10:00:00-04');
+        $this->solicitud($bongo, 'Ana Amarilla', 'amarillo', '2026-11-02 10:00:00-04');
+        $this->solicitud($bongo, 'Vito Antiguo', 'verde', '2026-11-03 10:00:00-04');
+
+        foreach ([[], ['estado' => 'pendiente']] as $filtro) {
+            $this->actingAs($this->admin)->get(route('admin.solicitudes-adopcion.index', $filtro))->assertOk()
+                ->assertSeeInOrder(['Vito Antiguo', 'Vera Nueva', 'Ana Amarilla', 'Rita Roja']);
+        }
+    }
+
+    public function test_el_boton_hoy_muestra_solo_las_recibidas_hoy_en_segundo_lugar(): void
+    {
+        $bongo = $this->mascota('Bongo');
+        $this->solicitud($bongo, 'Hugo Hoy', 'verde', now()->toIso8601String());
+        $this->solicitud($bongo, 'Ayer Antes', 'verde', now()->subDays(2)->toIso8601String());
+
+        $this->actingAs($this->admin)->get(route('admin.solicitudes-adopcion.index'))->assertOk()
+            ->assertSeeInOrder(['Todas', 'Hoy (1)', 'Recibidas', 'En evaluación']);
+
+        $this->actingAs($this->admin)->get(route('admin.solicitudes-adopcion.index', ['estado' => 'hoy']))->assertOk()
+            ->assertSee('Hugo Hoy')
+            ->assertDontSee('Ayer Antes');
+
+        DB::table('solicitudes_adopcion')->update(['created_at' => now()->subDays(3)]);
+        $this->actingAs($this->admin)->get(route('admin.solicitudes-adopcion.index', ['estado' => 'hoy']))->assertOk()
+            ->assertSee('Hoy (0)')
+            ->assertSee('Hoy no llegaron solicitudes.');
+    }
+
     public function test_las_adopciones_concretadas_se_muestran_como_tarjetas_con_foto(): void
     {
         $concretada = $this->solicitud($this->mascota('Bongo'), 'Carla Concreta', 'verde', '2026-11-01 10:00:00-04');

@@ -8,7 +8,7 @@
 --}}
 @php
     $total = count($opciones) + ($slot->isEmpty() ? 0 : 1);
-    $columnas = [2 => 'lg:grid-cols-2', 3 => 'lg:grid-cols-3', 4 => 'lg:grid-cols-4', 5 => 'lg:grid-cols-5', 6 => 'lg:grid-cols-6'][$total] ?? 'lg:grid-cols-6';
+    $columnas = [2 => 'lg:grid-cols-2', 3 => 'lg:grid-cols-3', 4 => 'lg:grid-cols-4', 5 => 'lg:grid-cols-5', 6 => 'lg:grid-cols-6', 7 => 'lg:grid-cols-7'][$total] ?? 'lg:grid-cols-6';
 @endphp
 <nav aria-label="{{ $etiqueta }}" {{ $attributes->merge(['class' => "grid grid-cols-2 gap-2 sm:grid-cols-3 {$columnas}"]) }}>
     @foreach ($opciones as [$texto, $url, $activa, $icono])
