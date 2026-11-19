@@ -37,7 +37,13 @@ class SolicitudAdopcionController extends Controller
         $filters = $request->validated();
 
         $solicitudes = SolicitudAdopcion::query()
-            ->with(['solicitante', 'mascota'])
+            ->with([
+                'solicitante',
+                'mascota',
+                // Para las tarjetas de adopciones concretadas: la foto principal y cómo va el seguimiento.
+                'mascota.fotos' => fn ($query) => $query->where('tipo', 'foto')->orderByDesc('es_principal')->orderBy('orden'),
+                'seguimiento:id,solicitud_id,estado',
+            ])
             // «cerradas» agrupa las que terminaron sin adopción o se cerraron (botón «Cerradas» de la lista).
             ->when($filters['estado'] ?? null, fn ($query, string $estado) => $estado === 'cerradas'
                 ? $query->whereIn('estado', SolicitudAdopcion::ESTADOS_CERRADOS)
@@ -59,7 +65,16 @@ class SolicitudAdopcionController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('admin.solicitudes-adopcion.index', compact('solicitudes', 'filters'));
+        // Cuántas solicitudes en trámite tiene cada mascota de la página (una sola consulta agrupada).
+        $enTramitePorMascota = SolicitudAdopcion::query()
+            ->whereIn('mascota_id', $solicitudes->getCollection()->pluck('mascota_id')->unique()->values())
+            ->whereIn('estado', SolicitudAdopcion::ESTADOS_ACTIVOS)
+            ->selectRaw('mascota_id, COUNT(*) as total')
+            ->groupBy('mascota_id')
+            ->pluck('total', 'mascota_id')
+            ->map(fn ($total) => (int) $total);
+
+        return view('admin.solicitudes-adopcion.index', compact('solicitudes', 'filters', 'enTramitePorMascota'));
     }
 
     public function show(SolicitudAdopcion $solicitud): View
@@ -78,7 +93,18 @@ class SolicitudAdopcionController extends Controller
                 || array_key_exists('estado', $a->valores_nuevos ?? [])
                 || array_key_exists('comentarios_admin', $a->valores_nuevos ?? []));
 
-        return view('admin.solicitudes-adopcion.show', compact('solicitud', 'historial'));
+        // Todas las solicitudes en trámite por la misma mascota (incluida esta), para comparar antes de decidir:
+        // primero las verdes, luego amarillas y rojas; dentro de cada color, la más antigua primero.
+        // Solo orienta: la decisión sigue siendo del administrador.
+        $porMascota = SolicitudAdopcion::query()
+            ->where('mascota_id', $solicitud->mascota_id)
+            ->whereIn('estado', SolicitudAdopcion::ESTADOS_ACTIVOS)
+            ->with('solicitante:id,nombres,apellidos')
+            ->orderByRaw("CASE nivel_alerta WHEN 'verde' THEN 0 WHEN 'amarillo' THEN 1 WHEN 'rojo' THEN 2 ELSE 3 END")
+            ->oldest()->orderBy('id')
+            ->get();
+
+        return view('admin.solicitudes-adopcion.show', compact('solicitud', 'historial', 'porMascota'));
     }
 
     /** Acta de adopción para imprimir, firmar y sellar el día de la entrega. Es válida solo con firmas y sello originales. */

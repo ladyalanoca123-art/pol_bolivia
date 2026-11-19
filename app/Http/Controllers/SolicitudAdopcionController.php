@@ -31,7 +31,27 @@ class SolicitudAdopcionController extends Controller
             return to_route('solicitudes-adopcion.index')->withErrors(['mascota' => SolicitudAdopcion::LIMITE_ALCANZADO]);
         }
 
-        return view('solicitudes-adopcion.create', compact('mascota'));
+        // Si ya respondió el cuestionario antes (misma versión), se completa con sus respuestas anteriores para que solo
+        // revise y corrija. Se cargan como «respuestas previas» (old) solo para esta página. Nunca se completan los
+        // consentimientos: deben marcarse cada vez. Tras un error de validación se conservan las que acaba de enviar.
+        $precargada = null;
+        if (! session()->hasOldInput()) {
+            $precargada = auth()->user()->solicitudesAdopcion()
+                ->where('version_cuestionario', C::VERSION)
+                ->whereNotNull('respuestas')
+                ->with('mascota:id,nombre')
+                ->latest()->orderByDesc('id')
+                ->first();
+
+            if ($precargada !== null) {
+                session()->now('_old_input', [
+                    ...collect($precargada->respuestas)->except(['consentimientos', ...array_keys(C::CONSENTIMIENTOS)])->all(),
+                    'zona_aproximada' => $precargada->zona_aproximada,
+                ]);
+            }
+        }
+
+        return view('solicitudes-adopcion.create', compact('mascota', 'precargada'));
     }
 
     public function store(StoreSolicitudAdopcionRequest $request, Mascota $mascota, EvaluadorSolicitudAdopcion $evaluador): RedirectResponse

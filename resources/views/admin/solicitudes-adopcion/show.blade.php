@@ -207,6 +207,78 @@
                 </div>
             </x-admin.tarjeta>
 
+            {{-- Otras solicitudes por la misma mascota: para comparar antes de decidir (verdes primero). Solo orienta. --}}
+            @if ($porMascota->count() > 1)
+                @php
+                    $tonosAlerta = ['verde' => ['bg-emerald-500', 'Sin observaciones'], 'amarillo' => ['bg-amber-400', 'Requiere revisión'], 'rojo' => ['bg-red-500', 'Condición incompatible']];
+                    $resumenColores = collect(['verde' => ['verde', 'verdes'], 'amarillo' => ['amarilla', 'amarillas'], 'rojo' => ['roja', 'rojas']])
+                        ->map(fn ($p, $nivel) => [$porMascota->where('nivel_alerta', $nivel)->count(), $p])
+                        ->filter(fn ($r) => $r[0] > 0)
+                        ->map(fn ($r) => $r[0].' '.($r[0] === 1 ? $r[1][0] : $r[1][1]))->values()->join(' · ');
+                @endphp
+                <x-admin.tarjeta :titulo="'Solicitudes por '.$solicitud->mascota->nombre.' ('.$porMascota->count().')'">
+                    <x-slot name="acciones"><span class="text-sm font-semibold text-slate-600">{{ $resumenColores }}</span></x-slot>
+                    <p class="mb-3 text-sm text-slate-600">{{ $porMascota->count() }} personas quieren adoptar a {{ $solicitud->mascota->nombre }}. Están ordenadas de la más recomendable a la menos (verdes primero); la decisión es tuya.</p>
+                    @php
+                        // La primera de la lista (la más recomendable) se destaca con un botón para ir directo a ella.
+                        $recomendada = $porMascota->first();
+                    @endphp
+                    <ul class="space-y-2">
+                        @foreach ($porMascota as $otra)
+                            @php
+                                [$punto, $textoAlerta] = $tonosAlerta[$otra->nivel_alerta] ?? ['bg-slate-300', 'Sin revisión'];
+                                $cuantas = count($otra->alertas ?? []);
+                                $esta = $otra->is($solicitud);
+                                $destacada = ! $esta && $otra->is($recomendada) && $otra->nivel_alerta === 'verde';
+                                $nombre = $otra->solicitante->nombres.' '.$otra->solicitante->apellidos;
+                            @endphp
+                            @php
+                                $datos = $textoAlerta.($otra->nivel_alerta === 'amarillo' && $cuantas > 0 ? ' · '.$cuantas.' '.($cuantas === 1 ? 'respuesta' : 'respuestas') : '');
+                            @endphp
+                            <li>
+                                @if ($esta)
+                                    {{-- La que se está viendo: borde y fondo fuertes, sin enlace. --}}
+                                    <div class="rounded-xl border-2 border-blue-700 bg-blue-50 px-4 py-3" aria-current="page">
+                                        <p class="flex flex-wrap items-center gap-2.5">
+                                            <span class="h-3 w-3 shrink-0 rounded-full {{ $punto }}" aria-hidden="true"></span>
+                                            <span class="font-bold text-blue-950">{{ $nombre }}</span>
+                                            <span class="rounded-full bg-blue-700 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-white">Estás viendo esta solicitud</span>
+                                        </p>
+                                        <p class="mt-1 flex flex-wrap gap-x-2 ps-[1.375rem] text-sm text-slate-700">
+                                            <span class="font-medium text-slate-800">{{ $datos }}</span>
+                                            <span aria-hidden="true">·</span><span>{{ $otra->estadoLegible() }}</span>
+                                            <span aria-hidden="true">·</span><time datetime="{{ $otra->created_at->toIso8601String() }}">{{ $otra->created_at->diffForHumans() }}</time>
+                                        </p>
+                                    </div>
+                                @else
+                                    {{-- Toda la fila lleva a esa solicitud. --}}
+                                    <a href="{{ route('admin.solicitudes-adopcion.show', $otra) }}"
+                                       class="group flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 {{ $destacada ? 'border-emerald-300 bg-emerald-50 hover:border-emerald-500 hover:bg-emerald-100' : 'border-slate-200 hover:border-slate-400 hover:bg-slate-50' }}">
+                                        <span class="min-w-0">
+                                            <span class="flex flex-wrap items-center gap-2.5">
+                                                <span class="h-3 w-3 shrink-0 rounded-full {{ $punto }}" aria-hidden="true"></span>
+                                                <span class="font-semibold text-blue-950 group-hover:underline">{{ $nombre }}</span>
+                                                @if ($destacada)
+                                                    <span class="rounded-full bg-emerald-700 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-white">Recomendada</span>
+                                                @endif
+                                            </span>
+                                            <span class="mt-1 flex flex-wrap gap-x-2 ps-[1.375rem] text-sm text-slate-600">
+                                                <span class="font-medium text-slate-800">{{ $datos }}</span>
+                                                <span aria-hidden="true">·</span><span>{{ $otra->estadoLegible() }}</span>
+                                                <span aria-hidden="true">·</span><time datetime="{{ $otra->created_at->toIso8601String() }}">{{ $otra->created_at->diffForHumans() }}</time>
+                                            </span>
+                                        </span>
+                                        <span class="ms-[1.375rem] inline-flex shrink-0 items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-semibold {{ $destacada ? 'bg-emerald-700 text-white group-hover:bg-emerald-800' : 'border border-slate-300 bg-white text-slate-700 group-hover:border-slate-400' }}">
+                                            {{ $destacada ? 'Ir a esta solicitud' : 'Ver solicitud' }} <span aria-hidden="true">→</span>
+                                        </span>
+                                    </a>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                </x-admin.tarjeta>
+            @endif
+
             {{-- Alertas --}}
             <x-admin.tarjeta titulo="Respuestas que necesitan revisión" :tono="$alertas->contains('nivel', 'rojo') ? 'rojo' : ($alertas->isNotEmpty() ? 'ambar' : 'blanco')">
                 <x-slot name="acciones">

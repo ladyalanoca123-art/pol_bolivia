@@ -40,6 +40,15 @@
                 <p class="mb-4 rounded-md bg-red-50 p-4 text-sm text-red-700">{{ $errors->first('mascota') }}</p>
             @elseif ($errors->any())
                 <p class="mb-4 rounded-md bg-red-50 p-4 text-sm text-red-700">Revisa las preguntas marcadas en rojo antes de enviar.</p>
+            @elseif ($precargada ?? null)
+                {{-- Respuestas completadas con su solicitud anterior: debe revisarlas y marcar de nuevo las aceptaciones. --}}
+                <div class="mb-4 flex gap-3 rounded-xl border border-sky-200 bg-sky-50 p-4 text-[15px] text-sky-950" role="status">
+                    <svg class="mt-0.5 h-5 w-5 shrink-0 text-sky-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-13v.01M11 12h1v4h1"/></svg>
+                    <p>
+                        <strong>Completamos tus respuestas</strong> con las de tu solicitud anterior (por {{ $precargada->mascota?->nombre ?? 'otra mascota' }}, del {{ $precargada->created_at->format('d/m/Y') }}).
+                        Revisa que sigan siendo correctas y cambia lo que haga falta. Las <strong>aceptaciones del final</strong> debes marcarlas de nuevo.
+                    </p>
+                </div>
             @endif
 
             <form method="POST" action="{{ route('solicitudes-adopcion.store', $mascota) }}" class="space-y-6"
